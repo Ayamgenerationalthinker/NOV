@@ -3,6 +3,8 @@ import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ProductCard } from '@/components/products/product-card';
+import { ProductService } from '@/services/product/product.service';
 import {
   ShieldCheck,
   Zap,
@@ -15,7 +17,15 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-export default function HomePage() {
+export const dynamic = 'force-dynamic';
+
+export default async function HomePage() {
+  const { products: featuredProducts } = await ProductService.getPublishedProducts({
+    sort: 'featured',
+    page: 1,
+    limit: 4,
+  });
+
   return (
     <div className="flex flex-col gap-16 py-12 md:py-20">
       {/* Hero Section */}
@@ -69,6 +79,34 @@ export default function HomePage() {
           </div>
         </Container>
       </section>
+
+      {/* Featured Products Section (Shown if any products exist) */}
+      {featuredProducts.length > 0 && (
+        <section>
+          <Container>
+            <div className="flex items-end justify-between mb-8 pb-4 border-b border-slate-800">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Featured Digital Products</h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  Hand-crafted templates, instructional guides, and software assets.
+                </p>
+              </div>
+              <Link href="/products">
+                <Button variant="ghost" size="sm" className="gap-1 text-xs text-blue-400 hover:text-blue-300">
+                  View all catalog
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </Container>
+        </section>
+      )}
 
       {/* Core Architectural Pillars */}
       <section>

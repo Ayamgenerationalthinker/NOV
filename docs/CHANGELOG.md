@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - Version 2: Product Management (2026-09-08)
+
+### Added
+* Product Service layer in `src/services/product/product.service.ts`:
+  - `getPublishedProducts`: Filterable, paginated query with category, price range, and full-text search.
+  - `getProductBySlug`: Retrieves full product details with file specifications and category tags.
+  - `getAllProductsAdmin`: Comprehensive catalog view for administrators.
+  - `createProduct`: Generates SEO slugs, attaches categories, and logs administrative audit events.
+  - `updateProduct`: Full product modification with change tracking.
+  - `deleteProduct`: Prevents deletion of purchased products to preserve customer entitlement integrity.
+  - `togglePublish`: Instant publication toggle.
+* Category Service in `src/services/category/category.service.ts`:
+  - Catalog category queries with real-time published product counts.
+* Public API Routes:
+  - `GET /api/products`: Filterable, searchable public catalog.
+  - `GET /api/products/[slug]`: Public product detail lookup.
+  - `GET /api/categories`: Public categories list.
+* Admin API Routes (guarded with RBAC):
+  - `GET /api/admin/products`: Admin catalog query.
+  - `POST /api/admin/products`: Author a new product.
+  - `PUT /api/admin/products/[id]`: Update product details and pricing.
+  - `DELETE /api/admin/products/[id]`: Product deletion.
+  - `PATCH /api/admin/products/[id]/publish`: Toggle publication status.
+* Storefront UI Views:
+  - `/products`: Responsive catalog with category pills, search input, and `ProductCard` component.
+  - `/products/[slug]`: SEO-optimized product landing page with dynamic OpenGraph metadata, feature checklists, "What's Included", pricing & discount display, and buy actions.
+  - `/categories`: Category showcase with product count badges.
+  - Homepage updated with dynamic "Featured Products" section.
+* Administrative UI Views:
+  - `/admin`: Dashboard overview with metrics and quick actions.
+  - `/admin/products`: Real-time inventory table with one-click publish/unpublish.
+  - `/admin/products/new`: Product authoring form with pricing, types, categories, features, and licensing terms.
+  - `/admin/products/[id]/edit`: Full product editor with delete safeguards.
+* Unit tests for Product Validators (`productCreateSchema`, `productFilterSchema`) and ProductService `slugify` (28 total tests).
+
 ## [0.2.0] - Version 1: Database + Authentication & RBAC (2026-09-08)
 
 ### Added
@@ -25,7 +60,6 @@ All notable changes to this project will be documented in this file.
   - `/register`: Customer sign-up form with password strength validation.
   - `/forgot-password`: Password recovery request form.
   - `/reset-password`: New password confirmation form.
-* Unit tests for PasswordService, TokenService, SessionService, RBACService, and Auth Validators (23 total tests).
 
 ## [0.1.0] - Version 0: Project Foundation (2026-09-08)
 
@@ -36,5 +70,3 @@ All notable changes to this project will be documented in this file.
 * Core reusable UI component primitives: `Button`, `Card`, `Badge`, `Input`, `Container`, `Skeleton`, `ErrorState`, `EmptyState`.
 * Storefront root layout, high-trust homepage, global error boundary, and 404 page.
 * Diagnostic health check API route at `/api/health`.
-* Unit and component testing harness with Vitest and React Testing Library.
-* Technical documentation (`README.md`, `ARCHITECTURE.md`, `DATABASE.md`, `PAYMENTS.md`, `SECURITY.md`).

@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.0] - Version 10: Marketing, Promotions & Discount Campaigns (2026-09-08)
+
+### Added
+* Advanced Coupon Management Engine (`src/services/coupon/coupon.service.ts`):
+  - `getAllCoupons`: Lists promotional discount codes with redemption metrics, limits, and filter search.
+  - `getCouponById`: Detailed view including itemized customer redemption history.
+  - `createCoupon`: Authoring with code normalization (uppercase), percentage (1-100%) and fixed-amount bounds checking, expiration dates, minimum spend thresholds, and maximum redemption quotas.
+  - `updateCoupon`: Full modification of discount values, limits, and expiration windows.
+  - `toggleCouponStatus`: 1-click active/inactive toggle switch.
+  - `deleteCoupon`: Safe deactivation for redeemed coupons to preserve historical order integrity, or hard deletion for unused test codes.
+* Marketing & Promotional Campaigns Engine (`src/services/marketing/marketing.service.ts`):
+  - `subscribeNewsletter`: Public subscription pipeline with email regex validation, idempotent upserts, and automatic dispatch of welcome email with 10% coupon code (`WELCOME10`).
+  - `unsubscribeNewsletter`: Opt-out support marking subscribers inactive.
+  - `getSubscribers`: Administrator subscriber directory with counts and dates.
+  - `getAbandonedCheckouts`: Real-time detector for `PENDING` checkout sessions older than 1 hour with items and contact details.
+  - `sendAbandonedCheckoutReminder`: Personalized recovery email dispatcher sending direct checkout resume link and recovery coupon code (`RECOVER15`).
+  - `getFlashSaleCampaign` / `updateFlashSaleCampaign`: Live campaign state management with real-time countdown targets and promotional coupon codes.
+* Storefront Marketing Components:
+  - `AnnouncementBanner` (`src/components/marketing/announcement-banner.tsx`): High-converting top banner featuring dynamic badge, headline, real-time hours/minutes/seconds countdown clock, and 1-click coupon code clipboard copier with session dismissibility.
+  - `NewsletterSignup` (`src/components/marketing/newsletter-signup.tsx`): Sleek dark glassmorphism lead-capture widget embedded across the storefront and homepage.
+* Admin Marketing & Coupon Dashboards:
+  - `/admin/coupons`: Complete coupon creation and control dashboard with real-time redemption counters.
+  - `/admin/marketing`: Multi-tab management hub for Flash Sale countdown configuration, Abandoned Checkout recovery actions, and Newsletter subscriber directory.
+* API Endpoints:
+  - `GET /api/admin/coupons`: Admin coupons list.
+  - `POST /api/admin/coupons`: Create new promotional coupon.
+  - `GET /api/admin/coupons/[id]`: Detailed coupon inspector.
+  - `PATCH /api/admin/coupons/[id]`: Update coupon or toggle status.
+  - `DELETE /api/admin/coupons/[id]`: Delete or deactivate coupon.
+  - `POST /api/marketing/newsletter`: Public newsletter subscription.
+  - `GET /api/marketing/flash-sale`: Public flash sale campaign query.
+  - `POST /api/marketing/flash-sale`: Admin flash sale campaign updater.
+  - `GET /api/admin/marketing/subscribers`: Admin newsletter subscribers list.
+  - `GET /api/admin/marketing/abandoned`: Admin abandoned checkouts query.
+  - `POST /api/admin/marketing/abandoned/[id]/recover`: Dispatch recovery reminder email.
+* Automated Tests:
+  - `tests/unit/admin-coupon.service.test.ts`: 10 unit tests for coupon bounds, uniqueness, updating, and soft deactivation.
+  - `tests/unit/marketing.service.test.ts`: 9 unit tests for newsletter, abandoned checkouts, recovery email dispatches, and flash sale state.
+  - Total automated test suite expanded to **116 tests passing across 22 test suites**.
+
 ## [0.10.0] - Version 9: Administrative Analytics, Sales Metrics & Customer Management (2026-09-08)
 
 ### Added

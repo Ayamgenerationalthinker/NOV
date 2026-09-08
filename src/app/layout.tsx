@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 };
 
 import { CartProvider } from '@/context/cart-context';
+import { AnnouncementBanner } from '@/components/marketing/announcement-banner';
 
 export default function RootLayout({
   children,
@@ -29,6 +30,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="min-h-screen flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
         <CartProvider>
+          <AnnouncementBanner />
           <Header />
           <main className="flex-1 flex flex-col">{children}</main>
           <Footer />

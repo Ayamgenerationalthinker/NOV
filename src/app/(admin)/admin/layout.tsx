@@ -12,6 +12,7 @@ import {
   BarChart3,
   ExternalLink,
   ShieldAlert,
+  Sparkles,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -53,6 +54,7 @@ export default async function AdminLayout({
     { label: 'Orders', href: '/admin/orders', icon: ShoppingCart },
     { label: 'Customers', href: '/admin/customers', icon: Users },
     { label: 'Coupons', href: '/admin/coupons', icon: Tag },
+    { label: 'Marketing', href: '/admin/marketing', icon: Sparkles },
     { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   ];
 

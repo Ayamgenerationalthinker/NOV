@@ -365,4 +365,106 @@ export class EmailService {
 
     return result.success;
   }
+
+  /**
+   * Send Welcome & Discount Email to Newsletter Subscriber
+   */
+  static async sendNewsletterWelcomeEmail(toEmail: string, discountCode: string = 'WELCOME10'): Promise<boolean> {
+    const storefrontUrl = env.NEXT_PUBLIC_APP_URL || 'https://nov.com';
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <h2 style="color: #2563eb; margin-top: 0;">Welcome to the NOV Creator & Developer Community!</h2>
+        <p>Thanks for subscribing to our release notes, developer dispatches, and exclusive drops.</p>
+        <p>As a warm welcome, here is an exclusive 10% discount on your first digital purchase:</p>
+        <div style="margin: 20px 0; padding: 16px; background-color: #f1f5f9; border-radius: 8px; text-align: center;">
+          <span style="font-size: 11px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px;">Your Coupon Code</span>
+          <span style="font-family: monospace; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #2563eb;">${discountCode}</span>
+        </div>
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${storefrontUrl}/products" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+            Explore Digital Goods →
+          </a>
+        </div>
+        <p style="color: #94a3b8; font-size: 11px;">You can unsubscribe at any time. © ${new Date().getFullYear()} NOV.com</p>
+      </div>
+    `;
+
+    const result = await this.sendEmail({
+      to: toEmail,
+      subject: `Welcome to NOV.com! Here is your 10% discount code (${discountCode})`,
+      html,
+      text: `Welcome to NOV.com! Use code ${discountCode} for 10% off your purchase at: ${storefrontUrl}`,
+    });
+
+    return result.success;
+  }
+
+  /**
+   * Send Abandoned Cart Reminder Email
+   */
+  static async sendAbandonedCartEmail(params: {
+    toEmail: string;
+    customerName?: string;
+    orderNumber: string;
+    items: Array<{ title: string; price: number }>;
+    totalAmount: number;
+    currency: string;
+    recoveryUrl: string;
+    discountCode?: string;
+  }): Promise<boolean> {
+    const { toEmail, customerName, orderNumber, items, totalAmount, currency, recoveryUrl, discountCode } = params;
+
+    const itemsHtml = items
+      .map(
+        (i) => `
+        <li style="padding: 6px 0; color: #334155; font-size: 13px;">
+          <strong>${i.title}</strong> — $${i.price.toFixed(2)}
+        </li>
+      `
+      )
+      .join('');
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <h2 style="color: #2563eb; margin-top: 0;">Did you leave something behind?</h2>
+        <p>Hi ${customerName || 'there'},</p>
+        <p>We noticed you didn't finish completing your order #${orderNumber} for your digital goods.</p>
+        <div style="background-color: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
+          <h4 style="margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: #64748b;">Items in your checkout:</h4>
+          <ul style="margin: 0; padding-left: 20px;">
+            ${itemsHtml}
+          </ul>
+          <p style="margin: 12px 0 0; font-weight: bold; font-size: 14px; color: #0f172a;">Total: $${totalAmount.toFixed(2)} ${currency}</p>
+        </div>
+        ${
+          discountCode
+            ? `
+          <div style="background-color: #ecfdf5; border: 1px dashed #10b981; padding: 12px; border-radius: 8px; margin: 20px 0; text-align: center;">
+            <p style="margin: 0; font-size: 13px; color: #065f46;">
+              Take an extra <strong>15% off</strong> to complete your order today with code:
+              <strong style="font-family: monospace; font-size: 16px; color: #047857; display: block; margin-top: 4px;">${discountCode}</strong>
+            </p>
+          </div>
+        `
+            : ''
+        }
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="${recoveryUrl}" style="background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+            Complete Your Checkout →
+          </a>
+        </div>
+        <p style="color: #94a3b8; font-size: 11px;">Instant digital file access and lifetime license unlocks upon completion.</p>
+      </div>
+    `;
+
+    const result = await this.sendEmail({
+      to: toEmail,
+      subject: `Complete your purchase for order #${orderNumber} - NOV.com`,
+      html,
+      text: `Complete your checkout for order #${orderNumber} at: ${recoveryUrl}`,
+    });
+
+    return result.success;
+  }
 }

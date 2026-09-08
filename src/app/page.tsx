@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProductCard } from '@/components/products/product-card';
 import { ProductService } from '@/services/product/product.service';
+import { NewsletterSignup } from '@/components/marketing/newsletter-signup';
 import {
   ShieldCheck,
   Zap,
@@ -188,6 +189,13 @@ export default async function HomePage() {
               </CardContent>
             </Card>
           </div>
+        </Container>
+      </section>
+
+      {/* Lead Capture Newsletter Section */}
+      <section className="py-16 border-t border-slate-900 bg-slate-950/80">
+        <Container>
+          <NewsletterSignup />
         </Container>
       </section>
     </div>

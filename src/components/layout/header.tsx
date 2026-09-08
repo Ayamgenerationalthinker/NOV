@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, ShoppingBag, User, Compass } from 'lucide-react';
+import { ShoppingBag, User, Compass } from 'lucide-react';
 
 export function Header() {
   return (

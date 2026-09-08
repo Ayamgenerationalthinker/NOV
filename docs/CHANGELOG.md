@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - Version 6: Customer Accounts, Digital Library UI & Instant File Access (2026-09-08)
+
+### Added
+* Customer Portal Architecture & Account Service (`src/services/account/account.service.ts`):
+  - `getAccountSummary`: Aggregates customer stats (total products, completed orders, total downloads) and profile details.
+  - `getCustomerOrders`: Retrieves full order history, line items, pricing, discounts, and payment transaction metadata.
+  - `getCustomerDownloads`: Retrieves download audit logs with privacy-preserving masked IP addresses (`192.168.***.***`).
+  - `claimGuestOrders`: Automatically discovers and binds past unlinked guest orders matching customer's email address and grants missing digital entitlements.
+  - `updateProfile`: Allows customers to update display names.
+  - `changePassword`: Secure password updating with current password verification and length validation.
+* Interactive Customer Portal UI (`src/components/account/account-portal.tsx`):
+  - Modern multi-tab dashboard (Digital Library, Order History, Download Activity, Settings & Security).
+  - Quick summary stats banner displaying real-time metrics.
+  - Interactive search bar to filter purchased digital products.
+  - License key revealer and 1-click clipboard copier with custom product-specific keys (`NOV-XXXX-XXXX-XXXX-LIC`).
+  - Direct download action buttons requesting 15-minute signed storage URLs.
+  - Order receipts modal with itemized pricing, subtotal, discount codes, tax breakdown, and 1-click browser printing (`window.print()`).
+  - Download activity audit table showing download timestamps, versions, and masked IP records.
+  - Guest order claim scanner tool with real-time UI feedback.
+  - Fast sign-out button.
+* API Endpoints:
+  - `GET /api/account/orders`: Fetches customer order history and transactions.
+  - `GET /api/account/downloads`: Fetches customer download activity logs.
+  - `PUT /api/account/profile`: Updates customer display name.
+  - `PUT /api/account/password`: Changes account password.
+  - `POST /api/account/claim-orders`: Associates past guest orders with customer account.
+* Automated Tests:
+  - Unit tests for Customer Account Service (`tests/unit/account.service.test.ts`): 9 tests passing.
+  - Test suite expanded to **73 tests passing across 17 test suites**.
+
 ## [0.6.0] - Version 5: Global & African Payment Gateways (Flutterwave & Paystack) (2026-09-08)
 
 ### Added

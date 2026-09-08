@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0] - Version 9: Administrative Analytics, Sales Metrics & Customer Management (2026-09-08)
+
+### Added
+* Analytics & Financial Intelligence Service (`src/services/admin/analytics.service.ts`):
+  - `getOverviewMetrics`: Computes live gross revenue, net revenue (gross minus completed refunds), total refunds, total orders, paid orders count, conversion rate percentage, average order value (AOV), total customer count, total downloads served, and active digital license entitlements.
+  - `getRevenueTimeSeries`: Generates an unbroken calendar time-series (7D / 14D / 30D / 90D) aggregating daily sales volume and order counts with zero-filled gaps for flawless chart rendering.
+  - `getTopProducts`: Ranks digital products descending by total revenue and unit sales volume from verified purchases.
+  - `getRecentOrders`: Real-time stream of latest customer transactions.
+  - `getOrders`: Filterable, searchable, and paginated global order querying by order number, customer name, or email across all lifecycle statuses (`PAID`, `PENDING`, `REFUNDED`, `CANCELLED`).
+  - `getOrderDetails`: Detailed inspector returning line items, payment gateway transactions, digital entitlements, customer metadata, and audit events.
+  - `processAdminRefund`: Administrative refund engine that verifies order status, generates immutable `Refund` records, transitions order state machine to `REFUNDED`, automatically revokes customer license keys and download rights, dispatches refund notification emails, and records audit logs.
+  - `getCustomers`: Paginated customer directory computing lifetime spend (LTV), total orders placed, and active digital licenses per customer.
+  - `getCustomerDetails`: Customer profile view detailing order history, granted entitlements, and download audit logs with privacy-preserving masked IP addresses.
+* Interactive Admin UI Components & Views:
+  - `AnalyticsChart` (`src/components/admin/analytics-chart.tsx`): Interactive SVG sales velocity chart with 7D, 14D, and 30D toggles and cursor hover tooltips displaying date, revenue, and order volume.
+  - `OrderManagement` (`src/components/admin/order-management.tsx`): Full-featured order control center with status filter tabs, search bar, order inspection modal, line-item viewer, 1-click receipt email re-dispatch, and refund confirmation modal with license revocation safeguards.
+  - `CustomerManagement` (`src/components/admin/customer-management.tsx`): Searchable customer relationship hub with LTV calculations, customer drill-down drawer, order history, active product entitlements, and download audit records.
+  - `/admin` (Executive Overview): Enhanced with 4 financial KPI cards, sales velocity chart, recent orders transaction feed, and top-selling product leaderboard.
+  - `/admin/orders`: Dedicated global order management dashboard.
+  - `/admin/customers`: Dedicated customer directory and relationship management portal.
+  - `/admin/analytics`: Deep-dive sales performance dashboard with revenue share distribution, conversion rates, and refund telemetry.
+* API Endpoints:
+  - `GET /api/admin/analytics/overview`: Overview KPIs, time series, and product rankings.
+  - `GET /api/admin/orders`: Paginated order query with status filters and search.
+  - `GET /api/admin/orders/[id]`: Detailed order inspector.
+  - `POST /api/admin/orders/[id]/refund`: Admin-initiated refund execution with entitlement revocation.
+  - `GET /api/admin/customers`: Customer directory with calculated LTV and active license counts.
+  - `GET /api/admin/customers/[id]`: Customer profile and audit history.
+* Automated Tests:
+  - `tests/unit/analytics.service.test.ts`: 9 unit tests verifying financial math, division-by-zero resilience, time-series gap filling, product rankings, refund validations, and customer metrics.
+  - Full test suite expanded to **97 tests passing across 20 test suites**.
+
 ## [0.9.0] - Version 8: Email Notifications & Customer Receipt Dispatch (2026-09-08)
 
 ### Added

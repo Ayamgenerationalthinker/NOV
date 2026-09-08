@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProductService } from '@/services/product/product.service';
+import { ProductBuyActions } from '@/components/products/product-buy-actions';
 import { formatCurrency, formatFileSize } from '@/lib/utils';
 import {
   CheckCircle,
@@ -232,18 +233,17 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
                 </div>
 
                 {/* Purchase Actions */}
-                <div className="space-y-3">
-                  <Link href={`/checkout?productId=${product.id}`} className="block w-full">
-                    <Button size="lg" className="w-full gap-2 text-sm font-semibold shadow-lg shadow-blue-600/30">
-                      Buy Now
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
-
-                  <p className="text-center text-[11px] text-slate-500">
-                    Instant delivery directly to your email and customer library.
-                  </p>
-                </div>
+                <ProductBuyActions
+                  product={{
+                    id: product.id,
+                    title: product.title,
+                    slug: product.slug,
+                    price: product.price,
+                    discountPrice: product.discountPrice,
+                    coverImage: product.coverImage,
+                    productType: product.productType,
+                  }}
+                />
 
                 {/* Guarantee Highlights */}
                 <div className="border-t border-slate-800/80 pt-6 space-y-3 text-xs text-slate-400">

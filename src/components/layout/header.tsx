@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { Container } from '@/components/ui/container';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, User, Compass } from 'lucide-react';
+import { CartBadge } from '@/components/cart/cart-badge';
+import { User, Compass } from 'lucide-react';
 
 export function Header() {
   return (
@@ -36,9 +37,7 @@ export function Header() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Link href="/cart" className="relative p-2 text-slate-300 hover:text-white transition-colors" aria-label="Cart">
-              <ShoppingBag className="w-5 h-5" />
-            </Link>
+            <CartBadge />
 
             <Link href="/login">
               <Button variant="ghost" size="sm" className="hidden sm:inline-flex gap-1.5">

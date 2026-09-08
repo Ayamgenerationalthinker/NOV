@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - Version 4: Shopping Cart, Checkout Session & Order State Machine (2026-09-08)
+
+### Added
+* Client-Side Shopping Cart & State Management:
+  - Persistent React `CartContext` (`src/context/cart-context.tsx`) with localStorage synchronization and multi-item digital bundle support.
+  - Interactive cart badge counter (`src/components/cart/cart-badge.tsx`) embedded in the header navigation.
+  - Interactive `ProductBuyActions` component (`src/components/products/product-buy-actions.tsx`) with "Add to Cart" feedback and "Buy Now" direct checkout flow.
+* Coupon & Promotion Engine (`src/services/coupon/coupon.service.ts`):
+  - Server-side validation of discount codes (`PERCENTAGE` and `FIXED_AMOUNT`).
+  - Active date window checking (`startsAt` and `expiresAt`), minimum order amounts, total redemption quotas (`maxUses`), and per-customer usage limits.
+  - Coupon redemption recording with atomic database increments.
+* Order Service & Lifecycle State Machine (`src/services/order/order.service.ts`):
+  - Zero-trust pricing engine querying live product prices and sales discounts directly from PostgreSQL, strictly preventing client-side price tampering.
+  - Unique audit-friendly order number generator (`NOV-XXXXXX-XXXX`).
+  - Order state machine with strict transition guards:
+    - `PENDING` -> `PAID`, `FAILED`, `CANCELLED`
+    - `PAID` -> `REFUND_PENDING`, `REFUNDED`, `CHARGEBACK`
+    - Blocks illegal state transitions (e.g. `PAID` back to `PENDING`).
+  - Automatic entitlement granting side-effect: transitioning to `PAID` automatically grants customer lifetime library licenses and access rights.
+  - Automatic entitlement revocation side-effect: transitioning to `REFUNDED` revokes access.
+* API Endpoints:
+  - `POST /api/coupons/validate`: Real-time coupon verification and discount computation.
+  - `POST /api/checkout/create-session`: Creates an order in `PENDING` state with server-verified line items and totals.
+  - `GET /api/orders/[id]`: Secure receipt and order details lookup.
+* User Interfaces:
+  - `/cart`: Responsive shopping cart page with item removals, live subtotal calculations, coupon code application, and security badges.
+  - `/checkout`: High-converting checkout page with email capture, payment provider selection (Cards, Flutterwave Mobile Money, Paystack Bank Transfer), and order submission.
+  - `/checkout/success`: Order confirmation page with order number, receipt breakdown, and direct link to customer library downloads.
+* Automated Tests:
+  - Unit tests for Coupon Service (`tests/unit/coupon.service.test.ts`): 5 tests passing.
+  - Unit tests for Order Service & State Machine (`tests/unit/order.service.test.ts`): 6 tests passing.
+  - Total automated test suite expanded to **50 tests passing across 14 test suites**.
+
 ## [0.4.0] - Version 3: Secure Digital File Storage & Entitlement-Authorized Delivery (2026-09-08)
 
 ### Added

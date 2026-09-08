@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { CartProvider } from '@/context/cart-context';
+
 export default function RootLayout({
   children,
 }: {
@@ -26,9 +28,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
-        <Header />
-        <main className="flex-1 flex flex-col">{children}</main>
-        <Footer />
+        <CartProvider>
+          <Header />
+          <main className="flex-1 flex flex-col">{children}</main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );

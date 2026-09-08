@@ -60,70 +60,88 @@ export class ProductService {
     else if (sort === 'price-desc') orderBy.price = 'desc';
     else if (sort === 'featured') orderBy.isFeatured = 'desc';
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where,
-        include: {
-          categories: {
-            include: { category: true },
+    try {
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          include: {
+            categories: {
+              include: { category: true },
+            },
           },
-        },
-        orderBy,
-        skip,
-        take: limit,
-      }),
-      prisma.product.count({ where }),
-    ]);
+          orderBy,
+          skip,
+          take: limit,
+        }),
+        prisma.product.count({ where }),
+      ]);
 
-    return {
-      products: products.map((p) => ({
-        ...p,
-        price: Number(p.price),
-        discountPrice: p.discountPrice ? Number(p.discountPrice) : null,
-      })),
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+      return {
+        products: products.map((p) => ({
+          ...p,
+          price: Number(p.price),
+          discountPrice: p.discountPrice ? Number(p.discountPrice) : null,
+        })),
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (err) {
+      console.error('Database connection or query failure in getPublishedProducts:', err);
+      return {
+        products: [],
+        pagination: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
+      };
+    }
   }
 
   /**
    * Get single published product by slug with files and categories
    */
   static async getProductBySlug(slug: string) {
-    const product = await prisma.product.findUnique({
-      where: { slug },
-      include: {
-        categories: {
-          include: { category: true },
-        },
-        files: {
-          select: {
-            id: true,
-            fileName: true,
-            fileSize: true,
-            fileType: true,
-            versionNumber: true,
-            createdAt: true,
+    try {
+      const product = await prisma.product.findUnique({
+        where: { slug },
+        include: {
+          categories: {
+            include: { category: true },
+          },
+          files: {
+            select: {
+              id: true,
+              fileName: true,
+              fileSize: true,
+              fileType: true,
+              versionNumber: true,
+              createdAt: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!product) return null;
+      if (!product) return null;
 
-    return {
-      ...product,
-      price: Number(product.price),
-      discountPrice: product.discountPrice ? Number(product.discountPrice) : null,
-      files: product.files.map((f) => ({
-        ...f,
-        fileSize: Number(f.fileSize),
-      })),
-    };
+      return {
+        ...product,
+        price: Number(product.price),
+        discountPrice: product.discountPrice ? Number(product.discountPrice) : null,
+        files: product.files.map((f) => ({
+          ...f,
+          fileSize: Number(f.fileSize),
+        })),
+      };
+    } catch (err) {
+      console.error('Database connection or query failure in getProductBySlug:', err);
+      return null;
+    }
   }
 
   /**

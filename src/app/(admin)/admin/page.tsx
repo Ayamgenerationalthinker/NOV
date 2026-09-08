@@ -7,11 +7,22 @@ import { Package, ShoppingCart, Users, ArrowUpRight, Plus, Sparkles } from 'luci
 export const dynamic = 'force-dynamic';
 
 export default async function AdminOverviewPage() {
-  const [productCount, userCount, orderCount] = await Promise.all([
-    prisma.product.count(),
-    prisma.user.count(),
-    prisma.order.count(),
-  ]);
+  let productCount = 0;
+  let userCount = 0;
+  let orderCount = 0;
+
+  try {
+    const [p, u, o] = await Promise.all([
+      prisma.product.count(),
+      prisma.user.count(),
+      prisma.order.count(),
+    ]);
+    productCount = p;
+    userCount = u;
+    orderCount = o;
+  } catch (err) {
+    console.error('Database connection error in AdminOverviewPage:', err);
+  }
 
   return (
     <div className="space-y-8">

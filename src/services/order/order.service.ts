@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { OrderStatus } from '@prisma/client';
 import { CouponService } from '../coupon/coupon.service';
 import { EntitlementService } from '../entitlement/entitlement.service';
+import { EmailService } from '../email/email.service';
 
 export interface CreateOrderParams {
   customerId?: string;
@@ -287,6 +288,11 @@ export class OrderService {
           });
         }
       }
+
+      // Asynchronously dispatch digital order receipt & download access email
+      EmailService.sendOrderReceiptEmail(order.id).catch((err) => {
+        console.error(`Failed to dispatch order receipt email for ${order.id}:`, err);
+      });
     }
 
     // Side effect: Revoke entitlements if order is refunded
@@ -305,6 +311,11 @@ export class OrderService {
           adminUserId,
         });
       }
+
+      // Asynchronously dispatch refund confirmation email
+      EmailService.sendRefundConfirmationEmail(order.id, notes).catch((err) => {
+        console.error(`Failed to dispatch refund email for ${order.id}:`, err);
+      });
     }
 
     return updatedOrder;

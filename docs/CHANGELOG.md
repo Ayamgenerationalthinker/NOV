@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - Version 8: Email Notifications & Customer Receipt Dispatch (2026-09-08)
+
+### Added
+* Transactional Email Engine (`src/services/email/email.service.ts`):
+  - `sendOrderReceiptEmail`: Dispatches branded, responsive HTML digital invoices and instant download access links to customers upon verified payment. Includes order number, itemized pricing breakdown, coupon savings, and direct customer portal download button.
+  - `sendRefundConfirmationEmail`: Dispatches refund confirmation notices to customers when an order is transitioned to `REFUNDED`.
+  - `sendProductUpdateEmail`: Broadcasts product update and version release notifications with changelog summaries to all verified entitlement owners.
+  - `sendPasswordResetEmail`: Generates cryptographically secure password reset links with 1-hour expiration.
+  - `sendVerificationEmail`: Generates account email confirmation links with 24-hour expiration.
+  - Development mock mode: Automatically logs full email content and simulated message IDs to the console when `RESEND_API_KEY` is not present, ensuring zero crashes during local development and testing.
+* Order State Machine Lifecycle Integration (`src/services/order/order.service.ts`):
+  - Automatically triggers asynchronous order receipt email delivery upon transitioning orders to `PAID`.
+  - Automatically triggers asynchronous refund confirmation email delivery upon transitioning orders to `REFUNDED`.
+* Interactive Customer Receipt Resending:
+  - Added "Email Receipt" 1-click action inside the order receipt modal in the Customer Portal (`src/components/account/account-portal.tsx`).
+* API Endpoints:
+  - `POST /api/orders/[id]/resend-receipt`: Authenticated customer and admin endpoint to re-dispatch digital purchase receipts.
+* Automated Tests:
+  - Unit tests for Email Service (`tests/unit/email.service.test.ts`): 5 tests passing.
+  - Total automated test suite expanded to **88 tests passing across 19 test suites**.
+
 ## [0.8.0] - Version 7: Product Reviews, Ratings & Customer Feedback System (2026-09-08)
 
 ### Added

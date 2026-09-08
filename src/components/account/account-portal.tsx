@@ -32,6 +32,7 @@ import {
   LogOut,
   ChevronRight,
   Laptop,
+  Mail,
 } from 'lucide-react';
 
 interface AccountPortalProps {
@@ -146,6 +147,26 @@ export function AccountPortal({
   // Claim guest orders state
   const [claimingOrders, setClaimingOrders] = useState(false);
   const [claimMessage, setClaimMessage] = useState<{ text: string; error?: boolean } | null>(null);
+
+  // Email receipt state
+  const [emailingReceipt, setEmailingReceipt] = useState(false);
+  const [receiptEmailStatus, setReceiptEmailStatus] = useState<string | null>(null);
+
+  const handleEmailReceipt = async (orderId: string) => {
+    setEmailingReceipt(true);
+    setReceiptEmailStatus(null);
+    try {
+      const res = await fetch(`/api/orders/${orderId}/resend-receipt`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to email receipt');
+      setReceiptEmailStatus('Receipt dispatched to your email!');
+      setTimeout(() => setReceiptEmailStatus(null), 4000);
+    } catch (err: any) {
+      setReceiptEmailStatus(err.message || 'Error emailing receipt');
+    } finally {
+      setEmailingReceipt(false);
+    }
+  };
 
   // Filtered library items
   const filteredLibrary = initialLibrary.filter((item) =>
@@ -912,7 +933,24 @@ export function AccountPortal({
               </div>
             </div>
 
+            {receiptEmailStatus && (
+              <div className="p-3 rounded-lg bg-blue-950/40 border border-blue-800/40 text-xs text-blue-300 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
+                <span>{receiptEmailStatus}</span>
+              </div>
+            )}
+
             <div className="flex items-center gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEmailReceipt(selectedReceipt.id)}
+                disabled={emailingReceipt}
+                className="w-full text-xs gap-1.5 border-slate-700 hover:bg-slate-800"
+              >
+                <Mail className="w-3.5 h-3.5 text-blue-400" />
+                {emailingReceipt ? 'Sending...' : 'Email Receipt'}
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -920,7 +958,7 @@ export function AccountPortal({
                 className="w-full text-xs gap-1.5 border-slate-700"
               >
                 <Printer className="w-3.5 h-3.5" />
-                Print Receipt
+                Print
               </Button>
               <Button
                 size="sm"

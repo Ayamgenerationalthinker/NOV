@@ -98,8 +98,12 @@ function CheckoutForm() {
       // Clear the local shopping cart
       clearCart();
 
-      // Redirect to order success page
-      router.push(`/checkout/success?orderId=${data.orderId}&orderNumber=${data.orderNumber}`);
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
+      } else {
+        // Redirect to order success page for zero-total or pre-fulfilled orders
+        router.push(`/checkout/success?orderId=${data.orderId}&orderNumber=${data.orderNumber}`);
+      }
     } catch {
       setError('An unexpected network error occurred. Please try again.');
       setIsLoading(false);

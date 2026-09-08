@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OrderService } from '@/services/order/order.service';
+import { PaymentService } from '@/services/payment/payment.service';
+import { PaymentProviderType } from '@/services/payment/payment.interface';
 import { SessionService } from '@/services/auth/session.service';
+import { OrderStatus } from '@prisma/client';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -50,15 +53,47 @@ export async function POST(request: NextRequest) {
       customerNotes,
     });
 
+    const orderTotal = Number(order.total);
+
+    // Free order (e.g. 100% coupon or $0 assets)
+    if (orderTotal === 0) {
+      await OrderService.transitionOrderStatus({
+        orderId: order.id,
+        toStatus: OrderStatus.PAID,
+        paymentProvider: 'FREE',
+        notes: 'Complimentary order ($0.00)',
+      });
+
+      return NextResponse.json({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        total: 0,
+        status: OrderStatus.PAID,
+        paymentUrl: null,
+        message: 'Order fulfilled successfully.',
+      });
+    }
+
+    // Determine target provider (default to FLUTTERWAVE for CARD or African methods, or PAYSTACK)
+    const provider: PaymentProviderType = paymentProvider === 'PAYSTACK' ? 'PAYSTACK' : 'FLUTTERWAVE';
+
+    // Initialize Gateway Payment Session
+    const paymentInit = await PaymentService.initializeOrderPayment({
+      orderId: order.id,
+      provider,
+    });
+
     return NextResponse.json({
       orderId: order.id,
       orderNumber: order.orderNumber,
-      total: Number(order.total),
+      total: orderTotal,
       subtotal: Number(order.subtotal),
       discountTotal: Number(order.discountTotal),
       currency: order.currency,
       status: order.status,
-      paymentProvider: paymentProvider || 'CARD',
+      paymentProvider: provider,
+      paymentUrl: paymentInit.paymentUrl,
+      transactionRef: paymentInit.transactionRef,
       message: 'Checkout session created successfully.',
     });
   } catch (error) {

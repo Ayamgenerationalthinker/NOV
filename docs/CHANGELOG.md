@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - Version 5: Global & African Payment Gateways (Flutterwave & Paystack) (2026-09-08)
+
+### Added
+* Payment Provider Architecture & Abstraction (`src/services/payment/`):
+  - Unified payment adapter contract `IPaymentAdapter` (`payment.interface.ts`) supporting multi-currency and regional settlement options.
+  - Flutterwave Gateway Adapter (`flutterwave.adapter.ts`):
+    - Full support for Cards, African Mobile Money (M-Pesa, MTN MoMo, Airtel Money, Telecel Cash), and USSD.
+    - Standard checkout initialization with automatic redirection and fallback to simulated dev testing.
+    - Constant-time `verif-hash` cryptographic signature verification.
+    - JSON payload normalization into typed `WebhookEventPayload`.
+  - Paystack Gateway Adapter (`paystack.adapter.ts`):
+    - Cards, Nigerian/Ghanaian/Kenyan Bank Transfers, and USSD.
+    - Automated currency subunit conversion (cents / kobo).
+    - Cryptographic HMAC-SHA512 `x-paystack-signature` verification using `crypto.timingSafeEqual`.
+  - Payment Service Manager (`payment.service.ts`):
+    - Factory resolver for `FLUTTERWAVE` and `PAYSTACK` gateways.
+    - Checkout session initialization creating persistent `Transaction` records with unique references (`FLW-` / `PSTK-`).
+    - Synchronous payment verification endpoint querying live gateway APIs.
+* Webhook Idempotency & Entitlement Automation Service (`src/services/payment/webhook.service.ts`):
+  - Replay-attack prevention and idempotency guard leveraging `PaymentWebhookEvent`.
+  - Dual-path fulfillment: orders are transitioned to `PAID` whether customer redirect completes or asynchronous webhook fires first.
+  - Automatic digital entitlement issuance and audit logging on verified transactions.
+* API Endpoints:
+  - `POST /api/payments/initialize`: Initializes gateway checkout sessions.
+  - `GET /api/payments/verify`: Customer redirect return callback handler verifying status and directing users to `/checkout/success`.
+  - `POST /api/webhooks/flutterwave`: Cryptographically verified webhook endpoint for Flutterwave events.
+  - `POST /api/webhooks/paystack`: HMAC-SHA512 verified webhook endpoint for Paystack events.
+* Storefront Checkout Integration:
+  - `POST /api/checkout/create-session` enhanced to automatically initiate payment sessions for paid orders and grant instant access for $0/free orders.
+  - `/checkout` UI updated to redirect directly to gateway payment pages and return gracefully to `/checkout/success`.
+* Automated Tests:
+  - Unit tests for payment adapters (`tests/unit/payment.service.test.ts`): 10 tests passing.
+  - Unit tests for webhook idempotency and cryptographic verification (`tests/unit/webhook.service.test.ts`): 4 tests passing.
+  - Test suite expanded to **64 tests passing across 16 test suites**.
+
 ## [0.5.0] - Version 4: Shopping Cart, Checkout Session & Order State Machine (2026-09-08)
 
 ### Added

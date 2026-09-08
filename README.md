@@ -1,6 +1,8 @@
-# DigiCommerce — Private Global Digital Product Commerce Platform
+# NOV.com — Private Global Digital Product Commerce Platform
 
-A production-grade, self-hosted digital product commerce platform engineered for creators and businesses who want 100% control over their storefront, customers, payments, file security, and digital product delivery.
+[![Repository](https://img.shields.io/badge/GitHub-Ayamgenerationalthinker%2FNOV-blue)](https://github.com/Ayamgenerationalthinker/NOV)
+
+**NOV.com** is a production-grade, self-hosted private digital product commerce platform engineered for creators and businesses who want 100% control over their storefront, customers, payments, file security, and digital product delivery.
 
 ---
 

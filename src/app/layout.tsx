@@ -5,13 +5,13 @@ import { Footer } from '@/components/layout/footer';
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | DigiCommerce',
-    default: 'DigiCommerce — Premium Digital Products Platform',
+    template: '%s | NOV.com',
+    default: 'NOV.com — Premium Digital Products Platform',
   },
   description:
-    'Secure, direct-to-consumer digital commerce platform for premium digital goods, ebooks, courses, tools, and templates.',
-  keywords: ['digital products', 'ebooks', 'developer templates', 'courses', 'software downloads'],
-  authors: [{ name: 'DigiCommerce' }],
+    'NOV.com: Secure, direct-to-consumer digital commerce platform for premium digital goods, ebooks, courses, tools, and templates.',
+  keywords: ['NOV', 'NOV.com', 'digital products', 'ebooks', 'developer templates', 'courses', 'software downloads'],
+  authors: [{ name: 'NOV.com' }],
   robots: {
     index: true,
     follow: true,

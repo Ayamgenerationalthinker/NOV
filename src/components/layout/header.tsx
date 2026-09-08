@@ -10,11 +10,11 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2.5 font-bold text-lg text-white">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 shadow-md shadow-blue-500/20">
-                <ShieldCheck className="h-5 w-5 text-white" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 shadow-md shadow-blue-500/20 font-black text-white text-xs tracking-wider">
+                NOV
               </div>
               <span className="tracking-tight">
-                Digi<span className="text-blue-400">Commerce</span>
+                NOV<span className="text-blue-400">.com</span>
               </span>
             </Link>
 

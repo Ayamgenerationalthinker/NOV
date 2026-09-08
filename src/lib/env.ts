@@ -3,13 +3,13 @@ import { z } from 'zod';
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
-  NEXT_PUBLIC_APP_NAME: z.string().default('DigiCommerce'),
-  NEXT_PUBLIC_SUPPORT_EMAIL: z.string().email().default('support@example.com'),
+  NEXT_PUBLIC_APP_NAME: z.string().default('NOV.com'),
+  NEXT_PUBLIC_SUPPORT_EMAIL: z.string().email().default('support@nov.com'),
 
   DATABASE_URL: z
     .string()
     .min(1, 'DATABASE_URL is required')
-    .default('postgresql://postgres:postgres@localhost:5432/digicommerce_dev?schema=public'),
+    .default('postgresql://postgres:postgres@localhost:5432/nov_dev?schema=public'),
 
   AUTH_SECRET: z
     .string()

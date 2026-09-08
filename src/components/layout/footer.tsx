@@ -56,10 +56,10 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="space-y-3">
             <div className="flex items-center gap-2 font-bold text-white">
-              <div className="flex h-7 w-7 items-center justify-center rounded bg-blue-600">
-                <Shield className="h-4 w-4 text-white" />
+              <div className="flex h-7 w-7 items-center justify-center rounded bg-blue-600 font-bold text-xs">
+                NOV
               </div>
-              <span>DigiCommerce</span>
+              <span>NOV.com</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
               Direct-to-consumer digital commerce platform delivering premium digital goods with secure international and African payment solutions.
@@ -136,9 +136,9 @@ export function Footer() {
         </div>
 
         <div className="mt-12 border-t border-slate-900 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} DigiCommerce. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} NOV.com. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <span>Powered by DigiCommerce Core</span>
+            <span>Powered by NOV Engine</span>
           </div>
         </div>
       </Container>

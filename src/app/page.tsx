@@ -25,14 +25,14 @@ export default function HomePage() {
           <div className="mx-auto max-w-3xl text-center">
             <Badge variant="default" className="mb-6 px-3.5 py-1 text-xs uppercase tracking-wider">
               <Sparkles className="w-3.5 h-3.5 mr-1.5 text-blue-400" />
-              Private Direct-to-Consumer Digital Commerce
+              NOV.com • Private Digital Commerce
             </Badge>
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl text-white">
               Own Your Commerce.{' '}
               <span className="gradient-text">Deliver Digital Excellence.</span>
             </h1>
             <p className="mt-6 text-base text-slate-300 sm:text-lg leading-relaxed">
-              A high-performance digital commerce platform with multi-provider payments, secure signed downloads,
+              Welcome to <span className="font-semibold text-white">NOV.com</span>. A high-performance digital commerce platform with multi-provider payments, secure signed downloads,
               robust webhook idempotency, and automated customer library access.
             </p>
 

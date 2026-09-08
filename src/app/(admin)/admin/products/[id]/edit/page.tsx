@@ -6,8 +6,9 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Save, AlertCircle, Loader2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, Loader2, Trash2, Upload, Download, CheckCircle2, FileText } from 'lucide-react';
 import { ProductType } from '@prisma/client';
+import { formatFileSize } from '@/lib/utils';
 
 interface CategoryOption {
   id: string;
@@ -41,7 +42,36 @@ export default function EditProductPage() {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Digital Asset Files State
+  const [files, setFiles] = React.useState<Array<{
+    id: string;
+    fileName: string;
+    fileSize: number;
+    fileType: string;
+    versionNumber: string;
+    isPrimary: boolean;
+    maxDownloads: number | null;
+    downloadCount: number;
+  }>>([]);
+  const [uploadFileObj, setUploadFileObj] = React.useState<File | null>(null);
+  const [uploadVersion, setUploadVersion] = React.useState('1.0.0');
+  const [uploadIsPrimary, setUploadIsPrimary] = React.useState(true);
+  const [uploadMaxDownloads, setUploadMaxDownloads] = React.useState('');
+  const [isUploadingFile, setIsUploadingFile] = React.useState(false);
+  const [fileActionError, setFileActionError] = React.useState<string | null>(null);
+  const [fileActionSuccess, setFileActionSuccess] = React.useState<string | null>(null);
+
+  const loadFiles = React.useCallback(() => {
+    fetch(`/api/admin/products/${id}/files`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.files) setFiles(data.files);
+      })
+      .catch((err) => console.error('Failed to load files:', err));
+  }, [id]);
+
   React.useEffect(() => {
+    loadFiles();
     Promise.all([
       fetch(`/api/admin/products`).then((res) => res.json()),
       fetch('/api/categories').then((res) => res.json()),
@@ -73,12 +103,77 @@ export default function EditProductPage() {
         setError('Failed to load product details.');
       })
       .finally(() => setIsFetching(false));
-  }, [id]);
+  }, [id, loadFiles]);
 
   const handleCategoryToggle = (catId: string) => {
     setSelectedCategoryIds((prev) =>
       prev.includes(catId) ? prev.filter((i) => i !== catId) : [...prev, catId]
     );
+  };
+
+  const handleUploadFile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFileObj) {
+      setFileActionError('Please select a file to upload.');
+      return;
+    }
+
+    setFileActionError(null);
+    setFileActionSuccess(null);
+    setIsUploadingFile(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadFileObj);
+      formData.append('versionNumber', uploadVersion);
+      formData.append('isPrimary', uploadIsPrimary ? 'true' : 'false');
+      if (uploadMaxDownloads) {
+        formData.append('maxDownloads', uploadMaxDownloads);
+      }
+
+      const res = await fetch(`/api/admin/products/${id}/files`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setFileActionError(data.error || 'Failed to upload digital asset.');
+        setIsUploadingFile(false);
+        return;
+      }
+
+      setFileActionSuccess(`Successfully uploaded ${uploadFileObj.name}!`);
+      setUploadFileObj(null);
+      setUploadMaxDownloads('');
+      loadFiles();
+    } catch {
+      setFileActionError('Network error uploading file.');
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
+  const handleDeleteFile = async (fileId: string, fileName: string) => {
+    if (!confirm(`Are you sure you want to permanently delete "${fileName}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/products/files/${fileId}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        loadFiles();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete file.');
+      }
+    } catch {
+      alert('Network error deleting file.');
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -358,6 +453,155 @@ export default function EditProductPage() {
                 value={refundInfo}
                 onChange={(e) => setRefundInfo(e.target.value)}
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Digital Asset Files Management */}
+        <Card className="border-slate-800 bg-slate-900/60">
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center justify-between">
+              <span>Digital Asset Files & Versioning</span>
+              <span className="text-xs font-normal text-slate-400">
+                {files.length} {files.length === 1 ? 'file' : 'files'} attached
+              </span>
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Secure private files delivered to verified customers via signed URLs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Notifications */}
+            {fileActionError && (
+              <div className="flex items-center gap-2 rounded-lg border border-red-800/40 bg-red-950/40 p-3 text-xs text-red-300">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+                <span>{fileActionError}</span>
+              </div>
+            )}
+            {fileActionSuccess && (
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-800/40 bg-emerald-950/40 p-3 text-xs text-emerald-300">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span>{fileActionSuccess}</span>
+              </div>
+            )}
+
+            {/* Attached Files List */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-slate-300">Attached Product Assets</label>
+              {files.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-slate-800 p-6 text-center text-xs text-slate-500">
+                  No digital files attached yet. Upload the primary product deliverable below.
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-800/60 rounded-lg border border-slate-800 overflow-hidden bg-slate-950/40">
+                  {files.map((file) => (
+                    <div
+                      key={file.id}
+                      className="flex items-center justify-between p-3 text-xs hover:bg-slate-850/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 pr-4">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-white truncate">{file.fileName}</span>
+                            {file.isPrimary && (
+                              <span className="rounded bg-blue-600/30 border border-blue-500/40 px-1.5 py-0.2 text-[10px] text-blue-300 font-medium">
+                                Primary
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                            <span>v{file.versionNumber}</span>
+                            <span>•</span>
+                            <span>{formatFileSize(file.fileSize)}</span>
+                            <span>•</span>
+                            <span>{file.downloadCount} downloads</span>
+                            {file.maxDownloads && (
+                              <>
+                                <span>•</span>
+                                <span>limit: {file.maxDownloads}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFile(file.id, file.fileName)}
+                          className="p-1.5 text-slate-500 hover:text-red-400 rounded hover:bg-red-950/30 transition-colors"
+                          title="Delete file"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Upload New File Box */}
+            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4 space-y-4">
+              <p className="text-xs font-semibold text-white flex items-center gap-1.5">
+                <Upload className="w-3.5 h-3.5 text-blue-400" />
+                Upload New Asset Revision
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-3">
+                  <input
+                    type="file"
+                    onChange={(e) => setUploadFileObj(e.target.files?.[0] || null)}
+                    className="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 file:cursor-pointer cursor-pointer"
+                  />
+                </div>
+
+                <Input
+                  label="Version (e.g. 1.0.0)"
+                  value={uploadVersion}
+                  onChange={(e) => setUploadVersion(e.target.value)}
+                  placeholder="1.0.0"
+                />
+
+                <Input
+                  label="Download Limit (optional)"
+                  type="number"
+                  value={uploadMaxDownloads}
+                  onChange={(e) => setUploadMaxDownloads(e.target.value)}
+                  placeholder="e.g. 5"
+                />
+
+                <div className="flex items-end pb-2">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={uploadIsPrimary}
+                      onChange={(e) => setUploadIsPrimary(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>Set as Primary Download</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleUploadFile}
+                  isLoading={isUploadingFile}
+                  disabled={!uploadFileObj}
+                  className="gap-1.5 text-xs"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Attach Asset to Product
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - Version 3: Secure Digital File Storage & Entitlement-Authorized Delivery (2026-09-08)
+
+### Added
+* Zero-Public-Storage Architecture:
+  - Private digital asset storage abstraction (`src/services/storage/storage.interface.ts`).
+  - S3 / Cloudflare R2 storage adapter (`src/services/storage/s3.storage.ts`) supporting AWS SDK v3 with pre-signed GET object URLs (15-minute expiration window).
+  - Local filesystem private storage adapter (`src/services/storage/local.storage.ts`) with HMAC-SHA256 signature verification for zero-credential local development and automated testing.
+  - Storage service factory (`src/services/storage/storage.service.ts`) with automatic R2/S3 credential detection.
+* Product File Service (`src/services/file/product-file.service.ts`):
+  - `attachFileToProduct`: Uploads private binaries to isolated UUID keys, associates file metadata (size, MIME type, version, primary flag, max downloads), and records administrative audit events.
+  - `getProductFiles`: Retrieves digital file portfolio and download counters.
+  - `removeProductFile`: Safely deletes binary objects from private storage and purges database records with audit logging.
+  - `createProductVersion`: Releases new software/template versions with changelog notes.
+* Entitlement Service (`src/services/entitlement/entitlement.service.ts`):
+  - `verifyCustomerAccess`: Strict cryptographic validation of active customer entitlements.
+  - `grantEntitlement`: Upserts customer entitlement state upon verified purchase.
+  - `revokeEntitlement`: Revokes access immediately upon refund or dispute and records audit trails.
+  - `getCustomerLibrary`: Retrieves full customer inventory of purchased digital goods.
+* Download Service (`src/services/download/download.service.ts`):
+  - `processDownloadRequest`: Multi-barrier security verification requiring authenticated session, active entitlement, download count quota checks, download audit logging, and 15-minute signed URL issuance.
+* API Endpoints:
+  - `GET /api/downloads/[fileId]`: Entitlement-guarded download endpoint redirecting authorized customers to signed URLs.
+  - `GET /api/downloads/file-stream`: Local signed file streaming endpoint with HMAC-SHA256 signature verification.
+  - `GET /api/admin/products/[id]/files`: Admin endpoint to list all attached product assets.
+  - `POST /api/admin/products/[id]/files`: Admin multipart upload endpoint for digital deliverables.
+  - `DELETE /api/admin/products/files/[fileId]`: Admin endpoint for deleting digital assets.
+  - `GET /api/account/library`: Authenticated customer library API.
+* User Interfaces:
+  - `/account`: Verified Customer Digital Library page with instant download triggers, license status, file sizes, and versions.
+  - `/admin/products/[id]/edit`: Added Digital Asset File Manager card with drag/drop file upload, versioning, download limits, and deletion controls.
+* Security & Automated Tests:
+  - Comprehensive unit test suite in `tests/unit/storage.service.test.ts` and `tests/unit/entitlement.service.test.ts`.
+  - Rigorous security barrier tests verifying 403 Forbidden on unauthorized downloads, revoked entitlements, download limits, and 404 on missing assets (39 total tests across 12 test suites passing).
+
 ## [0.3.0] - Version 2: Product Management (2026-09-08)
 
 ### Added

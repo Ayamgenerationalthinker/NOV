@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - Version 7: Product Reviews, Ratings & Customer Feedback System (2026-09-08)
+
+### Added
+* Product Review Service (`src/services/review/review.service.ts`):
+  - `createOrUpdateReview`: Validates integer 1-5 star ratings, enforces minimum review length, verifies active `Entitlement` status to automatically award the **Verified Buyer** badge, and prevents duplicate reviews by allowing customer review revisions.
+  - `getProductReviews`: Fetches paginated reviews with customer identities and calculates statistical distributions:
+    - Average score (rounded to 1 decimal place).
+    - Total reviews count.
+    - Distribution breakdown for 5★, 4★, 3★, 2★, and 1★ ratings with exact counts and dynamic percentages.
+  - `getProductReviewSummary`: Lightweight method for catalog cards and preview summaries.
+  - `checkCustomerReviewStatus`: Checks if a logged-in user has already reviewed and verifies purchase ownership.
+  - `moderateReview`: Administrative pipeline to approve, reject, or hide reviews with `AuditLog` tracking.
+  - `deleteReview`: Author and admin authorization guards for safe review removal.
+* Storefront Product Reviews UI (`src/components/reviews/product-reviews.tsx`):
+  - Overall rating score card with star visuals and review counts.
+  - Dynamic rating distribution bars for 1-5 star ratings.
+  - Expandable interactive review submission modal with 1-5 interactive star picker, hover animations, headline, and feedback text.
+  - Verified Buyer badge (`Verified Buyer` in emerald with shield check icon) on verified reviews.
+  - Review author initials avatar, verified badges, rating stars, and publication dates.
+* Product Details Integration (`src/app/(storefront)/products/[slug]/page.tsx`):
+  - Hero header star rating badge linking directly to `#reviews`.
+  - Full-width interactive reviews and ratings section embedded at the bottom of each product details view.
+* API Endpoints:
+  - `GET /api/products/[id]/reviews`: Paginated reviews list and rating distribution breakdown.
+  - `POST /api/products/[id]/reviews`: Authenticated customer review submission.
+  - `DELETE /api/reviews/[id]`: Review deletion with ownership check.
+  - `PATCH /api/admin/reviews/[id]`: Admin review moderation (approve / hide).
+* Automated Tests:
+  - Unit tests for Review Service (`tests/unit/review.service.test.ts`): 10 tests passing.
+  - Total automated test suite expanded to **83 tests passing across 18 test suites**.
+
 ## [0.7.0] - Version 6: Customer Accounts, Digital Library UI & Instant File Access (2026-09-08)
 
 ### Added

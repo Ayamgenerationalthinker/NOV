@@ -2,21 +2,23 @@ import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { Container } from '@/components/ui/container';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ProductService } from '@/services/product/product.service';
+import { ReviewService } from '@/services/review/review.service';
+import { SessionService } from '@/services/auth/session.service';
 import { ProductBuyActions } from '@/components/products/product-buy-actions';
+import { ProductReviews } from '@/components/reviews/product-reviews';
 import { formatCurrency, formatFileSize } from '@/lib/utils';
 import {
   CheckCircle,
   Zap,
-  ArrowRight,
   Download,
   FileText,
   Lock,
   RotateCcw,
   Sparkles,
+  Star,
 } from 'lucide-react';
 
 interface ProductDetailProps {
@@ -53,6 +55,26 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
   if (!product || !product.isPublished) {
     notFound();
   }
+
+  // Load reviews and user review eligibility in parallel
+  const session = await SessionService.getCurrentSession();
+  const [reviewsData, reviewStatus] = await Promise.all([
+    ReviewService.getProductReviews(product.id, { page: 1, limit: 10 }).catch(() => ({
+      reviews: [],
+      pagination: { page: 1, limit: 10, totalPages: 1, totalReviews: 0 },
+      metrics: {
+        averageRating: 0,
+        totalReviews: 0,
+        distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+        distributionPercentages: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+      },
+    })),
+    ReviewService.checkCustomerReviewStatus(product.id, session?.userId).catch(() => ({
+      canReview: false,
+      isVerifiedPurchase: false,
+      existingReview: null,
+    })),
+  ]);
 
   const hasDiscount =
     product.discountPrice !== null &&
@@ -101,14 +123,6 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
                   </span>
                 </div>
               )}
-
-              {hasDiscount && (
-                <div className="absolute top-4 left-4">
-                  <Badge variant="success" className="text-xs px-3 py-1 font-bold">
-                    Save {discountPercentage}%
-                  </Badge>
-                </div>
-              )}
             </div>
 
             {/* Description */}
@@ -143,21 +157,21 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
                 <h3 className="text-base font-semibold text-white">Key Features</h3>
                 <div className="space-y-2.5">
                   {product.features.map((feat, idx) => (
-                    <div key={idx} className="flex items-start gap-3 rounded-lg bg-slate-900/30 p-3 border border-slate-800/80">
-                      <Zap className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                      <span className="text-xs text-slate-300 leading-normal">{feat}</span>
+                    <div key={idx} className="flex items-start gap-2 text-xs text-slate-300">
+                      <div className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
+                      <span>{feat}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Files & Specs */}
+            {/* Included Digital Files List */}
             {product.files && product.files.length > 0 && (
-              <div className="space-y-4">
+              <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/40 p-6">
                 <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-slate-400" />
-                  Included Digital Files
+                  <FileText className="w-4 h-4 text-blue-400" />
+                  Downloadable Files ({product.files.length})
                 </h3>
                 <div className="space-y-2">
                   {product.files.map((file) => (
@@ -199,32 +213,55 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
                   </div>
 
                   <h1 className="text-2xl font-bold text-white">{product.title}</h1>
+
+                  {/* Rating Stars Header Preview */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <a href="#reviews" className="flex items-center gap-1.5 text-xs text-amber-400 hover:underline">
+                      <div className="flex items-center">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-3.5 h-3.5 ${
+                              star <= Math.round(reviewsData.metrics.averageRating)
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-slate-700'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="font-bold text-white">
+                        {reviewsData.metrics.averageRating > 0
+                          ? reviewsData.metrics.averageRating.toFixed(1)
+                          : 'New'}
+                      </span>
+                      <span className="text-slate-400">
+                        ({reviewsData.metrics.totalReviews} review{reviewsData.metrics.totalReviews === 1 ? '' : 's'})
+                      </span>
+                    </a>
+                  </div>
+
                   {product.shortDescription && (
-                    <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+                    <p className="mt-3 text-xs text-slate-400 leading-relaxed">
                       {product.shortDescription}
                     </p>
                   )}
                 </div>
 
                 {/* Price Display */}
-                <div className="rounded-xl bg-slate-950 p-4 border border-slate-800">
-                  <div className="flex items-baseline gap-3">
-                    {hasDiscount ? (
-                      <>
-                        <span className="text-3xl font-extrabold text-white">
-                          {formatCurrency(product.discountPrice!, product.currency)}
-                        </span>
-                        <span className="text-sm text-slate-500 line-through">
-                          {formatCurrency(product.price, product.currency)}
-                        </span>
-                        <Badge variant="success" className="text-[11px]">
-                          {discountPercentage}% OFF
-                        </Badge>
-                      </>
-                    ) : (
-                      <span className="text-3xl font-extrabold text-white">
+                <div className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-4">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-black tracking-tight text-white">
+                      {formatCurrency(hasDiscount ? product.discountPrice! : product.price, product.currency)}
+                    </span>
+                    {hasDiscount && (
+                      <span className="text-sm text-slate-500 line-through">
                         {formatCurrency(product.price, product.currency)}
                       </span>
+                    )}
+                    {hasDiscount && (
+                      <Badge variant="secondary" className="ml-auto bg-emerald-950 text-emerald-400 border-emerald-800">
+                        Save {discountPercentage}%
+                      </Badge>
                     )}
                   </div>
                   <p className="mt-1 text-[11px] text-slate-500">
@@ -280,6 +317,17 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
             </Card>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <ProductReviews
+          productId={product.id}
+          productTitle={product.title}
+          initialReviews={reviewsData.reviews}
+          initialMetrics={reviewsData.metrics}
+          currentUser={session ? { id: session.userId, email: session.email } : null}
+          isVerifiedBuyer={reviewStatus.isVerifiedPurchase}
+          existingReview={reviewStatus.existingReview}
+        />
       </Container>
     </div>
   );

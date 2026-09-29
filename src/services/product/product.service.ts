@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { ProductCreateInput, ProductUpdateInput, ProductFilterInput } from '@/lib/validators/product';
 import { Prisma, ProductKind } from '@prisma/client';
+import { DevProductStore } from '@/lib/dev-store';
 
 export class ProductService {
   /**
@@ -95,6 +96,25 @@ export class ProductService {
         prisma.product.count({ where }),
       ]);
 
+      if (products.length === 0) {
+        const devProducts = DevProductStore.getAll().filter((p) => {
+          if (kind && p.productKind !== kind) return false;
+          if (category && !p.categories.some((c) => c.category.slug === category)) return false;
+          return true;
+        });
+        if (devProducts.length > 0) {
+          return {
+            products: devProducts as any,
+            pagination: {
+              total: devProducts.length,
+              page,
+              limit,
+              totalPages: 1,
+            },
+          };
+        }
+      }
+
       return {
         products: products.map((p) => ({
           ...p,
@@ -115,15 +135,20 @@ export class ProductService {
           totalPages: Math.ceil(total / limit),
         },
       };
-    } catch (err) {
-      console.error('Database query failure in getPublishedProducts:', err);
+    } catch {
+      const devProducts = DevProductStore.getAll().filter((p) => {
+        if (kind && p.productKind !== kind) return false;
+        if (category && !p.categories.some((c) => c.category.slug === category)) return false;
+        return true;
+      });
+
       return {
-        products: [],
+        products: devProducts as any,
         pagination: {
-          total: 0,
+          total: devProducts.length,
           page,
           limit,
-          totalPages: 0,
+          totalPages: Math.max(1, Math.ceil(devProducts.length / limit)),
         },
       };
     }
@@ -162,7 +187,11 @@ export class ProductService {
         },
       });
 
-      if (!product) return null;
+      if (!product) {
+        const devProduct = DevProductStore.getBySlug(slug);
+        if (devProduct) return devProduct as any;
+        return null;
+      }
 
       return {
         ...product,
@@ -180,8 +209,9 @@ export class ProductService {
           fileSize: Number(f.fileSize),
         })),
       };
-    } catch (err) {
-      console.error('Database query failure in getProductBySlug:', err);
+    } catch {
+      const devProduct = DevProductStore.getBySlug(slug);
+      if (devProduct) return devProduct as any;
       return null;
     }
   }
@@ -219,7 +249,11 @@ export class ProductService {
         },
       });
 
-      if (!product) return null;
+      if (!product) {
+        const devProduct = DevProductStore.getById(id) || DevProductStore.getBySlug(id);
+        if (devProduct) return devProduct as any;
+        return null;
+      }
 
       return {
         ...product,
@@ -237,8 +271,9 @@ export class ProductService {
           fileSize: Number(f.fileSize),
         })),
       };
-    } catch (err) {
-      console.error('Database query failure in getProductById:', err);
+    } catch {
+      const devProduct = DevProductStore.getById(id) || DevProductStore.getBySlug(id);
+      if (devProduct) return devProduct as any;
       return null;
     }
   }

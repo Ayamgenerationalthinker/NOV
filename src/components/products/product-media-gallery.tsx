@@ -21,35 +21,35 @@ export function ProductMediaGallery({
 }: ProductMediaGalleryProps) {
   const allImages = [coverImage, ...galleryImages].filter(Boolean) as string[];
   const [selectedImage, setSelectedImage] = useState<string>(allImages[0] || '');
-  const [activeTab, setActiveTab] = useState<'PHOTO' | '3D'>(model3dUrl ? '3D' : 'PHOTO');
+  const [activeTab, setActiveTab] = useState<'PHOTO' | '3D'>('PHOTO');
 
   return (
     <div className="space-y-4">
       {/* Tab Switcher if 3D is available */}
       {model3dUrl && (
-        <div className="flex items-center gap-2 p-1 bg-zinc-900/90 border border-zinc-800 rounded-2xl w-fit">
+        <div className="flex items-center gap-1.5 p-1 bg-zinc-900 border border-zinc-800 rounded-xl w-fit">
           <button
             type="button"
             onClick={() => setActiveTab('PHOTO')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               activeTab === 'PHOTO'
-                ? 'bg-zinc-800 text-white shadow'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-zinc-800 text-stone-100 shadow-sm'
+                : 'text-zinc-400 hover:text-stone-200'
             }`}
           >
-            <ImageIcon className="w-3.5 h-3.5" /> Photography
+            <ImageIcon className="w-3.5 h-3.5" /> High-Res Photography
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('3D')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               activeTab === '3D'
-                ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-stone-200 text-zinc-950 font-semibold shadow-sm'
+                : 'text-zinc-400 hover:text-stone-200'
             }`}
           >
-            <Box className="w-3.5 h-3.5" /> 360° 3D Model
+            <Box className="w-3.5 h-3.5" /> Interactive 360° Inspection
           </button>
         </div>
       )}

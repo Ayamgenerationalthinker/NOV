@@ -240,7 +240,7 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
               <div>
                 <h3 className="text-base font-semibold text-white mb-3">Key Highlights & Features</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {product.features.map((feature, idx) => (
+                  {product.features.map((feature: string, idx: number) => (
                     <div
                       key={idx}
                       className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-start gap-2.5 text-xs text-zinc-300"

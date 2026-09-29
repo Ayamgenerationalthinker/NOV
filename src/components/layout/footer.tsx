@@ -1,144 +1,162 @@
 import Link from 'next/link';
 import { Container } from '@/components/ui/container';
-import { Shield, Lock, Zap, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Truck, Zap, RotateCcw, Lock } from 'lucide-react';
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-slate-800/80 bg-slate-950 text-slate-400">
-      {/* Trust Highlights Strip */}
-      <div className="border-b border-slate-900 bg-slate-900/40 py-6">
+    <footer className="mt-auto border-t border-zinc-800 bg-[#09090b] text-zinc-400">
+      {/* Editorial Trust Bar */}
+      <div className="border-b border-zinc-800/80 bg-zinc-950/60 py-8">
         <Container>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-blue-950/60 p-2 text-blue-400">
-                <Zap className="h-5 w-5" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-zinc-900 p-2.5 text-stone-200 border border-zinc-800">
+                <Truck className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-white">Instant Access</p>
-                <p className="text-xs text-slate-400">Immediate digital delivery</p>
+                <p className="text-xs font-semibold text-stone-100 uppercase tracking-wider">Direct Dispatch</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">Small-batch physical fulfillment from the owner atelier.</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-emerald-950/60 p-2 text-emerald-400">
-                <Lock className="h-5 w-5" />
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-zinc-900 p-2.5 text-stone-200 border border-zinc-800">
+                <Zap className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-white">Secure Payments</p>
-                <p className="text-xs text-slate-400">Encrypted global checkout</p>
+                <p className="text-xs font-semibold text-stone-100 uppercase tracking-wider">Instant Digital Deliverables</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">Cryptographic signed downloads available immediately upon payment.</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-indigo-950/60 p-2 text-indigo-400">
-                <Shield className="h-5 w-5" />
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-zinc-900 p-2.5 text-stone-200 border border-zinc-800">
+                <ShieldCheck className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-white">Direct from Creator</p>
-                <p className="text-xs text-slate-400">100% authentic product files</p>
+                <p className="text-xs font-semibold text-stone-100 uppercase tracking-wider">Verified Authenticity</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">No third-party sellers or unauthorized replicas.</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-purple-950/60 p-2 text-purple-400">
-                <CheckCircle2 className="h-5 w-5" />
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-zinc-900 p-2.5 text-stone-200 border border-zinc-800">
+                <RotateCcw className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-white">Lifetime Updates</p>
-                <p className="text-xs text-slate-400">Free access to revisions</p>
+                <p className="text-xs font-semibold text-stone-100 uppercase tracking-wider">14-Day Guarantee</p>
+                <p className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">Straightforward return workflow on all physical purchases.</p>
               </div>
             </div>
           </div>
         </Container>
       </div>
 
-      <Container className="py-12">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 font-bold text-white">
-              <div className="flex h-7 w-7 items-center justify-center rounded bg-blue-600 font-bold text-xs">
-                NOV
-              </div>
-              <span>NOV.com</span>
-            </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Direct-to-consumer digital commerce platform delivering premium digital goods with secure international and African payment solutions.
+      <Container className="py-16">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
+          <div className="md:col-span-2 space-y-4">
+            <Link href="/" className="inline-flex items-center gap-2 text-stone-100 group">
+              <span className="font-serif text-xl tracking-[0.25em] font-semibold uppercase group-hover:text-stone-300 transition-colors">
+                N O V
+              </span>
+              <span className="text-[10px] font-mono tracking-widest text-stone-400 uppercase border-l border-zinc-700 pl-2">
+                Atelier
+              </span>
+            </Link>
+            <p className="text-xs text-zinc-400 leading-relaxed max-w-sm">
+              An independent single-owner e-commerce house crafting premium physical hardware, bespoke mechanical timepieces, and precision digital software tools.
             </p>
+            <div className="pt-2 flex items-center gap-2 text-[11px] font-mono text-zinc-400">
+              <Lock className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Direct Bank, Card & Mobile Money (GHS / USD)</span>
+            </div>
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-200">Catalog</h4>
-            <ul className="mt-3 space-y-2 text-xs">
+            <h4 className="text-xs font-mono font-semibold uppercase tracking-widest text-stone-200">Catalog</h4>
+            <ul className="mt-4 space-y-2.5 text-xs">
               <li>
-                <Link href="/products" className="hover:text-white transition-colors">
-                  All Products
+                <Link href="/products" className="hover:text-stone-100 transition-colors">
+                  All Collections
                 </Link>
               </li>
               <li>
-                <Link href="/categories" className="hover:text-white transition-colors">
-                  Product Categories
+                <Link href="/products?kind=PHYSICAL" className="hover:text-stone-100 transition-colors">
+                  Physical Goods
                 </Link>
               </li>
               <li>
-                <Link href="/bundles" className="hover:text-white transition-colors">
-                  Bundles & Packs
+                <Link href="/products?kind=DIGITAL" className="hover:text-stone-100 transition-colors">
+                  Digital Deliverables
+                </Link>
+              </li>
+              <li>
+                <Link href="/categories" className="hover:text-stone-100 transition-colors">
+                  Curated Disciplines
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-200">Customer Care</h4>
-            <ul className="mt-3 space-y-2 text-xs">
+            <h4 className="text-xs font-mono font-semibold uppercase tracking-widest text-stone-200">Client Services</h4>
+            <ul className="mt-4 space-y-2.5 text-xs">
               <li>
-                <Link href="/account" className="hover:text-white transition-colors">
-                  Customer Library
+                <Link href="/account" className="hover:text-stone-100 transition-colors">
+                  My Orders & Downloads
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="hover:text-white transition-colors">
-                  Frequently Asked Questions
+                <Link href="/faq" className="hover:text-stone-100 transition-colors">
+                  Shipping & Delivery FAQs
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-white transition-colors">
-                  Contact Support
+                <Link href="/refund-policy" className="hover:text-stone-100 transition-colors">
+                  Returns & Exchanges
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-stone-100 transition-colors">
+                  Direct Studio Support
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-200">Legal & Licensing</h4>
-            <ul className="mt-3 space-y-2 text-xs">
+            <h4 className="text-xs font-mono font-semibold uppercase tracking-widest text-stone-200">Store Policies</h4>
+            <ul className="mt-4 space-y-2.5 text-xs">
               <li>
-                <Link href="/terms" className="hover:text-white transition-colors">
-                  Terms of Service
+                <Link href="/terms" className="hover:text-stone-100 transition-colors">
+                  Terms of Sale
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="hover:text-white transition-colors">
+                <Link href="/privacy" className="hover:text-stone-100 transition-colors">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/refund-policy" className="hover:text-white transition-colors">
-                  Refund Policy
+                <Link href="/refund-policy" className="hover:text-stone-100 transition-colors">
+                  Refund Framework
                 </Link>
               </li>
               <li>
-                <Link href="/license" className="hover:text-white transition-colors">
-                  Digital Product License
+                <Link href="/admin" className="text-zinc-400 hover:text-stone-300 transition-colors font-mono">
+                  Owner Portal →
                 </Link>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 border-t border-slate-900 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} NOV.com. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <span>Powered by NOV Engine</span>
+        <div className="mt-14 border-t border-zinc-800/80 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-400 gap-4">
+          <p>© {new Date().getFullYear()} NOV Atelier. Single-Owner Online Store. All rights reserved.</p>
+          <div className="flex items-center gap-3 text-[11px] font-mono text-zinc-400">
+            <span>Paystack & Flutterwave Secured</span>
+            <span>•</span>
+            <span>Global & Ghana Fulfillment</span>
           </div>
         </div>
       </Container>

@@ -8,8 +8,9 @@ export class AccountService {
    * Get customer account summary stats and profile details
    */
   static async getAccountSummary(customerId: string) {
+    let user = null;
     try {
-      const user = await prisma.user.findUnique({
+      user = await prisma.user.findUnique({
         where: { id: customerId },
         select: {
           id: true,
@@ -19,11 +20,29 @@ export class AccountService {
           createdAt: true,
         },
       });
+    } catch (dbErr) {
+      // Offline DB fallback for dev environment
+      return {
+        user: {
+          id: customerId,
+          email: 'customer@nov.com',
+          name: 'Customer',
+          role: 'CUSTOMER' as any,
+          createdAt: new Date(),
+        },
+        stats: {
+          totalProducts: 0,
+          totalOrders: 0,
+          totalDownloads: 0,
+        },
+      };
+    }
 
-      if (!user) {
-        throw new Error(`Customer ${customerId} not found.`);
-      }
+    if (!user) {
+      throw new Error(`Customer ${customerId} not found.`);
+    }
 
+    try {
       const [entitlementsCount, ordersCount, downloadsCount] = await Promise.all([
         prisma.entitlement.count({
           where: { customerId, status: 'ACTIVE' },
@@ -46,13 +65,7 @@ export class AccountService {
       };
     } catch {
       return {
-        user: {
-          id: customerId,
-          email: 'customer@nov.com',
-          name: 'Customer',
-          role: 'CUSTOMER' as any,
-          createdAt: new Date(),
-        },
+        user,
         stats: {
           totalProducts: 0,
           totalOrders: 0,

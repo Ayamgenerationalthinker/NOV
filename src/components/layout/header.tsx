@@ -1,56 +1,59 @@
 import Link from 'next/link';
 import { Container } from '@/components/ui/container';
-import { Button } from '@/components/ui/button';
 import { CartBadge } from '@/components/cart/cart-badge';
-import { User, Compass, Sparkles, Store, Layers } from 'lucide-react';
+import { User, Compass, ShoppingBag, Shield } from 'lucide-react';
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-800/80 bg-black/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-stone-800/80 bg-stone-950/95 backdrop-blur-md">
       <Container>
         <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2.5 font-bold text-lg text-white group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-600 shadow-lg shadow-emerald-500/20 font-black text-black text-xs tracking-wider transition-transform group-hover:scale-105">
+          <div className="flex items-center gap-10">
+            {/* Editorial Brand Mark */}
+            <Link href="/" className="flex items-center gap-2 group">
+              <span className="font-serif text-xl tracking-[0.25em] font-semibold text-stone-100 group-hover:text-amber-200 transition-colors">
                 NOV
-              </div>
-              <span className="tracking-tight font-black text-xl">
-                NOV<span className="text-emerald-400">.COMMERCE</span>
+              </span>
+              <span className="hidden sm:inline-block text-[9px] font-mono tracking-widest uppercase text-stone-500 border-l border-stone-800 pl-2">
+                Atelier
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-6 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              <Link href="/products" className="hover:text-white transition-colors flex items-center gap-1.5">
-                <Compass className="w-3.5 h-3.5 text-emerald-400" />
-                All Products
+            {/* Navigation links */}
+            <nav className="hidden md:flex items-center gap-6 text-xs font-medium tracking-wide text-stone-400">
+              <Link href="/products" className="hover:text-stone-100 transition-colors">
+                All Pieces
               </Link>
-              <Link href="/products?kind=PHYSICAL" className="hover:text-white transition-colors">
+              <Link href="/products?kind=PHYSICAL" className="hover:text-stone-100 transition-colors">
                 Physical Goods
               </Link>
-              <Link href="/products?kind=DIGITAL" className="hover:text-white transition-colors">
-                Digital Assets
+              <Link href="/products?kind=DIGITAL" className="hover:text-stone-100 transition-colors">
+                Digital Editions
               </Link>
-              <Link href="/categories" className="hover:text-white transition-colors">
+              <Link href="/categories" className="hover:text-stone-100 transition-colors">
                 Categories
               </Link>
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Action buttons */}
+          <div className="flex items-center gap-4">
             <CartBadge />
 
-            <Link href="/admin">
-              <Button variant="ghost" size="sm" className="hidden lg:inline-flex gap-1.5 text-xs text-zinc-400 hover:text-white">
-                <Store className="w-3.5 h-3.5 text-emerald-400" />
-                Merchant Console
-              </Button>
+            <Link
+              href="/account"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 hover:text-white hover:bg-stone-900 border border-transparent hover:border-stone-800 transition-all"
+            >
+              <User className="w-3.5 h-3.5 text-stone-400" />
+              <span>Account</span>
             </Link>
 
-            <Link href="/account">
-              <Button variant="secondary" size="sm" className="bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-800 rounded-xl text-xs font-medium">
-                <User className="w-3.5 h-3.5 mr-1.5 text-zinc-400" />
-                Account
-              </Button>
+            <Link
+              href="/admin"
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-500 hover:text-stone-300 hover:bg-stone-900/60 border border-stone-900 transition-all font-mono"
+            >
+              <Shield className="w-3 h-3 text-stone-500" />
+              <span>Owner Studio</span>
             </Link>
           </div>
         </div>

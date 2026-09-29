@@ -17,6 +17,8 @@ import {
   ShoppingBag,
   PackageCheck,
   Check,
+  Package,
+  Plus,
 } from 'lucide-react';
 import { ProductKind } from '@prisma/client';
 
@@ -181,27 +183,46 @@ export default async function HomePage() {
       </section>
 
       {/* Featured Pieces */}
-      {featuredProducts.length > 0 && (
-        <section>
-          <Container>
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500">Signature Works</span>
-                <h2 className="text-2xl font-serif font-medium tracking-tight text-white mt-1">Featured Selections</h2>
-              </div>
-              <Link href="/products" className="text-xs font-medium text-stone-400 hover:text-white flex items-center gap-1">
-                View Catalog <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+      <section>
+        <Container>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500">Signature Works</span>
+              <h2 className="text-2xl font-serif font-medium tracking-tight text-white mt-1">Featured Selections</h2>
             </div>
+            <Link href="/products" className="text-xs font-medium text-stone-400 hover:text-white flex items-center gap-1">
+              View Catalog <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
 
+          {featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredProducts.map((product: any) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
-          </Container>
-        </section>
-      )}
+          ) : (
+            <div className="rounded-2xl border border-stone-800/80 bg-stone-950/60 p-12 text-center max-w-lg mx-auto space-y-4">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-stone-900 border border-stone-800 text-stone-300">
+                <Package className="w-6 h-6 text-amber-400/80" />
+              </div>
+              <h3 className="text-lg font-serif font-medium text-white">New Collection in Preparation</h3>
+              <p className="text-xs text-stone-400 leading-relaxed">
+                The atelier is currently preparing and inspecting our next small-batch release of physical craft pieces and digital software tools.
+              </p>
+              <div className="pt-2">
+                <Link
+                  href="/admin/products/new"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-stone-200 text-stone-950 hover:bg-white transition-all shadow-md"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Admin: Add First Product</span>
+                </Link>
+              </div>
+            </div>
+          )}
+        </Container>
+      </section>
 
       {/* Brand Craftsmanship / Independent Atelier Statement */}
       <section className="bg-stone-950 border-y border-stone-900 py-16">

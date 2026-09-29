@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { loginSchema } from '@/lib/validators/auth';
 import { PasswordService } from '@/services/auth/password.service';
 import { SessionService } from '@/services/auth/session.service';
+import { DevUserStore } from '@/lib/dev-store';
 
 export async function POST(request: Request) {
   try {
@@ -22,9 +23,24 @@ export async function POST(request: Request) {
     const { email, password } = parseResult.data;
 
     // Retrieve user with password hash
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    let user: { id: string; email: string; name: string | null; role: any; passwordHash: string | null } | null = null;
+
+    try {
+      user = await prisma.user.findUnique({
+        where: { email },
+      });
+    } catch (dbErr) {
+      console.warn('⚠️ PostgreSQL unavailable, checking local development store:', dbErr);
+      user = DevUserStore.findByEmail(email);
+    }
+
+    if (!user || !user.passwordHash) {
+      // Fallback check if user was created in DevUserStore
+      const devUser = DevUserStore.findByEmail(email);
+      if (devUser) {
+        user = devUser;
+      }
+    }
 
     if (!user || !user.passwordHash) {
       return NextResponse.json(

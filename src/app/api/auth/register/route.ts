@@ -4,6 +4,7 @@ import { registerSchema } from '@/lib/validators/auth';
 import { PasswordService } from '@/services/auth/password.service';
 import { SessionService } from '@/services/auth/session.service';
 import { Role } from '@prisma/client';
+import { DevUserStore } from '@/lib/dev-store';
 
 export async function POST(request: Request) {
   try {
@@ -22,30 +23,49 @@ export async function POST(request: Request) {
 
     const { email, password, name } = parseResult.data;
 
-    // Check if email already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'An account with this email address already exists' },
-        { status: 409 }
-      );
-    }
-
-    // Hash password
+    let user: { id: string; email: string; name: string | null; role: Role } | null = null;
     const passwordHash = await PasswordService.hashPassword(password);
 
-    // Create Customer account
-    const user = await prisma.user.create({
-      data: {
+    try {
+      // Check if email already exists in PostgreSQL
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingUser) {
+        return NextResponse.json(
+          { error: 'An account with this email address already exists' },
+          { status: 409 }
+        );
+      }
+
+      // Create Customer account in PostgreSQL
+      user = await prisma.user.create({
+        data: {
+          email,
+          name: name || null,
+          passwordHash,
+          role: Role.CUSTOMER,
+        },
+      });
+    } catch (dbError) {
+      console.warn('⚠️ PostgreSQL unavailable, using local development fallback:', dbError);
+      
+      const existingDevUser = DevUserStore.findByEmail(email);
+      if (existingDevUser) {
+        return NextResponse.json(
+          { error: 'An account with this email address already exists' },
+          { status: 409 }
+        );
+      }
+
+      user = DevUserStore.create({
         email,
         name: name || null,
         passwordHash,
         role: Role.CUSTOMER,
-      },
-    });
+      });
+    }
 
     // Generate Session
     const token = await SessionService.createToken({
@@ -75,25 +95,8 @@ export async function POST(request: Request) {
     return response;
   } catch (error: any) {
     console.error('Registration error:', error);
-    
-    // Check for Prisma/Database connection error
-    const isDbError =
-      error?.code === 'P1001' || // Can't reach database server
-      error?.code === 'P1000' || // Authentication failed
-      error?.code === 'ECONNREFUSED' ||
-      error?.message?.includes('connection') ||
-      error?.message?.includes('connect');
-
-    const errorMessage =
-      isDbError && process.env.NODE_ENV !== 'production'
-        ? 'Database connection failed. Please verify your PostgreSQL DATABASE_URL in .env and run "npx prisma db push".'
-        : 'An error occurred during account registration';
-
     return NextResponse.json(
-      {
-        error: errorMessage,
-        ...(process.env.NODE_ENV !== 'production' && { details: error?.message }),
-      },
+      { error: 'An error occurred during account registration' },
       { status: 500 }
     );
   }

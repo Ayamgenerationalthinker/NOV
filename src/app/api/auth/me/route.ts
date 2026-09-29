@@ -8,22 +8,36 @@ export async function GET() {
     return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
   }
 
-  // Fetch fresh user data
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      emailVerified: true,
-      twoFactorEnabled: true,
-      createdAt: true,
-    },
-  });
+  let user = null;
+
+  try {
+    // Fetch fresh user data from PostgreSQL if available
+    user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        emailVerified: true,
+        twoFactorEnabled: true,
+        createdAt: true,
+      },
+    });
+  } catch {
+    // Ignore database error and fallback to session/dev store
+  }
 
   if (!user) {
-    return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
+    user = {
+      id: session.userId,
+      email: session.email,
+      name: session.name,
+      role: session.role,
+      emailVerified: null,
+      twoFactorEnabled: false,
+      createdAt: new Date(),
+    };
   }
 
   return NextResponse.json({

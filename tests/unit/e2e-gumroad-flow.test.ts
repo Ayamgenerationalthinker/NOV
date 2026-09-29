@@ -254,6 +254,14 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
       expect(RBACService.isSellerOrAdmin(Role.SELLER)).toBe(true);
       expect(RBACService.isSellerOrAdmin(Role.CUSTOMER)).toBe(false);
     });
+
+    it('should reject public customer registration requests with 403 Forbidden', async () => {
+      const { POST: registerPost } = await import('@/app/api/auth/register/route');
+      const res = await registerPost();
+      expect(res.status).toBe(403);
+      const data = await res.json();
+      expect(data.error).toContain('registration is disabled');
+    });
   });
 
   describe('TEST 9: Discounts & Returns Workflow', () => {

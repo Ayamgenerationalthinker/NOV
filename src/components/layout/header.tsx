@@ -37,23 +37,15 @@ export function Header() {
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <CartBadge />
 
             <Link
-              href="/account"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-400 hover:text-white hover:bg-stone-900 border border-transparent hover:border-stone-800 transition-all"
-            >
-              <User className="w-3.5 h-3.5 text-stone-400" />
-              <span>Account</span>
-            </Link>
-
-            <Link
               href="/admin"
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-500 hover:text-stone-300 hover:bg-stone-900/60 border border-stone-900 transition-all font-mono"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-stone-300 hover:text-white bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-800 transition-all font-mono"
             >
-              <Shield className="w-3 h-3 text-stone-500" />
-              <span>Owner Studio</span>
+              <Shield className="w-3.5 h-3.5 text-amber-400" />
+              <span>Admin Portal</span>
             </Link>
           </div>
         </div>

@@ -2,145 +2,60 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Container } from '@/components/ui/container';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { UserPlus, ArrowRight, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { ShieldCheck, ShoppingBag, Lock, ArrowRight } from 'lucide-react';
 
 export default function RegisterPage() {
-  const router = useRouter();
-
-  const [name, setName] = React.useState('');
-  const [email, setEmail] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        let errorMsg = data.error || 'Registration failed. Please check your details.';
-        if (data.details) {
-          if (typeof data.details === 'object') {
-            const firstKey = Object.keys(data.details)[0];
-            if (firstKey && Array.isArray(data.details[firstKey]) && data.details[firstKey].length > 0) {
-              errorMsg = `${data.details[firstKey][0]}`;
-            }
-          }
-        }
-        setError(errorMsg);
-        setIsLoading(false);
-        return;
-      }
-
-      setSuccessMessage('Account created successfully! Redirecting to library...');
-      setTimeout(() => {
-        router.push('/account');
-        router.refresh();
-      }, 700);
-    } catch {
-      setError('An unexpected network error occurred. Please try again.');
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <Container className="py-16 md:py-24">
-      <div className="mx-auto max-w-md">
-        <div className="text-center mb-8">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 mb-4">
-            <UserPlus className="h-6 w-6" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">Create Your Account</h1>
-          <p className="mt-2 text-xs text-slate-400">Join NOV.com to purchase and manage digital assets securely</p>
+    <Container className="py-20 md:py-28">
+      <div className="mx-auto max-w-md text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900 border border-zinc-800 text-stone-300 mb-6 shadow-xl">
+          <ShieldCheck className="h-7 w-7 text-emerald-400" />
         </div>
 
-        <Card className="border-slate-800 bg-slate-900/90 shadow-2xl">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-base">Register</CardTitle>
-            <CardDescription className="text-xs">Create your personal account for instant downloads.</CardDescription>
-          </CardHeader>
+        <h1 className="text-2xl sm:text-3xl font-serif font-medium text-white tracking-tight">
+          Customer Registration Not Required
+        </h1>
 
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-red-800/40 bg-red-950/40 p-3 text-xs text-red-300">
-                  <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
-                  <span>{error}</span>
-                </div>
-              )}
+        <p className="mt-3 text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-sm mx-auto">
+          At NOV Atelier, customers do not need to create or manage an account. All physical and digital purchases are completed directly through secure guest checkout.
+        </p>
 
-              {successMessage && (
-                <div className="flex items-center gap-2 rounded-lg border border-emerald-800/40 bg-emerald-950/40 p-3 text-xs text-emerald-300">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                  <span>{successMessage}</span>
-                </div>
-              )}
-
-              <Input
-                label="Full Name (Optional)"
-                type="text"
-                placeholder="Prince Fiebor"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                autoComplete="name"
-              />
-
-              <Input
-                label="Email Address"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-
-              <Input
-                label="Password"
-                type="password"
-                placeholder="At least 8 chars, 1 uppercase, 1 number"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-              />
-
-              <div className="flex items-start gap-2 rounded-lg bg-slate-800/50 p-3 text-xs text-slate-400 border border-slate-700/50">
-                <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
-                <span>Your purchases will be tied to this account for lifetime updates and redownloads.</span>
+        <Card className="mt-8 border-zinc-800/80 bg-zinc-950/80 p-6 shadow-2xl backdrop-blur-xl">
+          <CardContent className="p-0 space-y-4 text-left">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-zinc-900/60 border border-zinc-800">
+              <ShoppingBag className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+              <div className="text-xs">
+                <p className="font-semibold text-white">Instant Guest Shopping</p>
+                <p className="text-zinc-400 mt-0.5">Simply add any piece to your cart and checkout with your email.</p>
               </div>
+            </div>
 
-              <Button type="submit" className="w-full gap-2 mt-2" size="md" isLoading={isLoading}>
-                Create Account
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </CardContent>
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-zinc-900/60 border border-zinc-800">
+              <Lock className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="text-xs">
+                <p className="font-semibold text-white">Owner & Administrator Console</p>
+                <p className="text-zinc-400 mt-0.5">Login is reserved strictly for the pre-configured store administrator.</p>
+              </div>
+            </div>
 
-            <CardFooter className="flex flex-col border-t border-slate-800/80 pt-4 text-center">
-              <p className="text-xs text-slate-400">
-                Already have an account?{' '}
-                <Link href="/login" className="font-medium text-blue-400 hover:text-blue-300">
-                  Sign In
-                </Link>
-              </p>
-            </CardFooter>
-          </form>
+            <div className="pt-2 flex flex-col gap-2.5">
+              <Link href="/products" className="w-full">
+                <Button className="w-full gap-2 bg-stone-200 text-zinc-950 hover:bg-white text-xs font-semibold py-2.5">
+                  Browse Storefront Pieces
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Button>
+              </Link>
+
+              <Link href="/login" className="w-full">
+                <Button variant="outline" className="w-full border-zinc-800 text-zinc-300 hover:text-white text-xs py-2.5">
+                  Admin Sign In
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
         </Card>
       </div>
     </Container>

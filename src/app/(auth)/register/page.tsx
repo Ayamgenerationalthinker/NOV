@@ -34,7 +34,16 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Registration failed. Please check your details.');
+        let errorMsg = data.error || 'Registration failed. Please check your details.';
+        if (data.details) {
+          if (typeof data.details === 'object') {
+            const firstKey = Object.keys(data.details)[0];
+            if (firstKey && Array.isArray(data.details[firstKey]) && data.details[firstKey].length > 0) {
+              errorMsg = `${data.details[firstKey][0]}`;
+            }
+          }
+        }
+        setError(errorMsg);
         setIsLoading(false);
         return;
       }

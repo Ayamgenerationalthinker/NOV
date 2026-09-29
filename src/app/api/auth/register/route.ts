@@ -73,10 +73,27 @@ export async function POST(request: Request) {
     response.cookies.set(cookieOptions.name, token, cookieOptions);
 
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error);
+    
+    // Check for Prisma/Database connection error
+    const isDbError =
+      error?.code === 'P1001' || // Can't reach database server
+      error?.code === 'P1000' || // Authentication failed
+      error?.code === 'ECONNREFUSED' ||
+      error?.message?.includes('connection') ||
+      error?.message?.includes('connect');
+
+    const errorMessage =
+      isDbError && process.env.NODE_ENV !== 'production'
+        ? 'Database connection failed. Please verify your PostgreSQL DATABASE_URL in .env and run "npx prisma db push".'
+        : 'An error occurred during account registration';
+
     return NextResponse.json(
-      { error: 'An error occurred during account registration' },
+      {
+        error: errorMessage,
+        ...(process.env.NODE_ENV !== 'production' && { details: error?.message }),
+      },
       { status: 500 }
     );
   }

@@ -7,7 +7,7 @@ import { Container } from '@/components/ui/container';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatFileSize } from '@/lib/utils';
 import {
   CheckCircle2,
   Download,
@@ -15,6 +15,8 @@ import {
   Package,
   Layers,
   Loader2,
+  FileCode,
+  Mail,
 } from 'lucide-react';
 
 interface OrderReceipt {
@@ -40,8 +42,8 @@ interface OrderReceipt {
 
 function SuccessContent() {
   const searchParams = useSearchParams();
-  const orderId = searchParams.get('orderId');
-  const orderNumberParam = searchParams.get('orderNumber');
+  const orderId = searchParams.get('orderId') || searchParams.get('order_id');
+  const orderNumberParam = searchParams.get('orderNumber') || searchParams.get('order_number');
 
   const [order, setOrder] = React.useState<OrderReceipt | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -111,25 +113,49 @@ function SuccessContent() {
 
               <div className="divide-y divide-slate-800/80 rounded-lg border border-slate-800 bg-slate-950/60 overflow-hidden">
                 {order.items.map((item) => (
-                  <div key={item.id} className="p-3.5 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30">
-                        <Package className="w-4 h-4" />
+                  <div key={item.id} className="p-4 space-y-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          <Package className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-white truncate">
+                            {item.product.title}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            {item.product.files?.length || 0}{' '}
+                            {(item.product.files?.length || 0) === 1 ? 'file' : 'files'} included
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-white truncate">
-                          {item.product.title}
-                        </p>
-                        <p className="text-[10px] text-slate-400">
-                          {item.product.files.length}{' '}
-                          {item.product.files.length === 1 ? 'file' : 'files'} included
-                        </p>
-                      </div>
+
+                      <span className="text-xs font-semibold text-white shrink-0">
+                        {formatCurrency(item.totalPrice, order.currency)}
+                      </span>
                     </div>
 
-                    <span className="text-xs font-semibold text-white shrink-0">
-                      {formatCurrency(item.totalPrice, order.currency)}
-                    </span>
+                    {/* Direct File Download Buttons */}
+                    {item.product.files && item.product.files.length > 0 && (
+                      <div className="pt-2 border-t border-slate-800/60 space-y-1.5">
+                        {item.product.files.map((file) => (
+                          <a
+                            key={file.id}
+                            href={`/api/orders/${order.id}/download/${file.id}`}
+                            className="flex items-center justify-between w-full px-3 py-2 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/60 text-xs text-white transition-all group"
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              <FileCode className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              <span className="truncate font-mono">{file.fileName}</span>
+                              <span className="text-[10px] text-zinc-400 font-mono">({formatFileSize(file.fileSize)})</span>
+                            </div>
+                            <span className="flex items-center gap-1 text-[11px] font-mono text-emerald-400 group-hover:underline shrink-0 font-medium">
+                              <Download className="w-3.5 h-3.5" /> Download
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -145,18 +171,19 @@ function SuccessContent() {
 
           {/* Direct Library Actions */}
           <div className="pt-2 space-y-3">
-            <Link href="/account" className="block">
-              <Button size="lg" className="w-full gap-2 shadow-lg shadow-blue-500/20">
-                <Download className="w-4 h-4" />
-                Access My Digital Library & Downloads
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
+            {order?.guestEmail && (
+              <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center gap-2.5 text-xs text-zinc-300">
+                <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  Receipt and permanent download links sent to <strong className="text-white">{order.guestEmail}</strong>.
+                </span>
+              </div>
+            )}
 
             <Link href="/products" className="block text-center">
-              <Button variant="ghost" size="sm" className="text-xs text-slate-400 hover:text-white">
-                <Layers className="w-3.5 h-3.5 mr-1.5" />
-                Continue Browsing Catalog
+              <Button size="lg" className="w-full gap-2 shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-500 text-white font-medium">
+                <Layers className="w-4 h-4 mr-1" />
+                Continue Exploring Catalog
               </Button>
             </Link>
           </div>

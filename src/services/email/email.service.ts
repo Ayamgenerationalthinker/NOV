@@ -87,11 +87,11 @@ export class EmailService {
     }
 
     const customerName = order.customer?.name || order.guestName || 'Valued Customer';
-    const transaction = order.transactions[0];
+    const transaction = order.transactions?.[0];
     const totalAmount = Number(order.total).toFixed(2);
     const subtotalAmount = Number(order.subtotal).toFixed(2);
     const discountAmount = Number(order.discountTotal).toFixed(2);
-    const libraryUrl = `${env.NEXT_PUBLIC_APP_URL}/account`;
+    const libraryUrl = `${env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${order.id}&orderNumber=${order.orderNumber}`;
 
     const itemsRowsHtml = order.items
       .map(

@@ -61,6 +61,15 @@ vi.mock('@/lib/prisma', () => ({
     },
     user: {
       findUnique: vi.fn(),
+      create: vi.fn(),
+    },
+    entitlement: {
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      upsert: vi.fn(),
+    },
+    download: {
+      create: vi.fn(),
     },
     $transaction: vi.fn((arg) => {
       if (typeof arg === 'function') {
@@ -291,6 +300,117 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
       expect(result.valid).toBe(true);
       expect(result.discountAmount).toBe(20);
       expect(result.finalTotal).toBe(80);
+    });
+  });
+
+  describe('TEST 10: Guest Digital Purchase & Secure Order Download Workflow', () => {
+    it('should auto-provision customer record and grant digital entitlement upon payment transition for guest shoppers', async () => {
+      vi.mocked(prisma.order.findUnique).mockResolvedValue({
+        id: 'order-guest-100',
+        orderNumber: 'NOV-GUEST-100',
+        status: OrderStatus.PENDING,
+        guestEmail: 'artisan.buyer@gmail.com',
+        guestName: 'Artisan Buyer',
+        customerId: null,
+        items: [
+          {
+            productId: 'prod-digital-blueprint',
+            product: { productKind: ProductKind.DIGITAL },
+          },
+        ],
+      } as any);
+
+      vi.mocked(prisma.order.update).mockResolvedValue({
+        id: 'order-guest-100',
+        status: OrderStatus.PAID,
+      } as any);
+
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.user.create).mockResolvedValue({
+        id: 'user-auto-buyer',
+        email: 'artisan.buyer@gmail.com',
+        name: 'Artisan Buyer',
+        role: Role.CUSTOMER,
+      } as any);
+
+      const { EntitlementService } = await import('@/services/entitlement/entitlement.service');
+
+      await OrderService.transitionOrderStatus({
+        orderId: 'order-guest-100',
+        toStatus: OrderStatus.PAID,
+      });
+
+      // Verify that guest user account was auto-provisioned
+      expect(prisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            email: 'artisan.buyer@gmail.com',
+            role: Role.CUSTOMER,
+          }),
+        })
+      );
+
+      // Verify entitlement was granted with the auto-provisioned user ID
+      expect(EntitlementService.grantEntitlement).toHaveBeenCalledWith({
+        customerId: 'user-auto-buyer',
+        productId: 'prod-digital-blueprint',
+        orderId: 'order-guest-100',
+      });
+    });
+
+    it('should reject file download if order is not PAID', async () => {
+      vi.mocked(prisma.order.findUnique).mockResolvedValue({
+        id: 'order-unpaid-1',
+        status: OrderStatus.PENDING,
+        items: [],
+      } as any);
+
+      const { GET: downloadGet } = await import('@/app/api/orders/[id]/download/[fileId]/route');
+      const req = new Request('http://localhost:3000/api/orders/order-unpaid-1/download/file-1') as any;
+      const res = await downloadGet(req, { params: Promise.resolve({ id: 'order-unpaid-1', fileId: 'file-1' }) });
+
+      expect(res.status).toBe(403);
+      const data = await res.json();
+      expect(data.error).toContain('Payment required');
+    });
+
+    it('should authorize file download when order is verified PAID', async () => {
+      vi.mocked(prisma.order.findUnique).mockResolvedValue({
+        id: 'order-paid-1',
+        status: OrderStatus.PAID,
+        customerId: 'user-auto-buyer',
+        items: [
+          {
+            product: {
+              files: [
+                {
+                  id: 'file-blueprint-01',
+                  fileName: 'horology-blueprint-v1.pdf',
+                  fileKey: 'products/prod-1/blueprint.pdf',
+                  fileSize: BigInt(5242880),
+                  fileType: 'application/pdf',
+                  productId: 'prod-digital-blueprint',
+                },
+              ],
+            },
+          },
+        ],
+      } as any);
+
+      const { GET: downloadGet } = await import('@/app/api/orders/[id]/download/[fileId]/route');
+      const req = new Request('http://localhost:3000/api/orders/order-paid-1/download/file-blueprint-01', {
+        headers: { Accept: 'application/json' },
+      }) as any;
+
+      const res = await downloadGet(req, {
+        params: Promise.resolve({ id: 'order-paid-1', fileId: 'file-blueprint-01' }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.success).toBe(true);
+      expect(data.fileName).toBe('horology-blueprint-v1.pdf');
+      expect(data.downloadUrl).toBeDefined();
     });
   });
 });

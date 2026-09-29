@@ -1,10 +1,12 @@
 import { prisma } from '@/lib/prisma';
-import { OrderStatus, FulfillmentStatus, ProductKind, Prisma } from '@prisma/client';
+import { OrderStatus, FulfillmentStatus, ProductKind, Prisma, Role } from '@prisma/client';
 import { CouponService } from '../coupon/coupon.service';
 import { EntitlementService } from '../entitlement/entitlement.service';
 import { EmailService } from '../email/email.service';
 import { ShippingService } from '../shipping/shipping.service';
 import { InventoryService } from '../inventory/inventory.service';
+import { PasswordService } from '../auth/password.service';
+import crypto from 'crypto';
 
 export interface CreateOrderItemInput {
   productId: string;
@@ -387,16 +389,29 @@ export class OrderService {
       // 2. Grant entitlements for digital items
       let recipientCustomerId = order.customerId;
       if (!recipientCustomerId && order.guestEmail) {
-        const existingUser = await prisma.user.findUnique({
-          where: { email: order.guestEmail },
+        const cleanEmail = order.guestEmail.toLowerCase().trim();
+        let customerUser = await prisma.user.findUnique({
+          where: { email: cleanEmail },
         });
-        if (existingUser) {
-          recipientCustomerId = existingUser.id;
-          await prisma.order.update({
-            where: { id: order.id },
-            data: { customerId: existingUser.id },
+
+        if (!customerUser) {
+          const generatedSecret = crypto.randomBytes(24).toString('hex');
+          const passwordHash = await PasswordService.hashPassword(generatedSecret);
+          customerUser = await prisma.user.create({
+            data: {
+              email: cleanEmail,
+              name: order.guestName || cleanEmail.split('@')[0],
+              passwordHash,
+              role: Role.CUSTOMER,
+            },
           });
         }
+
+        recipientCustomerId = customerUser.id;
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { customerId: customerUser.id },
+        });
       }
 
       if (recipientCustomerId) {

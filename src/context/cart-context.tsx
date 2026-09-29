@@ -1,31 +1,42 @@
 'use client';
 
 import * as React from 'react';
+import { ProductKind } from '@prisma/client';
 
 export interface CartItem {
+  id: string; // unique item key e.g. `${productId}-${variantId || 'default'}`
   productId: string;
+  variantId?: string | null;
+  variantTitle?: string | null;
+  sku?: string | null;
+  productKind: ProductKind;
   title: string;
   slug: string;
   price: number;
   discountPrice?: number | null;
   coverImage?: string | null;
   productType: string;
+  quantity: number;
+  weightGrams?: number | null;
+  currency?: string;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: CartItem) => void;
-  removeItem: (productId: string) => void;
+  addItem: (item: Omit<CartItem, 'id' | 'quantity'> & { id?: string; quantity?: number }) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
+  removeItem: (itemId: string) => void;
   clearCart: () => void;
-  isInCart: (productId: string) => boolean;
+  isInCart: (productId: string, variantId?: string | null) => boolean;
   itemCount: number;
   subtotal: number;
+  hasPhysicalItems: boolean;
   isLoaded: boolean;
 }
 
 const CartContext = React.createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = 'nov_shopping_cart';
+const CART_STORAGE_KEY = 'nov_hybrid_cart';
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = React.useState<CartItem[]>([]);
@@ -56,18 +67,48 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, isLoaded]);
 
-  const addItem = React.useCallback((newItem: CartItem) => {
+  const addItem = React.useCallback(
+    (newItem: Omit<CartItem, 'id' | 'quantity'> & { id?: string; quantity?: number }) => {
+      const itemId = newItem.id || `${newItem.productId}-${newItem.variantId || 'default'}`;
+      const quantityToAdd = newItem.quantity || 1;
+
+      setItems((prev) => {
+        const existingIndex = prev.findIndex((item) => item.id === itemId);
+
+        if (existingIndex > -1) {
+          // Digital products remain quantity 1 to prevent double-buying
+          if (newItem.productKind === ProductKind.DIGITAL) {
+            return prev;
+          }
+          const updated = [...prev];
+          updated[existingIndex].quantity += quantityToAdd;
+          return updated;
+        }
+
+        return [
+          ...prev,
+          {
+            ...newItem,
+            id: itemId,
+            quantity: quantityToAdd,
+          },
+        ];
+      });
+    },
+    []
+  );
+
+  const updateQuantity = React.useCallback((itemId: string, quantity: number) => {
     setItems((prev) => {
-      // Digital products: avoid duplicate items in cart
-      if (prev.some((item) => item.productId === newItem.productId)) {
-        return prev;
+      if (quantity <= 0) {
+        return prev.filter((item) => item.id !== itemId);
       }
-      return [...prev, newItem];
+      return prev.map((item) => (item.id === itemId ? { ...item, quantity } : item));
     });
   }, []);
 
-  const removeItem = React.useCallback((productId: string) => {
-    setItems((prev) => prev.filter((item) => item.productId !== productId));
+  const removeItem = React.useCallback((itemId: string) => {
+    setItems((prev) => prev.filter((item) => item.id !== itemId && item.productId !== itemId));
   }, []);
 
   const clearCart = React.useCallback(() => {
@@ -75,11 +116,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const isInCart = React.useCallback(
-    (productId: string) => items.some((item) => item.productId === productId),
+    (productId: string, variantId?: string | null) => {
+      const targetId = `${productId}-${variantId || 'default'}`;
+      return items.some((item) => item.id === targetId || item.productId === productId);
+    },
     [items]
   );
 
-  const itemCount = items.length;
+  const itemCount = React.useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity, 0),
+    [items]
+  );
+
+  const hasPhysicalItems = React.useMemo(
+    () => items.some((item) => item.productKind === ProductKind.PHYSICAL),
+    [items]
+  );
 
   const subtotal = React.useMemo(() => {
     const sum = items.reduce((acc, item) => {
@@ -87,7 +139,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         item.discountPrice !== undefined && item.discountPrice !== null && item.discountPrice < item.price
           ? item.discountPrice
           : item.price;
-      return acc + activePrice;
+      return acc + activePrice * item.quantity;
     }, 0);
     return Math.round(sum * 100) / 100;
   }, [items]);
@@ -97,11 +149,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       value={{
         items,
         addItem,
+        updateQuantity,
         removeItem,
         clearCart,
         isInCart,
         itemCount,
         subtotal,
+        hasPhysicalItems,
         isLoaded,
       }}
     >

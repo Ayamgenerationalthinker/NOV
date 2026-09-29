@@ -8,6 +8,7 @@ import { ProductService } from '@/services/product/product.service';
 import { ReviewService } from '@/services/review/review.service';
 import { SessionService } from '@/services/auth/session.service';
 import { ProductBuyActions } from '@/components/products/product-buy-actions';
+import { ProductMediaGallery } from '@/components/products/product-media-gallery';
 import { ProductReviews } from '@/components/reviews/product-reviews';
 import { formatCurrency, formatFileSize } from '@/lib/utils';
 import {
@@ -19,7 +20,12 @@ import {
   RotateCcw,
   Sparkles,
   Star,
+  Truck,
+  ShieldCheck,
+  Store,
+  Box,
 } from 'lucide-react';
+import { ProductKind } from '@prisma/client';
 
 interface ProductDetailProps {
   params: Promise<{ slug: string }>;
@@ -56,24 +62,10 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
     notFound();
   }
 
-  // Load reviews and user review eligibility in parallel
   const session = await SessionService.getCurrentSession();
-  const [reviewsData, reviewStatus] = await Promise.all([
-    ReviewService.getProductReviews(product.id, { page: 1, limit: 10 }).catch(() => ({
-      reviews: [],
-      pagination: { page: 1, limit: 10, totalPages: 1, totalReviews: 0 },
-      metrics: {
-        averageRating: 0,
-        totalReviews: 0,
-        distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
-        distributionPercentages: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
-      },
-    })),
-    ReviewService.checkCustomerReviewStatus(product.id, session?.userId).catch(() => ({
-      canReview: false,
-      isVerifiedPurchase: false,
-      existingReview: null,
-    })),
+  const [reviewsData, userEligibility] = await Promise.all([
+    ReviewService.getProductReviews(product.id),
+    ReviewService.checkCustomerReviewStatus(product.id, session?.userId),
   ]);
 
   const hasDiscount =
@@ -81,15 +73,13 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
     product.discountPrice !== undefined &&
     product.discountPrice < product.price;
 
-  const discountPercentage = hasDiscount
-    ? Math.round(((product.price - product.discountPrice!) / product.price) * 100)
-    : 0;
+  const isPhysical = product.productKind === ProductKind.PHYSICAL;
 
   return (
-    <div className="py-12 md:py-16">
+    <div className="py-10 space-y-16 text-zinc-100 selection:bg-emerald-500 selection:text-black">
       <Container>
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-xs text-slate-400 mb-8">
+        {/* Breadcrumb Navigation */}
+        <nav className="flex items-center gap-2 text-xs font-mono text-zinc-500 mb-8">
           <Link href="/" className="hover:text-white transition-colors">
             Home
           </Link>
@@ -98,97 +88,165 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
             Products
           </Link>
           <span>/</span>
-          <span className="text-slate-200 line-clamp-1">{product.title}</span>
+          <Link
+            href={`/products?kind=${product.productKind}`}
+            className="hover:text-white transition-colors uppercase"
+          >
+            {isPhysical ? 'Physical Goods' : 'Digital Assets'}
+          </Link>
+          <span>/</span>
+          <span className="text-zinc-300 font-medium truncate max-w-xs">{product.title}</span>
         </nav>
 
+        {/* Product Showcase Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Left Column: Visuals & Detailed Overview */}
-          <div className="lg:col-span-7 space-y-10">
-            {/* Cover Visual */}
-            <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 flex items-center justify-center shadow-2xl">
-              {product.coverImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={product.coverImage}
-                  alt={product.title}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center text-slate-600 p-8 text-center">
-                  <div className="rounded-2xl bg-slate-900 p-6 border border-slate-800 mb-3 text-blue-400">
-                    <Download className="w-10 h-10" />
+          {/* Left Column: Media & 3D Interactive Viewer */}
+          <div className="lg:col-span-7">
+            <ProductMediaGallery
+              coverImage={product.coverImage}
+              galleryImages={product.galleryImages}
+              model3dUrl={product.model3dUrl}
+              model3dPoster={product.model3dPoster}
+              productTitle={product.title}
+            />
+          </div>
+
+          {/* Right Column: Details, Variants, Price, & Buy Actions */}
+          <div className="lg:col-span-5 space-y-6">
+            {/* Header / Brand */}
+            <div>
+              {product.brand && (
+                <p className="text-xs font-mono uppercase tracking-widest text-emerald-400 font-semibold mb-2">
+                  {product.brand}
+                </p>
+              )}
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-snug">
+                {product.title}
+              </h1>
+
+              {/* Verified Rating Snapshot */}
+              {reviewsData.metrics.totalReviews > 0 && (
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="flex text-amber-400">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= Math.round(reviewsData.metrics.averageRating)
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-zinc-700'
+                        }`}
+                      />
+                    ))}
                   </div>
-                  <span className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-                    {product.productType}
+                  <span className="text-xs font-mono font-semibold text-white">
+                    {reviewsData.metrics.averageRating.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-zinc-500 font-mono">
+                    ({reviewsData.metrics.totalReviews} reviews)
                   </span>
                 </div>
               )}
             </div>
 
-            {/* Description */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-white">Product Overview</h2>
-              <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
+            {/* Price Header */}
+            <div className="flex items-baseline gap-3 p-4 bg-zinc-950 rounded-2xl border border-zinc-800/80">
+              <span className="text-3xl font-bold font-mono text-white">
+                {formatCurrency(
+                  hasDiscount ? product.discountPrice! : product.price,
+                  product.currency
+                )}
+              </span>
+              {hasDiscount && (
+                <span className="text-sm font-mono text-zinc-500 line-through">
+                  {formatCurrency(product.price, product.currency)}
+                </span>
+              )}
+              <span className="text-[11px] font-mono text-zinc-400 ml-auto uppercase">
+                {product.currency}
+              </span>
+            </div>
+
+            {/* Short Tagline */}
+            {product.shortDescription && (
+              <p className="text-sm text-zinc-300 leading-relaxed font-normal">
+                {product.shortDescription}
+              </p>
+            )}
+
+            {/* Buy Actions Component */}
+            <ProductBuyActions
+              product={{
+                id: product.id,
+                title: product.title,
+                slug: product.slug,
+                price: product.price,
+                discountPrice: product.discountPrice,
+                currency: product.currency,
+                coverImage: product.coverImage,
+                productType: product.productType,
+                productKind: product.productKind,
+                variants: product.variants,
+              }}
+            />
+
+            {/* Shipping & Delivery Guarantee Card */}
+            <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800/80 space-y-3 text-xs text-zinc-400">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-zinc-900 text-emerald-400">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="font-semibold text-white">
+                    {isPhysical ? 'Nationwide & Global Dispatch' : 'Zero-Wait Instant Download'}
+                  </p>
+                  <p className="text-[11px] text-zinc-500">
+                    {isPhysical
+                      ? 'Shipped with insured tracking reference in 24–48h'
+                      : 'Immediate signed cryptographic download links'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2 border-t border-zinc-900">
+                <div className="p-2 rounded-xl bg-zinc-900 text-emerald-400">
+                  <RotateCcw className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="font-semibold text-white">
+                    {product.refundInfo || '14-Day Buyer Guarantee'}
+                  </p>
+                  <p className="text-[11px] text-zinc-500">
+                    {isPhysical ? 'Easy returns on original condition items' : 'Satisfaction guaranteed'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Product Specifications & Reviews */}
+        <div className="mt-20 pt-12 border-t border-zinc-900 grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <div className="lg:col-span-7 space-y-8">
+            <div>
+              <h2 className="text-xl font-bold text-white mb-4">About this Product</h2>
+              <div className="prose prose-invert max-w-none text-zinc-300 text-sm leading-relaxed whitespace-pre-line">
                 {product.description}
               </div>
             </div>
 
-            {/* What's Included */}
-            {product.whatsIncluded && product.whatsIncluded.length > 0 && (
-              <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/40 p-6">
-                <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-blue-400" />
-                  What&apos;s Included
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {product.whatsIncluded.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-slate-300">
-                      <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Features */}
+            {/* Key Features */}
             {product.features && product.features.length > 0 && (
-              <div className="space-y-4">
-                <h3 className="text-base font-semibold text-white">Key Features</h3>
-                <div className="space-y-2.5">
-                  {product.features.map((feat, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-xs text-slate-300">
-                      <div className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
-                      <span>{feat}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Included Digital Files List */}
-            {product.files && product.files.length > 0 && (
-              <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/40 p-6">
-                <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-blue-400" />
-                  Downloadable Files ({product.files.length})
-                </h3>
-                <div className="space-y-2">
-                  {product.files.map((file) => (
+              <div>
+                <h3 className="text-base font-semibold text-white mb-3">Key Highlights & Features</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {product.features.map((feature, idx) => (
                     <div
-                      key={file.id}
-                      className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-xs"
+                      key={idx}
+                      className="p-3.5 rounded-2xl bg-zinc-950 border border-zinc-800 flex items-start gap-2.5 text-xs text-zinc-300"
                     >
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-4 h-4 text-blue-400" />
-                        <div>
-                          <span className="font-medium text-white">{file.fileName}</span>
-                          <span className="ml-2 text-[11px] text-slate-500 uppercase">{file.fileType}</span>
-                        </div>
-                      </div>
-                      <span className="text-slate-400 font-mono text-[11px]">
-                        {formatFileSize(file.fileSize)}
-                      </span>
+                      <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                      <span>{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -196,138 +254,19 @@ export default async function ProductDetailPage({ params }: ProductDetailProps) 
             )}
           </div>
 
-          {/* Right Column: Checkout Card & Licensing */}
           <div className="lg:col-span-5 space-y-6">
-            <Card className="sticky top-24 border-slate-800 bg-slate-900/90 shadow-2xl backdrop-blur-md">
-              <CardContent className="p-6 md:p-8 space-y-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Badge variant="default" className="text-[10px]">
-                      {product.productType}
-                    </Badge>
-                    {product.categories.map(({ category }) => (
-                      <Badge key={category.slug} variant="secondary" className="text-[10px]">
-                        {category.name}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  <h1 className="text-2xl font-bold text-white">{product.title}</h1>
-
-                  {/* Rating Stars Header Preview */}
-                  <div className="mt-2 flex items-center gap-2">
-                    <a href="#reviews" className="flex items-center gap-1.5 text-xs text-amber-400 hover:underline">
-                      <div className="flex items-center">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-3.5 h-3.5 ${
-                              star <= Math.round(reviewsData.metrics.averageRating)
-                                ? 'fill-amber-400 text-amber-400'
-                                : 'text-slate-700'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="font-bold text-white">
-                        {reviewsData.metrics.averageRating > 0
-                          ? reviewsData.metrics.averageRating.toFixed(1)
-                          : 'New'}
-                      </span>
-                      <span className="text-slate-400">
-                        ({reviewsData.metrics.totalReviews} review{reviewsData.metrics.totalReviews === 1 ? '' : 's'})
-                      </span>
-                    </a>
-                  </div>
-
-                  {product.shortDescription && (
-                    <p className="mt-3 text-xs text-slate-400 leading-relaxed">
-                      {product.shortDescription}
-                    </p>
-                  )}
-                </div>
-
-                {/* Price Display */}
-                <div className="rounded-xl border border-slate-800/80 bg-slate-950/60 p-4">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black tracking-tight text-white">
-                      {formatCurrency(hasDiscount ? product.discountPrice! : product.price, product.currency)}
-                    </span>
-                    {hasDiscount && (
-                      <span className="text-sm text-slate-500 line-through">
-                        {formatCurrency(product.price, product.currency)}
-                      </span>
-                    )}
-                    {hasDiscount && (
-                      <Badge variant="secondary" className="ml-auto bg-emerald-950 text-emerald-400 border-emerald-800">
-                        Save {discountPercentage}%
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="mt-1 text-[11px] text-slate-500">
-                    One-time payment • Lifetime personal license • Free future updates
-                  </p>
-                </div>
-
-                {/* Purchase Actions */}
-                <ProductBuyActions
-                  product={{
-                    id: product.id,
-                    title: product.title,
-                    slug: product.slug,
-                    price: product.price,
-                    discountPrice: product.discountPrice,
-                    coverImage: product.coverImage,
-                    productType: product.productType,
-                  }}
-                />
-
-                {/* Guarantee Highlights */}
-                <div className="border-t border-slate-800/80 pt-6 space-y-3 text-xs text-slate-400">
-                  <div className="flex items-center gap-2.5">
-                    <Zap className="w-4 h-4 text-blue-400 shrink-0" />
-                    <span>Instant download access immediately after payment</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <Lock className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>Secure global cards & African Mobile Money supported</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <RotateCcw className="w-4 h-4 text-purple-400 shrink-0" />
-                    <span>Direct creator support & update guarantee</span>
-                  </div>
-                </div>
-
-                {/* License & Refund Information */}
-                {(product.licenseInfo || product.refundInfo) && (
-                  <div className="border-t border-slate-800/80 pt-4 space-y-2 text-[11px] text-slate-500">
-                    {product.licenseInfo && (
-                      <p>
-                        <strong className="text-slate-400">License:</strong> {product.licenseInfo}
-                      </p>
-                    )}
-                    {product.refundInfo && (
-                      <p>
-                        <strong className="text-slate-400">Refund Policy:</strong> {product.refundInfo}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Reviews Section */}
+            <ProductReviews
+              productId={product.id}
+              productTitle={product.title}
+              initialReviews={reviewsData.reviews}
+              initialMetrics={reviewsData.metrics}
+              currentUser={session ? { id: session.userId, email: session.email, name: session.email.split('@')[0] } : null}
+              isVerifiedBuyer={userEligibility.isVerifiedPurchase}
+              existingReview={userEligibility.existingReview}
+            />
           </div>
         </div>
-
-        {/* Reviews Section */}
-        <ProductReviews
-          productId={product.id}
-          productTitle={product.title}
-          initialReviews={reviewsData.reviews}
-          initialMetrics={reviewsData.metrics}
-          currentUser={session ? { id: session.userId, email: session.email } : null}
-          isVerifiedBuyer={reviewStatus.isVerifiedPurchase}
-          existingReview={reviewStatus.existingReview}
-        />
       </Container>
     </div>
   );

@@ -18,6 +18,13 @@ export class RBACService {
   }
 
   /**
+   * Check if user is a seller or administrator
+   */
+  static isSellerOrAdmin(role: Role): boolean {
+    return role === Role.SELLER || role === Role.ADMIN || role === Role.SUPER_ADMIN;
+  }
+
+  /**
    * Check if user has Super Admin privileges
    */
   static isSuperAdmin(role: Role): boolean {
@@ -38,6 +45,25 @@ export class RBACService {
       };
     }
     return { session };
+  }
+
+  /**
+   * Guard an API route for seller or admin privileges
+   */
+  static async requireSellerOrAdmin(): Promise<{ session: SessionPayload } | { error: NextResponse }> {
+    const authResult = await this.requireAuth();
+    if ('error' in authResult) return authResult;
+
+    if (!this.isSellerOrAdmin(authResult.session.role)) {
+      return {
+        error: NextResponse.json(
+          { error: 'Forbidden: Seller or Administrator privileges required' },
+          { status: 403 }
+        ),
+      };
+    }
+
+    return authResult;
   }
 
   /**

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OrderService } from '@/services/order/order.service';
 import { EntitlementService } from '@/services/entitlement/entitlement.service';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, ProductKind } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 vi.mock('@/lib/prisma', () => ({
@@ -9,10 +9,17 @@ vi.mock('@/lib/prisma', () => ({
     product: {
       findMany: vi.fn(),
     },
+    productVariant: {
+      update: vi.fn(),
+    },
     order: {
       create: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
+    },
+    inventoryReservation: {
+      create: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]),
     },
     coupon: {
       findUnique: vi.fn(),
@@ -72,14 +79,18 @@ describe('OrderService & Order State Machine', () => {
           title: 'Database Mastery',
           price: 99 as any,
           discountPrice: 79 as any,
+          productKind: ProductKind.DIGITAL,
           isPublished: true,
+          variants: [],
         } as any,
         {
           id: 'prod-2',
           title: 'API Architecture Guide',
           price: 49 as any,
           discountPrice: null,
+          productKind: ProductKind.DIGITAL,
           isPublished: true,
+          variants: [],
         } as any,
       ]);
 
@@ -89,6 +100,7 @@ describe('OrderService & Order State Machine', () => {
         subtotal: 128 as any,
         total: 128 as any,
         discountTotal: 0 as any,
+        shippingFee: 0 as any,
         taxTotal: 0 as any,
         status: OrderStatus.PENDING,
         items: [{ id: 'item-1' }, { id: 'item-2' }],
@@ -126,15 +138,15 @@ describe('OrderService & Order State Machine', () => {
   });
 
   describe('transitionOrderStatus State Machine', () => {
-    it('successfully transitions from PENDING to PAID and automatically grants entitlements', async () => {
+    it('successfully transitions from PENDING to PAID and automatically grants entitlements for digital products', async () => {
       const mockPendingOrder = {
         id: 'order-1',
         orderNumber: 'NOV-123-4567',
         status: OrderStatus.PENDING,
         customerId: 'customer-1',
         items: [
-          { id: 'item-1', productId: 'prod-1' },
-          { id: 'item-2', productId: 'prod-2' },
+          { id: 'item-1', productId: 'prod-1', product: { productKind: ProductKind.DIGITAL } },
+          { id: 'item-2', productId: 'prod-2', product: { productKind: ProductKind.DIGITAL } },
         ],
       };
 
@@ -154,7 +166,7 @@ describe('OrderService & Order State Machine', () => {
 
       expect(updated.status).toBe(OrderStatus.PAID);
 
-      // Verify entitlements were granted for both products
+      // Verify entitlements were granted for both digital products
       expect(EntitlementService.grantEntitlement).toHaveBeenCalledTimes(2);
       expect(EntitlementService.grantEntitlement).toHaveBeenCalledWith({
         customerId: 'customer-1',

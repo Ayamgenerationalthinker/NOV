@@ -2,7 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.0] - Version 11: Hybrid Physical & Digital Commerce, Shipping, Inventory Ledger, Multi-vendor & Interactive 3D (2026-09-29)
+
+### Added
+* Hybrid Product Architecture:
+  - Unified data model for `PHYSICAL` and `DIGITAL` products (`prisma/schema.prisma`).
+  - Product variants with SKUs, barcode, dimensions, weight, option attributes (Size, Color, Material).
+  - 3D WebGL model configuration (`model3dUrl`, `model3dPoster`, `model3dConfig`).
+* Real-Time Inventory & Stock Movement Ledger (`src/services/inventory/inventory.service.ts`):
+  - Immutable stock movements (`RESTOCK`, `ORDER_RESERVATION`, `ORDER_FULFILLMENT`, `RETURN_RESTOCK`, `MANUAL_ADJUSTMENT`).
+  - Expiring checkout stock reservations (`InventoryReservation`).
+  - Low-stock alerts and out-of-stock guardrails.
+* Dynamic Shipping & Fulfillment Logistics (`src/services/shipping/shipping.service.ts`):
+  - Zone-based shipping rate calculation with domestic (e.g. Ghana) and international tiers.
+  - Automatic zero-shipping computation for purely digital baskets.
+  - Multi-carrier fulfillment tracking (DHL, FedEx, Ghana Post).
+  - Customer return request submission and merchant dispute processing with restock automation.
+* Multi-Vendor Store Settings (`src/services/store/store.service.ts`):
+  - Store profile customization, shipping zones, and return policy configuration.
+* Interactive 3D Asset Experiences:
+  - `Product3DViewer` (`src/components/3d/product-3d-viewer.tsx`): React Three Fiber & Drei 360° orbit viewer with WebGL detection and high-res photography fallback.
+  - `Hero3DScene` (`src/components/3d/hero-3d-scene.tsx`): Luxury ambient geometric mesh rendering.
+  - `ProductMediaGallery` (`src/components/products/product-media-gallery.tsx`): Multi-angle gallery with seamless 3D/Photo tab toggling.
+* Merchant Management Consoles:
+  - `/admin/inventory`: SKU inventory table, reservation monitoring, and manual stock adjustment modal.
+  - `/admin/fulfillments`: Batch fulfillment, carrier assignment, and tracking status updates.
+  - `/admin/returns`: Reverse logistics and dispute resolution.
+  - `/admin/settings`: Store settings, fulfillment parameters, and shipping policies.
+  - `ProductWizard` (`src/components/admin/product-wizard.tsx`): Step-by-step adaptive creation form.
+* Automated Tests:
+  - `tests/unit/inventory.service.test.ts`: Stock movements, reservations, and alerts.
+  - `tests/unit/shipping.service.test.ts`: Dynamic rate calculations and physical vs digital item checks.
+  - Test suite expanded to **123 tests passing across 24 test suites**.
+
 ## [0.11.0] - Version 10: Marketing, Promotions & Discount Campaigns (2026-09-08)
+
 
 ### Added
 * Advanced Coupon Management Engine (`src/services/coupon/coupon.service.ts`):

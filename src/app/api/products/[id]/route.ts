@@ -3,11 +3,14 @@ import { ProductService } from '@/services/product/product.service';
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { slug } = await params;
-    const product = await ProductService.getProductBySlug(slug);
+    const { id } = await params;
+    let product = await ProductService.getProductById(id);
+    if (!product) {
+      product = await ProductService.getProductBySlug(id);
+    }
 
     if (!product || !product.isPublished) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
@@ -15,7 +18,7 @@ export async function GET(
 
     return NextResponse.json({ product });
   } catch (error) {
-    console.error('Error fetching product by slug:', error);
+    console.error('Error fetching product by id/slug:', error);
     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });
   }
 }

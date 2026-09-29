@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format currency amount with proper currency code/symbol
+ * Format currency amount with proper currency code/symbol (handles USD, GHS / Ghana Cedis, NGN, EUR, GBP)
  */
 export function formatCurrency(
   amount: number | string,
@@ -17,17 +17,21 @@ export function formatCurrency(
   locale: string = 'en-US'
 ): string {
   const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (isNaN(numericAmount)) return '$0.00';
+  if (isNaN(numericAmount)) return currency === 'GHS' ? 'GH₵0.00' : '$0.00';
+
+  const curr = currency.toUpperCase();
+  const targetLocale = curr === 'GHS' ? 'en-GH' : curr === 'NGN' ? 'en-NG' : locale;
 
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(targetLocale, {
       style: 'currency',
-      currency: currency.toUpperCase(),
+      currency: curr,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(numericAmount);
   } catch {
-    return `${currency.toUpperCase()} ${numericAmount.toFixed(2)}`;
+    const symbol = curr === 'GHS' ? 'GH₵' : curr === 'USD' ? '$' : `${curr} `;
+    return `${symbol}${numericAmount.toFixed(2)}`;
   }
 }
 

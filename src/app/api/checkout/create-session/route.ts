@@ -8,12 +8,30 @@ import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
 
+const checkoutItemSchema = z.object({
+  productId: z.string(),
+  variantId: z.string().optional(),
+  quantity: z.number().int().min(1).default(1),
+});
+
+const shippingAddressSchema = z.object({
+  fullName: z.string().min(2),
+  street: z.string().min(3),
+  city: z.string().min(2),
+  state: z.string().optional(),
+  postalCode: z.string().optional(),
+  country: z.string().length(2),
+  phone: z.string().min(6),
+});
+
 const checkoutSchema = z.object({
-  items: z.array(z.object({ productId: z.string() })).min(1, 'At least one item is required'),
+  items: z.array(checkoutItemSchema).min(1, 'At least one item is required'),
   guestEmail: z.string().email().optional(),
   guestName: z.string().min(2).optional(),
   couponCode: z.string().optional(),
   currency: z.string().default('USD'),
+  shippingAddress: shippingAddressSchema.optional(),
+  shippingMethod: z.string().optional(),
   customerNotes: z.string().max(500).optional(),
   paymentProvider: z.string().optional(),
 });
@@ -30,7 +48,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { items, guestEmail, guestName, couponCode, currency, customerNotes, paymentProvider } = parsed.data;
+    const {
+      items,
+      guestEmail,
+      guestName,
+      couponCode,
+      currency,
+      shippingAddress,
+      shippingMethod,
+      customerNotes,
+      paymentProvider,
+    } = parsed.data;
 
     // Check if user is logged in
     const session = await SessionService.getCurrentSession();
@@ -50,6 +78,8 @@ export async function POST(request: NextRequest) {
       items,
       couponCode,
       currency,
+      shippingAddress,
+      shippingMethod,
       customerNotes,
     });
 
@@ -74,7 +104,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Determine target provider (default to FLUTTERWAVE for CARD or African methods, or PAYSTACK)
+    // Determine target provider (default to FLUTTERWAVE for CARD / African Mobile Money, or PAYSTACK)
     const provider: PaymentProviderType = paymentProvider === 'PAYSTACK' ? 'PAYSTACK' : 'FLUTTERWAVE';
 
     // Initialize Gateway Payment Session
@@ -89,8 +119,10 @@ export async function POST(request: NextRequest) {
       total: orderTotal,
       subtotal: Number(order.subtotal),
       discountTotal: Number(order.discountTotal),
+      shippingFee: Number(order.shippingFee),
       currency: order.currency,
       status: order.status,
+      fulfillmentStatus: order.fulfillmentStatus,
       paymentProvider: provider,
       paymentUrl: paymentInit.paymentUrl,
       transactionRef: paymentInit.transactionRef,

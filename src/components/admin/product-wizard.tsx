@@ -16,6 +16,8 @@ import {
   Box,
   Truck,
   ShieldCheck,
+  Upload,
+  Loader2,
 } from 'lucide-react';
 import { ProductType, ProductKind } from '@prisma/client';
 
@@ -65,6 +67,77 @@ export function ProductWizard({ initialData }: { initialData?: any }) {
   );
   const [model3dUrl, setModel3dUrl] = useState(initialData?.model3dUrl || '');
   const [model3dPoster, setModel3dPoster] = useState(initialData?.model3dPoster || '');
+
+  // Media Upload States
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+  const [isUploading3D, setIsUploading3D] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const uploadFileToServer = async (file: File, folder: string): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+    const res = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Upload failed');
+    }
+    return data.url;
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingCover(true);
+    setUploadError(null);
+    try {
+      const url = await uploadFileToServer(file, 'covers');
+      setCoverImage(url);
+    } catch (err: any) {
+      setUploadError(err.message || 'Failed to upload cover image');
+    } finally {
+      setIsUploadingCover(false);
+    }
+  };
+
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploadingGallery(true);
+    setUploadError(null);
+    try {
+      const urls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const url = await uploadFileToServer(files[i], 'gallery');
+        urls.push(url);
+      }
+      const existing = galleryInput ? galleryInput.split('\n').map((s: string) => s.trim()).filter(Boolean) : [];
+      setGalleryInput([...existing, ...urls].join('\n'));
+    } catch (err: any) {
+      setUploadError(err.message || 'Failed to upload gallery images');
+    } finally {
+      setIsUploadingGallery(false);
+    }
+  };
+
+  const handle3DModelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading3D(true);
+    setUploadError(null);
+    try {
+      const url = await uploadFileToServer(file, 'models');
+      setModel3dUrl(url);
+    } catch (err: any) {
+      setUploadError(err.message || 'Failed to upload 3D model');
+    } finally {
+      setIsUploading3D(false);
+    }
+  };
 
   // Tags & Features
   const [tagsInput, setTagsInput] = useState(initialData?.tags?.join(', ') || '');
@@ -430,45 +503,151 @@ export function ProductWizard({ initialData }: { initialData?: any }) {
       {/* Step 3: Media & 3D Interactive Assets */}
       {step === 3 && (
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-white">Visuals, Photography & 3D Model</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-white">Visuals, Photography & 3D Model</h2>
+            <span className="text-xs font-mono text-zinc-400">Direct upload or hosted URL</span>
+          </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-zinc-400 mb-2">
-                Primary Cover Image URL *
-              </label>
+          {uploadError && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-mono">
+              {uploadError}
+            </div>
+          )}
+
+          <div className="space-y-6">
+            {/* Primary Cover Image */}
+            <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-mono uppercase tracking-wider text-zinc-300">
+                  Primary Cover Image *
+                </label>
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-mono cursor-pointer transition-all">
+                  {isUploadingCover ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5" /> Upload File
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    disabled={isUploadingCover}
+                    className="hidden"
+                    onChange={handleCoverUpload}
+                  />
+                </label>
+              </div>
+
               <input
                 type="url"
-                placeholder="https://images.unsplash.com/photo-..."
+                placeholder="https://images.unsplash.com/... or upload directly above"
                 value={coverImage}
                 onChange={(e) => setCoverImage(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 text-sm"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 text-xs font-mono"
               />
+
+              {coverImage && (
+                <div className="flex items-center gap-3 pt-2">
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-zinc-700 bg-zinc-900 flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="text-xs text-zinc-400 break-all">
+                    <span className="text-emerald-400 font-mono">Preview Ready:</span> {coverImage}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div>
-              <label className="block text-xs font-mono uppercase tracking-wider text-zinc-400 mb-2">
-                Additional Gallery Image URLs (one per line)
-              </label>
+            {/* Gallery Images */}
+            <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-mono uppercase tracking-wider text-zinc-300">
+                  Additional Gallery Images
+                </label>
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg text-xs font-mono cursor-pointer transition-all">
+                  {isUploadingGallery ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5" /> Upload Multiple
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    disabled={isUploadingGallery}
+                    className="hidden"
+                    onChange={handleGalleryUpload}
+                  />
+                </label>
+              </div>
+
               <textarea
-                rows={4}
-                placeholder="https://images.unsplash.com/photo-1...&#10;https://images.unsplash.com/photo-2..."
+                rows={3}
+                placeholder="Paste URLs (one per line) or use the upload button above"
                 value={galleryInput}
                 onChange={(e) => setGalleryInput(e.target.value)}
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-300 font-mono text-xs focus:outline-none focus:border-emerald-500"
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-zinc-300 font-mono text-xs focus:outline-none focus:border-emerald-500"
               />
+
+              {galleryInput && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {galleryInput
+                    .split('\n')
+                    .map((s: string) => s.trim())
+                    .filter(Boolean)
+                    .map((imgUrl: string, idx: number) => (
+                      <div
+                        key={idx}
+                        className="relative w-12 h-12 rounded-lg overflow-hidden border border-zinc-700 bg-zinc-900"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={imgUrl} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
 
             {/* 3D Model Section */}
             <div className="p-6 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-4">
-              <div className="flex items-center gap-3 text-emerald-400">
-                <Sparkles className="w-5 h-5" />
-                <h3 className="text-sm font-semibold uppercase tracking-wider">
-                  Interactive 3D Experience (Optional)
-                </h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-emerald-400">
+                  <Sparkles className="w-5 h-5" />
+                  <h3 className="text-sm font-semibold uppercase tracking-wider">
+                    Interactive 3D Experience (Optional)
+                  </h3>
+                </div>
+
+                <label className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-mono cursor-pointer transition-all">
+                  {isUploading3D ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading GLB...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-3.5 h-3.5" /> Upload .GLB File
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept=".glb,.gltf"
+                    disabled={isUploading3D}
+                    className="hidden"
+                    onChange={handle3DModelUpload}
+                  />
+                </label>
               </div>
+
               <p className="text-xs text-zinc-400">
-                Provide a hosted `.glb` or `.gltf` 3D model URL to enable interactive 360° orbit inspection for customers. If omitted, standard photography is displayed.
+                Provide or upload a `.glb` or `.gltf` 3D model to enable interactive 360° orbit inspection for customers. If omitted, standard photography is displayed.
               </p>
 
               <div>
@@ -477,7 +656,7 @@ export function ProductWizard({ initialData }: { initialData?: any }) {
                 </label>
                 <input
                   type="url"
-                  placeholder="https://assets.nov.com/models/watch-titanium.glb"
+                  placeholder="https://assets.nov.com/models/watch.glb or upload directly above"
                   value={model3dUrl}
                   onChange={(e) => setModel3dUrl(e.target.value)}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-emerald-500"

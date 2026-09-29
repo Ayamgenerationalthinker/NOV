@@ -29,24 +29,28 @@ export async function GET(request: NextRequest) {
     let verifiedTransactionRef = txRef;
 
     if (verificationRef) {
-      try {
-        const verifyResult = await PaymentService.verifyPaymentStatus({
-          provider,
-          reference: verificationRef,
-        });
-        isVerified = verifyResult.success;
-        if (verifyResult.transactionRef) {
-          verifiedTransactionRef = verifyResult.transactionRef;
-        }
-      } catch (verifyErr) {
-        console.warn('Gateway verification call returned error:', verifyErr);
-        // Fallback: check if simulated or if status param explicitly successful
-        if (statusParam === 'successful') {
-          isVerified = true;
+      // In development or test environments, allow simulated test reference verification
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        typeof verificationRef === 'string' &&
+        verificationRef.startsWith('test_simulated_')
+      ) {
+        isVerified = true;
+      } else {
+        try {
+          const verifyResult = await PaymentService.verifyPaymentStatus({
+            provider,
+            reference: verificationRef,
+          });
+          isVerified = Boolean(verifyResult.success);
+          if (verifyResult.transactionRef) {
+            verifiedTransactionRef = verifyResult.transactionRef;
+          }
+        } catch (verifyErr) {
+          console.error('Authoritative gateway payment verification failed:', verifyErr);
+          isVerified = false;
         }
       }
-    } else if (statusParam === 'successful') {
-      isVerified = true;
     }
 
     // Find the target order

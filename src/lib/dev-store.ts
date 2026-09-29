@@ -46,6 +46,7 @@ export interface DevProduct {
   isPublished: boolean;
   isFeatured: boolean;
   model3dUrl?: string | null;
+  model3dPoster?: string | null;
   features: string[];
   whatsIncluded: string[];
   tags: string[];
@@ -193,6 +194,8 @@ export const DevProductStore = {
       currency: productData.currency || 'USD',
       isPublished: productData.isPublished !== undefined ? productData.isPublished : true,
       isFeatured: productData.isFeatured || false,
+      model3dUrl: productData.model3dUrl || null,
+      model3dPoster: productData.model3dPoster || null,
       features: productData.features || [],
       whatsIncluded: productData.whatsIncluded || [],
       tags: productData.tags || [],
@@ -223,6 +226,16 @@ export const DevProductStore = {
 
     saveDevProducts(products);
     return newProduct;
+  },
+
+  delete(id: string): boolean {
+    const products = getDevProducts();
+    const filtered = products.filter((p) => p.id !== id && p.slug !== id);
+    if (filtered.length !== products.length) {
+      saveDevProducts(filtered);
+      return true;
+    }
+    return false;
   },
 
   adjustStock(variantId: string, delta: number): boolean {

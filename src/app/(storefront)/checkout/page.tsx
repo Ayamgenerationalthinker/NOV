@@ -24,13 +24,16 @@ import { Suspense } from 'react';
 function CheckoutForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialCoupon = searchParams.get('coupon') || '';
+  const initialCoupon = searchParams.get('coupon') || searchParams.get('discount_code') || '';
+  const initialEmail = searchParams.get('email') || '';
+  const initialName = searchParams.get('name') || '';
+  const initialPhone = searchParams.get('phone') || '';
 
   const { items, subtotal, hasPhysicalItems, clearCart, isLoaded } = useCart();
 
   // Contact Info
-  const [email, setEmail] = React.useState('');
-  const [name, setName] = React.useState('');
+  const [email, setEmail] = React.useState(initialEmail);
+  const [name, setName] = React.useState(initialName);
 
   // Shipping Address State (for physical goods)
   const [street, setStreet] = React.useState('');
@@ -38,7 +41,7 @@ function CheckoutForm() {
   const [state, setState] = React.useState('');
   const [postalCode, setPostalCode] = React.useState('');
   const [country, setCountry] = React.useState('GH');
-  const [phone, setPhone] = React.useState('');
+  const [phone, setPhone] = React.useState(initialPhone);
 
   // Shipping Calculation State
   const [shippingFee, setShippingFee] = React.useState(0);

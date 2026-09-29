@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/cart-context';
 import { ShoppingBag, ArrowRight, Check, Plus, Minus, Package, ShieldCheck } from 'lucide-react';
@@ -39,17 +39,34 @@ interface ProductBuyActionsProps {
 
 export function ProductBuyActions({ product }: ProductBuyActionsProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addItem, isInCart } = useCart();
   const [justAdded, setJustAdded] = React.useState(false);
+
+  const urlVariant = searchParams?.get('variant') || searchParams?.get('sku') || null;
+  const parsedQty = searchParams?.get('quantity') ? parseInt(searchParams.get('quantity')!, 10) : 1;
+  const initialQty = !isNaN(parsedQty) && parsedQty > 0 ? parsedQty : 1;
+  const urlCoupon = searchParams?.get('coupon') || searchParams?.get('discount_code') || '';
 
   const isPhysical = product.productKind === ProductKind.PHYSICAL;
   const hasVariants = Boolean(product.variants && product.variants.length > 0);
 
-  const [selectedVariant, setSelectedVariant] = React.useState<ProductVariantData | null>(
-    hasVariants ? product.variants![0] : null
-  );
+  const initialVariant = React.useMemo(() => {
+    if (!hasVariants || !product.variants) return null;
+    if (urlVariant) {
+      const match = product.variants.find(
+        (v) =>
+          v.id === urlVariant ||
+          v.sku.toLowerCase() === urlVariant.toLowerCase() ||
+          v.title.toLowerCase() === urlVariant.toLowerCase()
+      );
+      if (match) return match;
+    }
+    return product.variants[0];
+  }, [hasVariants, product.variants, urlVariant]);
 
-  const [quantity, setQuantity] = React.useState(1);
+  const [selectedVariant, setSelectedVariant] = React.useState<ProductVariantData | null>(initialVariant);
+  const [quantity, setQuantity] = React.useState(initialQty);
 
   // Active price based on variant or product base
   const activePrice = selectedVariant
@@ -109,7 +126,8 @@ export function ProductBuyActions({ product }: ProductBuyActionsProps) {
       currency: product.currency,
     });
 
-    router.push('/checkout');
+    const checkoutUrl = urlCoupon ? `/checkout?coupon=${encodeURIComponent(urlCoupon)}` : '/checkout';
+    router.push(checkoutUrl);
   };
 
   return (

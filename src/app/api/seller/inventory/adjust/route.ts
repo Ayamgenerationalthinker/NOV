@@ -12,7 +12,7 @@ const adjustSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const auth = await RBACService.requireSellerOrAdmin();
+  const auth = await RBACService.requireAdmin();
   if ('error' in auth) return auth.error;
 
   try {

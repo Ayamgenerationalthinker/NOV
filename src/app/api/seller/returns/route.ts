@@ -11,20 +11,13 @@ const returnRequestSchema = z.object({
   customerComment: z.string().optional(),
 });
 
-export async function GET(req: NextRequest) {
-  const auth = await RBACService.requireAuth();
+export async function GET(_req: NextRequest) {
+  // Single-owner store: only the owner manages returns.
+  const auth = await RBACService.requireAdmin();
   if ('error' in auth) return auth.error;
 
   try {
-    const isSeller = RBACService.isSellerOrAdmin(auth.session.role);
-    const store = isSeller ? await prisma.store.findUnique({ where: { sellerId: auth.session.userId } }) : null;
-
-    const where = isSeller
-      ? (auth.session.role === 'ADMIN' ? {} : { storeId: store?.id })
-      : { customerId: auth.session.userId };
-
     const returns = await prisma.returnRequest.findMany({
-      where,
       include: {
         order: { select: { id: true, orderNumber: true } },
         orderItem: { include: { product: true, variant: true } },
@@ -41,7 +34,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await RBACService.requireAuth();
+  // Customers have no accounts; the owner logs a return on the buyer's behalf.
+  const auth = await RBACService.requireAdmin();
   if ('error' in auth) return auth.error;
 
   try {
@@ -52,10 +46,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid return request', details: parsed.error.flatten() }, { status: 400 });
     }
 
+    const order = await prisma.order.findUnique({
+      where: { id: parsed.data.orderId },
+      select: { customerId: true },
+    });
+    if (!order?.customerId) {
+      return NextResponse.json({ error: 'Order not found or has no buyer record.' }, { status: 404 });
+    }
+
     const returnReq = await ShippingService.requestReturn({
       orderId: parsed.data.orderId,
       orderItemId: parsed.data.orderItemId,
-      customerId: auth.session.userId,
+      customerId: order.customerId,
       reason: parsed.data.reason,
       customerComment: parsed.data.customerComment,
     });

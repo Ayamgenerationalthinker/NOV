@@ -12,7 +12,7 @@ const updateReturnSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await RBACService.requireSellerOrAdmin();
+  const auth = await RBACService.requireAdmin();
   if ('error' in auth) return auth.error;
 
   const { id } = await params;

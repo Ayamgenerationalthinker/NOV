@@ -1,3 +1,4 @@
+import { RBACService } from '@/services/auth/rbac.service';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,8 @@ import { OrderStatus } from '@prisma/client';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminOverviewPage() {
+  await RBACService.requireAdminPage('/admin');
+
   let overview = {
     grossRevenue: 0,
     netRevenue: 0,

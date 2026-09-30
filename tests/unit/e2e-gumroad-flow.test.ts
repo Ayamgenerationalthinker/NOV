@@ -263,10 +263,10 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
 
   describe('TEST 8: Customer Security & Isolation (RBAC)', () => {
     it('should allow only owner/admin roles to access studio dashboard', () => {
-      expect(RBACService.isSellerOrAdmin(Role.SUPER_ADMIN)).toBe(true);
-      expect(RBACService.isSellerOrAdmin(Role.ADMIN)).toBe(true);
-      expect(RBACService.isSellerOrAdmin(Role.SELLER)).toBe(true);
-      expect(RBACService.isSellerOrAdmin(Role.CUSTOMER)).toBe(false);
+      expect(RBACService.isAdmin(Role.SUPER_ADMIN)).toBe(true);
+      expect(RBACService.isAdmin(Role.ADMIN)).toBe(true);
+      expect(RBACService.isAdmin(Role.SELLER)).toBe(false);
+      expect(RBACService.isAdmin(Role.CUSTOMER)).toBe(false);
     });
 
     it('should reject public customer registration requests with 403 Forbidden', async () => {

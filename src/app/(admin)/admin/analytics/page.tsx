@@ -1,3 +1,4 @@
+import { RBACService } from '@/services/auth/rbac.service';
 import { AnalyticsService } from '@/services/admin/analytics.service';
 import { AnalyticsChart } from '@/components/admin/analytics-chart';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,6 +18,8 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminAnalyticsPage() {
+  await RBACService.requireAdminPage('/admin/analytics');
+
   let overview = {
     grossRevenue: 0,
     netRevenue: 0,

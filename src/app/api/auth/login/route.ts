@@ -43,6 +43,15 @@ export async function POST(request: Request) {
       );
     }
 
+    // Single-owner store: guest buyers get a customer record for their orders, but only the
+    // owner/admin may sign in.
+    if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Sign-in is for the store owner only. You can buy without an account.' },
+        { status: 403 }
+      );
+    }
+
     // Generate Session Token
     const token = await SessionService.createToken({
       userId: user.id,

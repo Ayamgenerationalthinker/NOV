@@ -3,7 +3,7 @@ import { RBACService } from '@/services/auth/rbac.service';
 import { StoreService } from '@/services/store/store.service';
 
 export async function GET(req: NextRequest) {
-  const auth = await RBACService.requireSellerOrAdmin();
+  const auth = await RBACService.requireAdmin();
   if ('error' in auth) return auth.error;
 
   try {

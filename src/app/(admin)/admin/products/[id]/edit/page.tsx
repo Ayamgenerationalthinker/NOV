@@ -5,7 +5,8 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
 import { ProductForm, ProductFormProduct } from '@/components/admin/product-form';
-import { productPath, productUrl } from '@/lib/product-url';
+import { productPath } from '@/lib/product-url';
+import { ShareProductButtons } from '@/components/admin/share-product-buttons';
 
 export default function EditProductPage() {
   const params = useParams();
@@ -57,17 +58,27 @@ export default function EditProductPage() {
         </div>
       </div>
 
-      {saved && (
-        <div className="rounded-2xl border border-emerald-800 bg-emerald-950/40 p-4 space-y-2">
-          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
-            <CheckCircle2 className="w-4 h-4" />
-            {saved === 'published' && product.isPublished ? 'Published! Your product is live.' : 'Saved.'}
+      {saved === 'published' && product.isPublished ? (
+        <div className="rounded-2xl border border-emerald-800 bg-emerald-950/40 p-4 space-y-3">
+          <div className="flex items-center gap-2 text-base font-semibold text-emerald-300">
+            <CheckCircle2 className="w-5 h-5" />
+            Published! Share your link:
           </div>
-          {product.isPublished && (
-            <a href={productPath(product.slug)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 break-all text-sm text-emerald-200 underline">
-              {productUrl(product.slug)} <ExternalLink className="w-3.5 h-3.5 shrink-0" />
-            </a>
-          )}
+          <ShareProductButtons slug={product.slug} title={product.title} showUrl size="md" />
+          <a href={productPath(product.slug)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs text-emerald-200 underline">
+            Open product page <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      ) : saved ? (
+        <div className="flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 p-3 text-sm text-zinc-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Saved.
+        </div>
+      ) : null}
+
+      {product.isPublished && saved !== 'published' && (
+        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 space-y-2">
+          <div className="text-xs font-semibold text-zinc-300">Product link</div>
+          <ShareProductButtons slug={product.slug} title={product.title} showUrl />
         </div>
       )}
 

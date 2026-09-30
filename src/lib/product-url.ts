@@ -3,7 +3,7 @@
  * Open Graph metadata use these helpers, so the URL format lives in one place.
  */
 export function productPath(slug: string): string {
-  return `/products/${slug}`;
+  return `/p/${slug}`;
 }
 
 /** Site origin: NEXT_PUBLIC_APP_URL when configured, else the browser's origin. */

@@ -6,6 +6,7 @@ import { Plus, Loader2, BookOpen, Package, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { productPath, productUrl } from '@/lib/product-url';
+import { ShareProductButtons } from '@/components/admin/share-product-buttons';
 
 interface AdminProductRow {
   id: string;
@@ -137,6 +138,8 @@ export default function AdminProductsPage() {
                     )}
                   </div>
                 </div>
+
+                {p.isPublished && <ShareProductButtons slug={p.slug} title={p.title} className="mt-3" />}
 
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link href={`/admin/products/${p.id}/edit`}>

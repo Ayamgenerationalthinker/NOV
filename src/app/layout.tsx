@@ -2,11 +2,15 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { SiteChrome } from '@/components/layout/site-chrome';
+import { env } from '@/lib/env';
 
 export const metadata: Metadata = {
+  // Lets relative image/URL metadata resolve to absolute URLs (needed for social previews).
+  metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
   title: {
-    template: '%s | NOV.com',
-    default: 'NOV.com — Premium Digital Products Platform',
+    template: `%s | ${env.NEXT_PUBLIC_APP_NAME}`,
+    default: env.NEXT_PUBLIC_APP_NAME,
   },
   description:
     'NOV.com: Secure, direct-to-consumer digital commerce platform for premium digital goods, ebooks, courses, tools, and templates.',
@@ -30,10 +34,9 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="min-h-screen flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
         <CartProvider>
-          <AnnouncementBanner />
-          <Header />
-          <main className="flex-1 flex flex-col">{children}</main>
-          <Footer />
+          <SiteChrome banner={<AnnouncementBanner />} header={<Header />} footer={<Footer />}>
+            {children}
+          </SiteChrome>
         </CartProvider>
       </body>
     </html>

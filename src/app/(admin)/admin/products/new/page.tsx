@@ -1,21 +1,18 @@
 import { Metadata } from 'next';
-import { ProductWizard } from '@/components/admin/product-wizard';
+import { NewProductForm } from './new-product-form';
 
 export const metadata: Metadata = {
-  title: 'Create Product — NOV Console',
+  title: 'New product — NOV Console',
 };
 
 export default function NewProductPage() {
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-white">Add New Product</h1>
-        <p className="text-xs text-zinc-400 mt-1">
-          Create physical or digital products, configure SKU variants, inventory stock, and interactive 3D experiences.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-white">New product</h1>
+        <p className="text-sm text-zinc-400 mt-1">Save it as a draft, or publish it to get a shareable link.</p>
       </div>
-
-      <ProductWizard />
+      <NewProductForm />
     </div>
   );
 }

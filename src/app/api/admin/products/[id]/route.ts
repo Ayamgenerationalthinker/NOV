@@ -1,7 +1,22 @@
 import { NextResponse } from 'next/server';
 import { RBACService } from '@/services/auth/rbac.service';
-import { ProductService } from '@/services/product/product.service';
+import { ProductService, ProductValidationError } from '@/services/product/product.service';
 import { productUpdateSchema } from '@/lib/validators/product';
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await RBACService.requireAdmin();
+  if ('error' in auth) return auth.error;
+
+  const { id } = await params;
+  const product = await ProductService.getProductById(id);
+  if (!product) {
+    return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+  }
+  return NextResponse.json({ product });
+}
 
 export async function PUT(
   request: Request,
@@ -25,11 +40,11 @@ export async function PUT(
     const updated = await ProductService.updateProduct(id, parsed.data, auth.session.userId);
     return NextResponse.json({ product: updated, message: 'Product updated successfully' });
   } catch (error) {
+    if (error instanceof ProductValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error('Admin product update error:', error);
-    return NextResponse.json(
-      { error: (error as Error).message || 'Failed to update product' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
   }
 }
 
@@ -45,10 +60,10 @@ export async function DELETE(
     await ProductService.deleteProduct(id, auth.session.userId);
     return NextResponse.json({ message: 'Product deleted successfully' });
   } catch (error) {
+    if (error instanceof ProductValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error('Admin product delete error:', error);
-    return NextResponse.json(
-      { error: (error as Error).message || 'Failed to delete product' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
   }
 }

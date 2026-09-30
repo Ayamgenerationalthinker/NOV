@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { RBACService } from '@/services/auth/rbac.service';
-import { ProductService } from '@/services/product/product.service';
+import { ProductService, ProductValidationError } from '@/services/product/product.service';
 
 export async function PATCH(
   request: Request,
@@ -23,6 +23,9 @@ export async function PATCH(
       message: body.isPublished ? 'Product published' : 'Product unpublished',
     });
   } catch (error) {
+    if (error instanceof ProductValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error('Admin toggle publish error:', error);
     return NextResponse.json({ error: 'Failed to update publication status' }, { status: 500 });
   }

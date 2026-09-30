@@ -2,213 +2,162 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
+import { Plus, Loader2, BookOpen, Package, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
-import { Plus, Edit, Eye, EyeOff, Loader2, Package, ExternalLink } from 'lucide-react';
-import { ProductType } from '@prisma/client';
+import { productPath, productUrl } from '@/lib/product-url';
 
-interface AdminProduct {
+interface AdminProductRow {
   id: string;
   title: string;
   slug: string;
+  productKind: 'DIGITAL' | 'PHYSICAL';
+  coverImage: string | null;
   price: number;
   discountPrice: number | null;
   currency: string;
   isPublished: boolean;
-  isFeatured: boolean;
-  productType: ProductType;
-  createdAt: string;
-  categories: Array<{ category: { name: string } }>;
-  _count?: { orderItems: number; entitlements: number };
+  salesCount: number;
+  stockAvailable: number | null;
+  files: Array<{ id: string }>;
 }
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = React.useState<AdminProduct[]>([]);
+  const [products, setProducts] = React.useState<AdminProductRow[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [togglingId, setTogglingId] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [busyId, setBusyId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    let isMounted = true;
-    fetch('/api/admin/products')
-      .then((res) => res.json())
-      .then((data) => {
-        if (isMounted) {
-          setProducts(data.products || []);
-          setIsLoading(false);
-        }
+    fetch('/api/admin/products?limit=100')
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Could not load products');
+        setProducts(data.products || []);
       })
-      .catch((err) => {
-        console.error('Failed to load products:', err);
-        if (isMounted) setIsLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setIsLoading(false));
   }, []);
 
-  const handleTogglePublish = async (id: string, currentStatus: boolean) => {
-    setTogglingId(id);
+  const togglePublish = async (product: AdminProductRow) => {
+    setBusyId(product.id);
+    setError(null);
     try {
-      const res = await fetch(`/api/admin/products/${id}/publish`, {
+      const res = await fetch(`/api/admin/products/${product.id}/publish`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isPublished: !currentStatus }),
+        body: JSON.stringify({ isPublished: !product.isPublished }),
       });
-
-      if (res.ok) {
-        setProducts((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, isPublished: !currentStatus } : p))
-        );
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not update');
+      setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, isPublished: !p.isPublished } : p)));
     } catch (err) {
-      console.error('Failed to toggle publish:', err);
+      setError(`${product.title}: ${(err as Error).message}`);
     } finally {
-      setTogglingId(null);
+      setBusyId(null);
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white">Product Catalog</h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Create, edit, publish, and manage your digital product portfolio.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Products</h1>
+          <p className="text-sm text-zinc-400">{products.length} product{products.length === 1 ? '' : 's'}</p>
         </div>
-
         <Link href="/admin/products/new">
-          <Button size="sm" className="gap-1.5 shadow-md shadow-blue-600/30">
-            <Plus className="w-4 h-4" />
-            New Product
+          <Button variant="success">
+            <Plus className="w-4 h-4" /> New product
           </Button>
         </Link>
       </div>
 
-      <Card className="border-slate-800 bg-slate-900/60 overflow-hidden">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center p-12 text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />
-              <span className="text-xs">Loading products...</span>
-            </div>
-          ) : products.length === 0 ? (
-            <div className="p-12 text-center">
-              <Package className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-              <h3 className="text-sm font-semibold text-white">No products created yet</h3>
-              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                Start by creating your first digital product with pricing, files, and description.
-              </p>
-              <Link href="/admin/products/new" className="inline-block mt-4">
-                <Button size="sm" className="gap-1">
-                  <Plus className="w-3.5 h-3.5" />
-                  Create First Product
-                </Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950/60 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
-                  <tr>
-                    <th className="px-6 py-3 font-semibold">Product</th>
-                    <th className="px-6 py-3 font-semibold">Type</th>
-                    <th className="px-6 py-3 font-semibold">Price</th>
-                    <th className="px-6 py-3 font-semibold">Categories</th>
-                    <th className="px-6 py-3 font-semibold">Status</th>
-                    <th className="px-6 py-3 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {products.map((p) => (
-                    <tr key={p.id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-white">{p.title}</div>
-                        <div className="text-[11px] text-slate-500 font-mono">/{p.slug}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge variant="secondary" className="text-[10px]">
-                          {p.productType}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-white">
-                          {formatCurrency(p.price, p.currency)}
-                        </div>
-                        {p.discountPrice && (
-                          <div className="text-[10px] text-emerald-400">
-                            Sale: {formatCurrency(p.discountPrice, p.currency)}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {p.categories.map(({ category }) => (
-                            <span
-                              key={category.name}
-                              className="text-[10px] rounded bg-slate-800 px-1.5 py-0.5 text-slate-400"
-                            >
-                              {category.name}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {p.isPublished ? (
-                          <Badge variant="success" className="text-[10px]">
-                            Published
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="text-[10px] text-slate-400">
-                            Draft
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={togglingId === p.id}
-                            onClick={() => handleTogglePublish(p.id, p.isPublished)}
-                            className="text-xs h-8 px-2"
-                            title={p.isPublished ? 'Unpublish' : 'Publish'}
-                          >
-                            {togglingId === p.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : p.isPublished ? (
-                              <EyeOff className="w-3.5 h-3.5 text-amber-400" />
-                            ) : (
-                              <Eye className="w-3.5 h-3.5 text-emerald-400" />
-                            )}
-                          </Button>
+      {error && <div role="alert" className="rounded-xl border border-red-900 bg-red-950/60 p-3 text-sm text-red-200">{error}</div>}
 
-                          <Link href={`/admin/products/${p.id}/edit`}>
-                            <Button variant="ghost" size="sm" className="text-xs h-8 px-2" title="Edit">
-                              <Edit className="w-3.5 h-3.5 text-slate-300" />
-                            </Button>
-                          </Link>
+      {isLoading ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+        </div>
+      ) : products.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-zinc-800 p-10 text-center">
+          <p className="text-zinc-300">No products yet.</p>
+          <Link href="/admin/products/new" className="mt-3 inline-block text-sm text-emerald-400 underline">
+            Create your first product
+          </Link>
+        </div>
+      ) : (
+        <ul className="space-y-3">
+          {products.map((p) => {
+            const hasSale = p.discountPrice !== null && p.discountPrice < p.price;
+            const needsFile = p.productKind === 'DIGITAL' && p.files.length === 0;
+            return (
+              <li key={p.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
+                <div className="flex gap-4">
+                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-zinc-800">
+                    {p.coverImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.coverImage} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-zinc-500">
+                        {p.productKind === 'DIGITAL' ? <BookOpen className="w-5 h-5" /> : <Package className="w-5 h-5" />}
+                      </div>
+                    )}
+                  </div>
 
-                          {p.isPublished && (
-                            <Link href={`/products/${p.slug}`} target="_blank">
-                              <Button variant="ghost" size="sm" className="text-xs h-8 px-2" title="View Storefront">
-                                <ExternalLink className="w-3.5 h-3.5 text-blue-400" />
-                              </Button>
-                            </Link>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="truncate font-semibold text-white">{p.title}</span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                          p.isPublished ? 'bg-emerald-500/15 text-emerald-300' : 'bg-zinc-700/60 text-zinc-300'
+                        }`}
+                      >
+                        {p.isPublished ? 'Published' : 'Draft'}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-400">
+                      <span className="text-zinc-200">
+                        {formatCurrency(hasSale ? p.discountPrice! : p.price, p.currency)}
+                        {hasSale && <s className="ml-1 text-zinc-500">{formatCurrency(p.price, p.currency)}</s>}
+                      </span>
+                      <span>{p.salesCount} sold</span>
+                      {p.stockAvailable !== null && (
+                        <span className={p.stockAvailable === 0 ? 'text-amber-400' : ''}>
+                          {p.stockAvailable === 0 ? 'Sold out' : `${p.stockAvailable} in stock`}
+                        </span>
+                      )}
+                      {needsFile && <span className="text-amber-400">No file uploaded</span>}
+                    </div>
+                    {p.isPublished ? (
+                      <a href={productPath(p.slug)} target="_blank" rel="noreferrer" className="block truncate text-xs text-emerald-400 underline">
+                        {productUrl(p.slug)}
+                      </a>
+                    ) : (
+                      <span className="block truncate text-xs text-zinc-500">Link goes live when published</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link href={`/admin/products/${p.id}/edit`}>
+                    <Button variant="outline" size="sm">
+                      <Pencil className="w-3.5 h-3.5" /> Edit
+                    </Button>
+                  </Link>
+                  <Button
+                    variant={p.isPublished ? 'ghost' : 'success'}
+                    size="sm"
+                    isLoading={busyId === p.id}
+                    onClick={() => togglePublish(p)}
+                  >
+                    {p.isPublished ? 'Unpublish' : 'Publish'}
+                  </Button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

@@ -139,3 +139,12 @@ describe('Vercel environment', () => {
     expect(parsed.NEXT_PUBLIC_APP_URL).toBe('https://shop.example.com');
   });
 });
+
+describe('Database URL from Vercel integrations', () => {
+  it('uses POSTGRES_PRISMA_URL / POSTGRES_URL when DATABASE_URL is not set', () => {
+    const base = { NODE_ENV: 'production', VERCEL_PROJECT_PRODUCTION_URL: 'nov.vercel.app', AUTH_SECRET: 'a'.repeat(40) };
+    expect(loadEnv({ ...base, POSTGRES_PRISMA_URL: 'postgresql://prisma-url' } as any).DATABASE_URL).toBe('postgresql://prisma-url');
+    expect(loadEnv({ ...base, POSTGRES_URL: 'postgresql://pg-url' } as any).DATABASE_URL).toBe('postgresql://pg-url');
+    expect(() => loadEnv(base as any)).toThrow(/DATABASE_URL/);
+  });
+});

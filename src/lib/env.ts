@@ -76,6 +76,12 @@ export function loadEnv(rawSource: NodeJS.ProcessEnv = process.env): Env {
   const source = Object.fromEntries(
     Object.entries(rawSource).filter(([, value]) => value !== undefined && value.trim() !== '')
   ) as NodeJS.ProcessEnv;
+  // Accept the variable names Vercel's Postgres integrations create.
+  if (!source.DATABASE_URL) {
+    const fallback = source.POSTGRES_PRISMA_URL || source.POSTGRES_URL;
+    if (fallback) source.DATABASE_URL = fallback;
+  }
+
   // On Vercel, default the public site URL to the project's production domain.
   if (!source.NEXT_PUBLIC_APP_URL) {
     const derived = vercelSiteUrl(source);

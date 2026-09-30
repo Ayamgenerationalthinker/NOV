@@ -332,7 +332,8 @@ export class OrderService {
       [OrderStatus.PAID]: [OrderStatus.PENDING, OrderStatus.CANCELLED],
       [OrderStatus.REFUNDED]: [OrderStatus.PENDING, OrderStatus.PAID],
       [OrderStatus.CANCELLED]: [OrderStatus.PAID],
-      [OrderStatus.FAILED]: [OrderStatus.PAID],
+      // FAILED -> PAID is allowed: the customer can retry after a declined attempt.
+      [OrderStatus.FAILED]: [],
       [OrderStatus.PENDING]: [],
       [OrderStatus.REFUND_PENDING]: [OrderStatus.PENDING],
       [OrderStatus.PARTIALLY_REFUNDED]: [OrderStatus.PENDING],
@@ -348,14 +349,24 @@ export class OrderService {
     const isTransitioningToCancelled = toStatus === OrderStatus.CANCELLED;
 
     const updatedOrder = await prisma.$transaction(async (tx) => {
-      const updated = await tx.order.update({
-        where: { id: orderId },
+      // Compare-and-set on the status we read, so concurrent callers (e.g. redirect + webhook)
+      // cannot both run the side effects below.
+      const { count } = await tx.order.updateMany({
+        where: { id: orderId, status: order.status },
         data: {
           status: toStatus,
           paymentProvider: paymentProvider || order.paymentProvider,
           paidAt: isTransitioningToPaid ? new Date() : order.paidAt,
           cancelledAt: isTransitioningToCancelled ? new Date() : order.cancelledAt,
         },
+      });
+
+      if (count === 0) {
+        return null;
+      }
+
+      const updated = await tx.order.findUnique({
+        where: { id: orderId },
         include: {
           items: { include: { product: true, variant: true } },
         },
@@ -374,6 +385,19 @@ export class OrderService {
 
       return updated;
     });
+
+    if (!updatedOrder) {
+      // Another request changed the status first. If it reached the same target, that request
+      // owns the side effects; anything else is a genuine conflict.
+      const current = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { items: { include: { product: true, variant: true } } },
+      });
+      if (current?.status === toStatus) {
+        return current;
+      }
+      throw new Error(`Order ${orderId} status changed concurrently (now ${current?.status}); transition to ${toStatus} aborted.`);
+    }
 
     // Side effect upon payment:
     if (isTransitioningToPaid) {

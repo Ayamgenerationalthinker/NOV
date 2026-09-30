@@ -31,6 +31,7 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     orderItem: {
       findMany: vi.fn(),
@@ -240,7 +241,10 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
         data: { id: 'evt_dup_999' },
       });
 
-      const headers = new Headers({ 'verif-hash': 'flutterwave-secret-hash-dev' });
+      const { PaymentService } = await import('@/services/payment/payment.service');
+      const { FlutterwaveAdapter } = await import('@/services/payment/flutterwave.adapter');
+      PaymentService.setAdapter('FLUTTERWAVE', new FlutterwaveAdapter({ secretKey: 'k', webhookSecret: 'e2e-hash' }));
+      const headers = new Headers({ 'verif-hash': 'e2e-hash' });
 
       vi.mocked(prisma.paymentWebhookEvent.findFirst).mockResolvedValue({
         id: 'proc-1',
@@ -253,6 +257,7 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
       const result = await WebhookService.processWebhook('FLUTTERWAVE', headers, rawBody);
       expect(result.isDuplicate).toBe(true);
       expect(result.message).toContain('idempotent skip');
+      PaymentService.setAdapter('FLUTTERWAVE', new FlutterwaveAdapter());
     });
   });
 

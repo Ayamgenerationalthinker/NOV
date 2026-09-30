@@ -28,6 +28,13 @@ export interface VerifyPaymentResult {
   paymentMethod?: string;
   status: 'SUCCESSFUL' | 'FAILED' | 'PENDING';
   rawPayload?: any;
+  /** True only for local simulated payments (never in production). */
+  simulated?: boolean;
+}
+
+export interface PaymentAdapterConfig {
+  secretKey?: string;
+  webhookSecret?: string;
 }
 
 export interface WebhookEventPayload {
@@ -47,6 +54,11 @@ export interface IPaymentAdapter {
 
   initializePayment(params: InitializePaymentParams): Promise<InitializePaymentResult>;
 
+  /**
+   * Ask the gateway for the authoritative status of a payment.
+   * `reference` is always NOV's own transactionRef (as stored on the Transaction row).
+   * Throws PaymentConfigurationError when the gateway is not configured.
+   */
   verifyPayment(reference: string): Promise<VerifyPaymentResult>;
 
   verifyWebhookSignature(headers: Headers, rawBody: string): boolean;

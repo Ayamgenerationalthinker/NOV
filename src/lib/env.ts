@@ -1,18 +1,17 @@
 import { z } from 'zod';
 
+const DEV_AUTH_SECRET = 'dev-auth-secret-for-local-testing-32-chars-long';
+const DEV_DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/nov_dev?schema=public';
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
   NEXT_PUBLIC_APP_NAME: z.string().default('NOV.com'),
   NEXT_PUBLIC_SUPPORT_EMAIL: z.string().email().default('support@nov.com'),
 
-  DATABASE_URL: z
-    .string()
-    .default('postgresql://postgres:postgres@localhost:5432/nov_dev?schema=public'),
+  DATABASE_URL: z.string().default(DEV_DATABASE_URL),
 
-  AUTH_SECRET: z
-    .string()
-    .default('dev-auth-secret-for-local-testing-32-chars-long'),
+  AUTH_SECRET: z.string().default(DEV_AUTH_SECRET),
   AUTH_URL: z.string().url().optional(),
 
   // Payment Providers
@@ -23,7 +22,9 @@ const envSchema = z.object({
 
   NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY: z.string().optional(),
   PAYSTACK_SECRET_KEY: z.string().optional(),
-  PAYSTACK_WEBHOOK_SECRET: z.string().optional(),
+
+  // Local-only simulated payments. Ignored when NODE_ENV=production.
+  PAYMENT_SIMULATION: z.enum(['true', 'false']).optional(),
 
   // Email
   RESEND_API_KEY: z.string().optional(),
@@ -39,16 +40,51 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
-function getEnv(): Env {
-  const result = envSchema.safeParse(process.env);
-  if (!result.success) {
-    console.warn('⚠️ Environment variable parse notice:', result.error.flatten().fieldErrors);
-    return envSchema.parse({
-      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/nov_dev?schema=public',
-      AUTH_SECRET: process.env.AUTH_SECRET || 'dev-auth-secret-for-local-testing-32-chars-long',
-    });
+/**
+ * Production rules that must never fall back to development defaults.
+ */
+function assertProductionEnv(source: NodeJS.ProcessEnv): void {
+  const problems: string[] = [];
+
+  const authSecret = source.AUTH_SECRET;
+  if (!authSecret || authSecret.length < 32 || authSecret === DEV_AUTH_SECRET) {
+    problems.push('AUTH_SECRET must be set to a random string of at least 32 characters.');
   }
-  return result.data;
+  if (!source.DATABASE_URL) {
+    problems.push('DATABASE_URL must be set.');
+  }
+  if (!source.NEXT_PUBLIC_APP_URL) {
+    problems.push('NEXT_PUBLIC_APP_URL must be set to the public site URL.');
+  }
+
+  if (problems.length > 0) {
+    throw new Error(`Invalid production environment:\n- ${problems.join('\n- ')}`);
+  }
 }
 
-export const env = getEnv();
+export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
+  const isProduction = source.NODE_ENV === 'production';
+  if (isProduction) {
+    assertProductionEnv(source);
+  }
+
+  const result = envSchema.safeParse(source);
+  if (result.success) {
+    return result.data;
+  }
+
+  const fieldErrors = result.error.flatten().fieldErrors;
+  if (isProduction) {
+    throw new Error(`Invalid environment variables: ${JSON.stringify(fieldErrors)}`);
+  }
+
+  // Development: drop only the invalid keys (so they fall back to defaults) and keep everything else.
+  console.warn('⚠️ Ignoring invalid environment variables:', fieldErrors);
+  const cleaned: Record<string, string | undefined> = { ...source };
+  for (const key of Object.keys(fieldErrors)) {
+    delete cleaned[key];
+  }
+  return envSchema.parse(cleaned);
+}
+
+export const env = loadEnv();

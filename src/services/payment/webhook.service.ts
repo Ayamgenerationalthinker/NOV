@@ -1,7 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { PaymentProviderType } from './payment.interface';
 import { PaymentService } from './payment.service';
-import { OrderService } from '@/services/order/order.service';
 import { OrderStatus, TransactionStatus } from '@prisma/client';
 
 export interface WebhookProcessResult {
@@ -14,7 +13,11 @@ export interface WebhookProcessResult {
 
 export class WebhookService {
   /**
-   * Cryptographically verify, record, and idempotently process payment webhooks
+   * Cryptographically verify, record, and idempotently process payment webhooks.
+   *
+   * A webhook is treated only as a signal: its payload is never trusted for the payment
+   * outcome, amount, or order. Successful events are re-verified with the gateway through
+   * PaymentService.confirmOrderPayment, exactly like the customer redirect.
    */
   static async processWebhook(
     provider: PaymentProviderType,
@@ -37,7 +40,7 @@ export class WebhookService {
 
     const { eventType, eventId, transactionRef, isSuccessful, rawPayload } = eventPayload;
 
-    // 3. Idempotency Check: check if eventId or transactionRef has already been successfully processed
+    // 3. Idempotency Check: skip events that were already processed
     if (eventId) {
       const existingEvent = await prisma.paymentWebhookEvent.findFirst({
         where: {
@@ -57,7 +60,7 @@ export class WebhookService {
       }
     }
 
-    // Record the webhook event record
+    // Record the webhook event
     const recordedEvent = await prisma.paymentWebhookEvent.create({
       data: {
         provider,
@@ -68,92 +71,79 @@ export class WebhookService {
       },
     });
 
-    try {
-      // 4. Find the corresponding transaction or order
-      let orderId: string | undefined;
-      const transaction = await prisma.transaction.findUnique({
-        where: { transactionRef },
-        include: { order: true },
-      });
-
-      if (transaction) {
-        orderId = transaction.orderId;
-      } else {
-        // Fallback: check metadata in payload for orderId or orderNumber
-        const metadata = rawPayload?.data?.metadata || rawPayload?.meta || {};
-        if (metadata.orderId) {
-          orderId = metadata.orderId;
-        } else if (metadata.orderNumber) {
-          const order = await prisma.order.findUnique({
-            where: { orderNumber: metadata.orderNumber },
-          });
-          if (order) orderId = order.id;
-        }
-      }
-
-      if (!orderId) {
-        // Save note in event and return
-        await prisma.paymentWebhookEvent.update({
-          where: { id: recordedEvent.id },
-          data: {
-            error: `Unable to match transactionRef ${transactionRef} to any existing order.`,
-            isProcessed: true,
-            processedAt: new Date(),
-          },
-        });
-
-        return {
-          success: false,
-          message: `No order found matching transactionRef ${transactionRef}`,
-          transactionRef,
-        };
-      }
-
-      // 5. Update Transaction status if exists
-      if (transaction) {
-        await prisma.transaction.update({
-          where: { id: transaction.id },
-          data: {
-            status: isSuccessful ? TransactionStatus.SUCCESSFUL : TransactionStatus.FAILED,
-            rawPayload: rawPayload as any,
-          },
-        });
-      }
-
-      // 6. Transition Order Status if successful
-      if (isSuccessful) {
-        await OrderService.transitionOrderStatus({
-          orderId,
-          toStatus: OrderStatus.PAID,
-          paymentProvider: provider,
-          transactionRef,
-          notes: `Fulfilled via ${provider} webhook (${eventType})`,
-        });
-      } else {
-        // If explicitly failed event
-        await prisma.order.update({
-          where: { id: orderId },
-          data: { status: OrderStatus.FAILED },
-        });
-      }
-
-      // 7. Mark webhook as processed
+    const finish = async (result: WebhookProcessResult, error?: string) => {
       await prisma.paymentWebhookEvent.update({
         where: { id: recordedEvent.id },
         data: {
           isProcessed: true,
           processedAt: new Date(),
+          error: error || null,
         },
       });
+      return result;
+    };
 
-      return {
+    try {
+      // 4. Only references we issued are considered (no payload metadata fallback)
+      const transaction = transactionRef
+        ? await prisma.transaction.findUnique({
+            where: { transactionRef },
+            include: { order: true },
+          })
+        : null;
+
+      if (!transaction) {
+        const message = `No transaction found matching reference ${transactionRef || '(none)'}`;
+        return finish({ success: false, message, transactionRef }, message);
+      }
+
+      if (transaction.provider !== provider) {
+        const message = `Reference ${transactionRef} belongs to ${transaction.provider}, not ${provider}`;
+        return finish({ success: false, message, transactionRef }, message);
+      }
+
+      // 5a. Successful event: re-verify with the gateway and apply all payment checks
+      if (isSuccessful) {
+        const confirmation = await PaymentService.confirmOrderPayment({
+          reference: transactionRef,
+          provider,
+          source: 'webhook',
+        });
+
+        const paid = confirmation.outcome === 'PAID' || confirmation.outcome === 'ALREADY_PAID';
+        return finish(
+          {
+            success: paid,
+            message: `${provider} webhook for order ${transaction.orderId}: ${confirmation.outcome}${
+              confirmation.reason ? ` (${confirmation.reason})` : ''
+            }`,
+            orderId: transaction.orderId,
+            transactionRef,
+          },
+          paid ? undefined : `${confirmation.outcome}: ${confirmation.message}`
+        );
+      }
+
+      // 5b. Failure event: record it, but never downgrade a paid order or a successful transaction
+      if (transaction.status !== TransactionStatus.SUCCESSFUL) {
+        await prisma.transaction.update({
+          where: { id: transaction.id },
+          data: { status: TransactionStatus.FAILED, rawPayload: rawPayload as any },
+        });
+      }
+      await prisma.order.updateMany({
+        where: { id: transaction.orderId, status: OrderStatus.PENDING },
+        data: { status: OrderStatus.FAILED },
+      });
+
+      return finish({
         success: true,
-        message: `Successfully processed ${provider} webhook for order ${orderId}`,
-        orderId,
+        message: `Recorded failed ${provider} payment for order ${transaction.orderId}`,
+        orderId: transaction.orderId,
         transactionRef,
-      };
+      });
     } catch (err: any) {
-      // Record failure on webhook event
+      // Leave isProcessed=false so the gateway's retry can process it again
       await prisma.paymentWebhookEvent.update({
         where: { id: recordedEvent.id },
         data: {

@@ -1,16 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Role, ProductKind, ProductType, OrderStatus, FulfillmentStatus } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-
-export interface DevUser {
-  id: string;
-  email: string;
-  name: string | null;
-  passwordHash: string;
-  role: Role;
-  createdAt: string;
-}
+import { ProductKind, ProductType, OrderStatus, FulfillmentStatus } from '@prisma/client';
 
 export interface DevVariant {
   id: string;
@@ -57,7 +47,6 @@ export interface DevProduct {
 }
 
 const STORAGE_DIR = path.resolve(process.cwd(), '.private_storage');
-const USERS_FILE = path.join(STORAGE_DIR, 'dev_users.json');
 const PRODUCTS_FILE = path.join(STORAGE_DIR, 'dev_products.json');
 
 function ensureDir() {
@@ -65,68 +54,6 @@ function ensureDir() {
     fs.mkdirSync(STORAGE_DIR, { recursive: true });
   }
 }
-
-// ==========================================
-// 1. Dev User Store
-// ==========================================
-function getDevUsers(): DevUser[] {
-  try {
-    ensureDir();
-    if (!fs.existsSync(USERS_FILE)) {
-      // Seed default single store owner
-      const defaultOwner: DevUser = {
-        id: 'owner_nov_001',
-        email: 'owner@nov.com',
-        name: 'Store Owner',
-        passwordHash: bcrypt.hashSync('OwnerPassword123!', 10),
-        role: Role.SUPER_ADMIN,
-        createdAt: new Date().toISOString(),
-      };
-      fs.writeFileSync(USERS_FILE, JSON.stringify([defaultOwner], null, 2), 'utf-8');
-      return [defaultOwner];
-    }
-    const data = fs.readFileSync(USERS_FILE, 'utf-8');
-    return JSON.parse(data) || [];
-  } catch {
-    return [];
-  }
-}
-
-function saveDevUsers(users: DevUser[]): void {
-  try {
-    ensureDir();
-    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Failed to save dev users:', err);
-  }
-}
-
-export const DevUserStore = {
-  findByEmail(email: string): DevUser | null {
-    const users = getDevUsers();
-    return users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null;
-  },
-
-  findById(id: string): DevUser | null {
-    const users = getDevUsers();
-    return users.find((u) => u.id === id) || null;
-  },
-
-  create(userData: { email: string; name?: string | null; passwordHash: string; role?: Role }): DevUser {
-    const users = getDevUsers();
-    const newUser: DevUser = {
-      id: `dev_usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      email: userData.email.toLowerCase(),
-      name: userData.name || null,
-      passwordHash: userData.passwordHash,
-      role: userData.role || Role.CUSTOMER,
-      createdAt: new Date().toISOString(),
-    };
-    users.push(newUser);
-    saveDevUsers(users);
-    return newUser;
-  },
-};
 
 // ==========================================
 // 2. Dev Product Store (Zero In-Built Products)

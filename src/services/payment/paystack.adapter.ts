@@ -1,37 +1,58 @@
 import {
   IPaymentAdapter,
+  PaymentAdapterConfig,
   PaymentProviderType,
   InitializePaymentParams,
   InitializePaymentResult,
   VerifyPaymentResult,
   WebhookEventPayload,
 } from './payment.interface';
+import { isPaymentSimulationEnabled, PaymentConfigurationError } from './simulation';
 import { env } from '@/lib/env';
 import crypto from 'crypto';
+
+export const PAYSTACK_SIMULATED_PREFIX = 'PSTK-sim-';
 
 export class PaystackAdapter implements IPaymentAdapter {
   readonly provider: PaymentProviderType = 'PAYSTACK';
   private secretKey: string | undefined;
 
-  constructor() {
-    this.secretKey = env.PAYSTACK_SECRET_KEY;
+  constructor(config: PaymentAdapterConfig = {}) {
+    this.secretKey = 'secretKey' in config ? config.secretKey : env.PAYSTACK_SECRET_KEY;
+  }
+
+  /** Simulation is used only when explicitly enabled outside production and no real key is set. */
+  private useSimulation(): boolean {
+    return !this.secretKey && isPaymentSimulationEnabled();
+  }
+
+  private requireSecretKey(): string {
+    if (!this.secretKey) {
+      throw new PaymentConfigurationError(
+        'PAYSTACK_SECRET_KEY is not configured. Paystack payments cannot be processed.'
+      );
+    }
+    return this.secretKey;
   }
 
   async initializePayment(params: InitializePaymentParams): Promise<InitializePaymentResult> {
-    const txRef = `PSTK-${params.orderNumber}-${Date.now().toString().slice(-4)}`;
+    const suffix = crypto.randomBytes(4).toString('hex');
 
-    // Simulated test gateway URL if secret key is not set
-    if (!this.secretKey) {
-      console.warn('⚠️ PAYSTACK_SECRET_KEY not set, using simulated payment gateway URL');
+    if (this.useSimulation()) {
+      const txRef = `${PAYSTACK_SIMULATED_PREFIX}${params.orderNumber}-${suffix}`;
+      console.warn('⚠️ PAYMENT_SIMULATION enabled: using simulated Paystack checkout');
       return {
-        paymentUrl: `${env.NEXT_PUBLIC_APP_URL}/api/payments/verify?provider=PAYSTACK&reference=${txRef}&order_id=${params.orderId}`,
+        paymentUrl: `${env.NEXT_PUBLIC_APP_URL}/api/payments/verify?provider=PAYSTACK&reference=${encodeURIComponent(txRef)}&order_id=${params.orderId}`,
         transactionRef: txRef,
         provider: this.provider,
         rawResponse: { simulated: true },
       };
     }
 
-    // Paystack amounts are in subunit (kobo / cents: amount * 100)
+    const secretKey = this.requireSecretKey();
+    const txRef = `PSTK-${params.orderNumber}-${suffix}`;
+
+    // Paystack amounts are in subunits (pesewas / kobo / cents: amount * 100)
     const amountInSubunits = Math.round(params.amount * 100);
 
     const payload = {
@@ -51,7 +72,7 @@ export class PaystackAdapter implements IPaymentAdapter {
     const res = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${this.secretKey}`,
+        Authorization: `Bearer ${secretKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
@@ -72,33 +93,37 @@ export class PaystackAdapter implements IPaymentAdapter {
   }
 
   async verifyPayment(reference: string): Promise<VerifyPaymentResult> {
-    if (!this.secretKey || reference.startsWith('PSTK-sim-')) {
+    if (this.useSimulation()) {
+      const isSimulatedRef = reference.startsWith(PAYSTACK_SIMULATED_PREFIX);
       return {
-        success: true,
-        amount: 0,
-        currency: 'USD',
+        success: isSimulatedRef,
+        amount: NaN, // filled from the stored Transaction by PaymentService in simulation mode
+        currency: '',
         transactionRef: reference,
-        providerRef: reference,
-        status: 'SUCCESSFUL',
+        providerRef: isSimulatedRef ? reference : undefined,
+        status: isSimulatedRef ? 'SUCCESSFUL' : 'FAILED',
         rawPayload: { simulated: true },
+        simulated: isSimulatedRef,
       };
     }
+
+    const secretKey = this.requireSecretKey();
 
     const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${this.secretKey}`,
+        Authorization: `Bearer ${secretKey}`,
         'Content-Type': 'application/json',
       },
     });
 
     const data = await res.json();
 
-    if (!res.ok || !data.status) {
+    if (!res.ok || !data.status || !data.data) {
       return {
         success: false,
         amount: 0,
-        currency: 'USD',
+        currency: '',
         transactionRef: reference,
         status: 'FAILED',
         rawPayload: data,
@@ -110,29 +135,31 @@ export class PaystackAdapter implements IPaymentAdapter {
 
     return {
       success: isSuccessful,
-      amount: tx.amount / 100, // Convert from subunits
-      currency: tx.currency,
+      amount: Number(tx.amount) / 100, // Convert from subunits
+      currency: String(tx.currency || '').toUpperCase(),
       transactionRef: tx.reference,
       providerRef: tx.id?.toString(),
       customerEmail: tx.customer?.email,
       paymentMethod: tx.channel,
-      status: isSuccessful ? 'SUCCESSFUL' : tx.status === 'ongoing' ? 'PENDING' : 'FAILED',
+      status: isSuccessful ? 'SUCCESSFUL' : tx.status === 'ongoing' || tx.status === 'pending' ? 'PENDING' : 'FAILED',
       rawPayload: data,
     };
   }
 
+  /**
+   * Paystack signs webhooks with HMAC-SHA512 of the raw body using the account secret key.
+   * No key configured means no webhook can be trusted.
+   */
   verifyWebhookSignature(headers: Headers, rawBody: string): boolean {
     const signature = headers.get('x-paystack-signature');
-    if (!signature) return false;
+    if (!signature || !this.secretKey) return false;
 
-    const secret = this.secretKey || env.PAYSTACK_WEBHOOK_SECRET || 'paystack-secret-dev';
-    const computed = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
+    const computed = crypto.createHmac('sha512', this.secretKey).update(rawBody).digest('hex');
+    const provided = Buffer.from(signature, 'hex');
+    const expected = Buffer.from(computed, 'hex');
 
-    try {
-      return crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(computed, 'hex'));
-    } catch {
-      return false;
-    }
+    if (provided.length !== expected.length) return false;
+    return crypto.timingSafeEqual(provided, expected);
   }
 
   parseWebhookEvent(rawBody: string): WebhookEventPayload | null {
@@ -140,13 +167,17 @@ export class PaystackAdapter implements IPaymentAdapter {
       const payload = JSON.parse(rawBody);
       const data = payload.data || payload;
 
+      const eventType = payload.event || 'unknown';
+      const objectId = data.id?.toString() || payload.id?.toString();
+
       return {
         provider: this.provider,
-        eventType: payload.event || 'charge.success',
-        eventId: payload.id?.toString() || data.id?.toString(),
+        eventType,
+        // Paystack events have no own id; key idempotency on event type + transaction id.
+        eventId: objectId ? `${eventType}:${objectId}` : undefined,
         transactionRef: data.reference || '',
         amount: Number((data.amount || 0) / 100),
-        currency: data.currency || 'USD',
+        currency: String(data.currency || '').toUpperCase(),
         customerEmail: data.customer?.email,
         isSuccessful: payload.event === 'charge.success' && data.status === 'success',
         rawPayload: payload,

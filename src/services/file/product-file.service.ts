@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { storageService } from '../storage/storage.service';
 import crypto from 'crypto';
+import { isProductFileKey, safeFileName } from '@/lib/upload-rules';
 
 export interface AttachFileParams {
   productId: string;
@@ -35,8 +36,7 @@ export class ProductFileService {
       throw new Error('Product not found.');
     }
 
-    const sanitizedName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storageKey = `products/${productId}/${crypto.randomUUID()}-${sanitizedName}`;
+    const storageKey = `products/${productId}/${crypto.randomUUID()}-${safeFileName(fileName)}`;
 
     // Upload to private storage
     await storageService.uploadFile({
@@ -45,6 +45,78 @@ export class ProductFileService {
       contentType: mimeType,
     });
 
+    return this.recordFile({
+      productId,
+      fileName,
+      fileKey: storageKey,
+      fileSize: fileBuffer.length,
+      mimeType,
+      versionNumber,
+      isPrimary,
+      maxDownloads,
+      adminUserId,
+    });
+  }
+
+  /**
+   * Attach a file the owner's browser already uploaded straight to storage (large files).
+   * The key must be under this product's folder and the file must really exist.
+   */
+  static async registerUploadedFile({
+    productId,
+    fileKey,
+    fileName,
+    adminUserId,
+  }: {
+    productId: string;
+    fileKey: string;
+    fileName: string;
+    adminUserId: string;
+  }) {
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new Error('Product not found.');
+
+    if (!isProductFileKey(fileKey, productId)) {
+      throw new Error('That file does not belong to this product.');
+    }
+    if (!storageService.statFile) {
+      throw new Error('Direct uploads are not supported by the current storage.');
+    }
+    const info = await storageService.statFile(fileKey);
+    if (!info) throw new Error('The uploaded file could not be found. Please upload it again.');
+
+    return this.recordFile({
+      productId,
+      fileName,
+      fileKey,
+      fileSize: info.size,
+      mimeType: info.contentType || 'application/octet-stream',
+      isPrimary: true,
+      adminUserId,
+    });
+  }
+
+  private static async recordFile({
+    productId,
+    fileName,
+    fileKey: storageKey,
+    fileSize,
+    mimeType,
+    versionNumber = '1.0.0',
+    isPrimary = true,
+    maxDownloads,
+    adminUserId,
+  }: {
+    productId: string;
+    fileName: string;
+    fileKey: string;
+    fileSize: number;
+    mimeType: string;
+    versionNumber?: string;
+    isPrimary?: boolean;
+    maxDownloads?: number;
+    adminUserId: string;
+  }) {
     // If marked primary, unset existing primary files
     if (isPrimary) {
       await prisma.productFile.updateMany({
@@ -60,7 +132,7 @@ export class ProductFileService {
           productId,
           fileName,
           fileKey: storageKey,
-          fileSize: BigInt(fileBuffer.length),
+          fileSize: BigInt(fileSize),
           fileType: mimeType,
           versionNumber,
           isPrimary,
@@ -76,7 +148,7 @@ export class ProductFileService {
           newValue: {
             productId,
             fileName,
-            fileSize: fileBuffer.length,
+            fileSize,
             versionNumber,
           },
         },

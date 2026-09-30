@@ -50,7 +50,7 @@ Every variable is explained in `.env.example`.
 ### 4. Create the tables and your admin login
 
 ```bash
-npx prisma db push      # creates the tables
+npm run db:migrate      # creates the tables
 npm run prisma:seed     # creates your owner account from INITIAL_ADMIN_EMAIL / INITIAL_ADMIN_PASSWORD
 ```
 
@@ -106,12 +106,43 @@ npm test           # unit tests
 
 ---
 
+## Put it online (Vercel)
+
+The repo is ready for Vercel. Every deploy runs `npm run vercel-build`, which:
+1. applies the database migrations;
+2. creates or updates your owner account from `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD`;
+3. builds the site.
+
+One-time setup in the Vercel dashboard (**your project → Storage** and **→ Settings → Environment Variables**):
+
+1. **Database:** Storage → **Create Database → Neon (Postgres)** → connect it to this project (all environments). This sets `DATABASE_URL` automatically.
+2. **File storage:** Storage → **Create → Blob**, choose **Private**, and connect it to this project. This sets `BLOB_READ_WRITE_TOKEN`. Images and ebooks upload straight from your browser to it, so large files work.
+3. **Environment variables:** add these (Production and Preview):
+
+   | Name | Value |
+   | --- | --- |
+   | `AUTH_SECRET` | A long random string, 64 characters. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+   | `INITIAL_ADMIN_EMAIL` | Your login email. |
+   | `INITIAL_ADMIN_PASSWORD` | Your password (12+ characters). Changing it and redeploying resets your password. |
+   | `PAYSTACK_SECRET_KEY` | `sk_test_…` to take test payments, `sk_live_…` for real money. |
+   | `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | The matching `pk_test_…` / `pk_live_…`. |
+   | `RESEND_API_KEY` *(optional)* | From resend.com, so buyers get receipt emails. Without it, the download link is still shown on the success page. |
+   | `EMAIL_FROM` *(optional)* | For example `NOV <orders@your-domain.com>` (a domain verified in Resend). |
+
+   You don't need `NEXT_PUBLIC_APP_URL`: share links use your Vercel domain automatically. Set it only if you add a custom domain, for example `https://shop.example.com`.
+4. **Deploy:** Deployments → the latest one → **Redeploy**. Then open `https://<your-site>/login`.
+5. **Paystack webhook** *(recommended)*: in Paystack → Settings → API Keys & Webhooks, set the webhook URL to `https://<your-site>/api/webhooks/paystack`.
+
+`PAYMENT_SIMULATION` does nothing on Vercel: real (test or live) Paystack keys are required to take payments.
+
+---
+
 ## Good to know
 
 - **Payments:** Paystack is the default. An order is marked paid only after the payment is re-checked with the gateway, and only if the reference, amount (in GH₵) and order all match. Simulated payments are impossible in production, even if `PAYMENT_SIMULATION` is set.
 - **Stock:** placing an order holds the stock for 30 minutes while the buyer pays. The stock only goes down for good once payment is confirmed. Abandoned checkouts release their hold automatically.
-- **Files and images:** without R2 settings, uploads are stored on your computer (`public/uploads` for images, `.private_storage` for paid files). That's fine for local use, but hosting on Vercel needs Cloudflare R2 (or S3), because Vercel doesn't keep uploaded files.
-- **Database changes:** the project uses `npx prisma db push` (there are no migration files yet).
+- **Files and images:** locally, uploads are stored on your computer (`public/uploads` for images, `.private_storage` for paid files). On Vercel they go to a private Vercel Blob store (see below). Paid files are only ever reachable through short-lived download links.
+- **Database changes:** tables are created by migrations in `prisma/migrations` (`npm run db:migrate`). Vercel runs them automatically on every deploy.
 
 ## Project layout
 

@@ -30,6 +30,22 @@ export async function POST(
 
   try {
     const { id } = await params;
+
+    // Large files: the browser uploaded straight to storage; just record it.
+    if (request.headers.get('content-type')?.includes('application/json')) {
+      const body = await request.json();
+      if (typeof body.fileKey !== 'string' || typeof body.fileName !== 'string') {
+        return NextResponse.json({ error: 'fileKey and fileName are required.' }, { status: 400 });
+      }
+      const registered = await ProductFileService.registerUploadedFile({
+        productId: id,
+        fileKey: body.fileKey,
+        fileName: body.fileName,
+        adminUserId: auth.session.userId,
+      });
+      return NextResponse.json({ file: registered, message: 'File attached.' }, { status: 201 });
+    }
+
     const formData = await request.formData();
 
     const file = formData.get('file') as File | null;

@@ -36,6 +36,9 @@ const envSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET_NAME: z.string().default('nov-private-products'),
   R2_ENDPOINT: z.string().optional(),
+
+  // Vercel Blob (set automatically when a Blob store is connected to the Vercel project)
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -62,11 +65,22 @@ function assertProductionEnv(source: NodeJS.ProcessEnv): void {
   }
 }
 
+/** https://<production domain> from Vercel's system variables, if running on Vercel. */
+export function vercelSiteUrl(source: NodeJS.ProcessEnv = process.env): string | undefined {
+  const host = source.VERCEL_PROJECT_PRODUCTION_URL || source.VERCEL_URL;
+  return host ? `https://${host.replace(/^https?:\/\//, '').replace(/\/+$/, '')}` : undefined;
+}
+
 export function loadEnv(rawSource: NodeJS.ProcessEnv = process.env): Env {
   // KEY="" in .env means "not set" (so defaults and "missing key" checks apply).
   const source = Object.fromEntries(
     Object.entries(rawSource).filter(([, value]) => value !== undefined && value.trim() !== '')
   ) as NodeJS.ProcessEnv;
+  // On Vercel, default the public site URL to the project's production domain.
+  if (!source.NEXT_PUBLIC_APP_URL) {
+    const derived = vercelSiteUrl(source);
+    if (derived) source.NEXT_PUBLIC_APP_URL = derived;
+  }
   const isProduction = source.NODE_ENV === 'production';
   if (isProduction) {
     assertProductionEnv(source);

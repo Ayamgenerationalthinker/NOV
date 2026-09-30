@@ -8,8 +8,7 @@ import {
   SignedUrlParams,
   FileStreamResult,
 } from './storage.interface';
-import { env } from '@/lib/env';
-import crypto from 'crypto';
+import { buildSignedDownloadUrl } from '@/lib/signed-download';
 
 export class LocalStorageAdapter implements IStorageService {
   private baseDir: string;
@@ -58,20 +57,7 @@ export class LocalStorageAdapter implements IStorageService {
     expiresInSeconds = 900, // 15 minutes
     originalFileName,
   }: SignedUrlParams): Promise<string> {
-    const expires = Math.floor(Date.now() / 1000) + expiresInSeconds;
-    const payload = `${key}:${expires}:${env.AUTH_SECRET}`;
-    const signature = crypto
-      .createHmac('sha256', env.AUTH_SECRET)
-      .update(payload)
-      .digest('hex');
-
-    const fileNameParam = originalFileName
-      ? `&fn=${encodeURIComponent(originalFileName)}`
-      : '';
-
-    return `${env.NEXT_PUBLIC_APP_URL}/api/downloads/file-stream?key=${encodeURIComponent(
-      key
-    )}&expires=${expires}&sig=${signature}${fileNameParam}`;
+    return buildSignedDownloadUrl({ key, originalFileName, expiresInSeconds });
   }
 
   async deleteFile(key: string): Promise<void> {
@@ -110,20 +96,5 @@ export class LocalStorageAdapter implements IStorageService {
       contentType,
       contentLength: stats.size,
     };
-  }
-
-  verifyLocalSignature(key: string, expires: number, signature: string): boolean {
-    if (Math.floor(Date.now() / 1000) > expires) {
-      return false;
-    }
-    const expected = crypto
-      .createHmac('sha256', env.AUTH_SECRET)
-      .update(`${key}:${expires}:${env.AUTH_SECRET}`)
-      .digest('hex');
-
-    return crypto.timingSafeEqual(
-      Buffer.from(signature, 'hex'),
-      Buffer.from(expected, 'hex')
-    );
   }
 }

@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { LocalStorageAdapter } from '@/services/storage/local.storage';
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
+import { verifyDownloadSignature } from '@/lib/signed-download';
+import { resolveStorageBackend } from '@/services/storage/storage.service';
+import { isMediaKey, isProductFileKey } from '@/lib/upload-rules';
 
 describe('LocalStorageAdapter', () => {
   let adapter: LocalStorageAdapter;
@@ -51,23 +53,36 @@ describe('LocalStorageAdapter', () => {
     expect(url).toContain('fn=nov-guide.pdf');
   });
 
-  it('should verify local HMAC signature correctly and reject expired or tampered signatures', () => {
-    const expires = Math.floor(Date.now() / 1000) + 600;
-    const key = 'test/key.zip';
-    const secret = process.env.AUTH_SECRET || 'dev-auth-secret-for-local-testing-32-chars-long';
-    const validSig = crypto
-      .createHmac('sha256', secret)
-      .update(`${key}:${expires}:${secret}`)
-      .digest('hex');
+  it('signed download links verify, and reject tampered keys, bad signatures and expired links', async () => {
+    const url = new URL(await adapter.getSignedDownloadUrl({ key: 'products/p1/book.pdf', expiresInSeconds: 600 }));
+    const key = url.searchParams.get('key')!;
+    const expires = Number(url.searchParams.get('expires'));
+    const sig = url.searchParams.get('sig')!;
 
-    // Valid signature
-    expect(adapter.verifyLocalSignature(key, expires, validSig)).toBe(true);
+    expect(verifyDownloadSignature(key, expires, sig)).toBe(true);
+    expect(verifyDownloadSignature('products/p2/other.pdf', expires, sig)).toBe(false);
+    expect(verifyDownloadSignature(key, expires + 1, sig)).toBe(false);
+    expect(verifyDownloadSignature(key, expires, 'abc')).toBe(false);
+    expect(verifyDownloadSignature(key, Math.floor(Date.now() / 1000) - 10, sig)).toBe(false);
+  });
+});
 
-    // Tampered key
-    expect(adapter.verifyLocalSignature('tampered/key.zip', expires, validSig)).toBe(false);
+describe('Storage selection', () => {
+  it('prefers Vercel Blob, then R2/S3, then local disk only outside production', () => {
+    expect(resolveStorageBackend({ BLOB_READ_WRITE_TOKEN: 'vercel_blob_rw_x', NODE_ENV: 'production' } as any)).toBe('vercel-blob');
+    expect(resolveStorageBackend({ R2_ACCESS_KEY_ID: 'a', R2_SECRET_ACCESS_KEY: 'b', NODE_ENV: 'production' } as any)).toBe('s3');
+    expect(resolveStorageBackend({ NODE_ENV: 'development' } as any)).toBe('local');
+    // Never write uploads to Vercel's temporary disk
+    expect(resolveStorageBackend({ NODE_ENV: 'production' } as any)).toBe('none');
+    expect(resolveStorageBackend({ NODE_ENV: 'development', VERCEL: '1' } as any)).toBe('none');
+  });
 
-    // Expired timestamp
-    const pastExpires = Math.floor(Date.now() / 1000) - 10;
-    expect(adapter.verifyLocalSignature(key, pastExpires, validSig)).toBe(false);
+  it('only product images (media/) are publicly viewable; paid files stay under products/<id>/', () => {
+    expect(isMediaKey('media/products/cover-abc.png')).toBe(true);
+    expect(isMediaKey('products/p1/book.pdf')).toBe(false);
+    expect(isMediaKey('media/../products/p1/book.pdf')).toBe(false);
+    expect(isProductFileKey('products/p1/abc-book.pdf', 'p1')).toBe(true);
+    expect(isProductFileKey('products/p2/abc-book.pdf', 'p1')).toBe(false);
+    expect(isProductFileKey('products/p1/../p2/x.pdf', 'p1')).toBe(false);
   });
 });

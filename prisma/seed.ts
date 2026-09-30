@@ -18,6 +18,12 @@ function requireOwnerCredentials(): { email: string; password: string } {
     problems.push(`INITIAL_ADMIN_PASSWORD must be set and at least ${MIN_PASSWORD_LENGTH} characters long.`);
   }
 
+  if (problems.length > 0 && process.argv.includes('--if-configured')) {
+    // Deploy builds: seeding is optional once the owner exists.
+    console.log('ℹ️  Skipping seed: INITIAL_ADMIN_EMAIL / INITIAL_ADMIN_PASSWORD not set.');
+    process.exit(0);
+  }
+
   if (problems.length > 0) {
     console.error('❌ Cannot create the store owner account:');
     for (const problem of problems) console.error(`   - ${problem}`);
@@ -30,12 +36,13 @@ function requireOwnerCredentials(): { email: string; password: string } {
 
 const { email: adminEmail, password: adminPassword } = requireOwnerCredentials();
 
-if (!process.env.DATABASE_URL) {
+const databaseUrl = process.env.DATABASE_URL_UNPOOLED || process.env.POSTGRES_URL_NON_POOLING || process.env.DATABASE_URL;
+if (!databaseUrl) {
   console.error('❌ DATABASE_URL is not set.');
   process.exit(1);
 }
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ connectionString: databaseUrl });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {

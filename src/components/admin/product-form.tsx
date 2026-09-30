@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { formatFileSize } from '@/lib/utils';
 import { DEFAULT_VARIANT_TITLE } from '@/lib/product-purchase';
+import { uploadProductFile, uploadProductImage } from '@/lib/admin-upload';
 
 type Kind = 'DIGITAL' | 'PHYSICAL';
 
@@ -83,16 +84,6 @@ const fieldClass =
 const labelClass = 'block text-xs font-semibold text-zinc-300 mb-1.5';
 const optionalTag = <span className="ml-1 font-normal text-zinc-500">(optional)</span>;
 
-async function uploadImage(file: File): Promise<string> {
-  const form = new FormData();
-  form.append('file', file);
-  form.append('folder', 'products');
-  const res = await fetch('/api/upload', { method: 'POST', body: form });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Image upload failed');
-  return data.url as string;
-}
-
 export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
   const isEdit = Boolean(initialProduct);
   const optionVariants = (initialProduct?.variants || []).filter(
@@ -146,7 +137,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
     setUploading('cover');
     setError(null);
     try {
-      setCoverImage(await uploadImage(file));
+      setCoverImage(await uploadProductImage(file));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -160,7 +151,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
     setError(null);
     try {
       const urls: string[] = [];
-      for (const file of Array.from(files)) urls.push(await uploadImage(file));
+      for (const file of Array.from(files)) urls.push(await uploadProductImage(file));
       setGallery((prev) => [...prev, ...urls]);
     } catch (err) {
       setError((err as Error).message);
@@ -275,16 +266,15 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
 
       // 2. Attach the delivery file for digital products
       if (kind === 'DIGITAL' && pendingFile) {
-        const form = new FormData();
-        form.append('file', pendingFile);
-        form.append('isPrimary', 'true');
-        const fileRes = await fetch(`/api/admin/products/${product.id}/files`, { method: 'POST', body: form });
-        const fileData = await fileRes.json();
-        if (!fileRes.ok) {
-          throw new Error(`Product saved as a draft, but the file upload failed: ${fileData.error || 'unknown error'}`);
+        try {
+          const saved = await uploadProductFile(product.id, pendingFile, (pct) => setUploading(`file:${Math.round(pct)}`));
+          setPendingFile(null);
+          setExistingFiles((prev) => [saved, ...prev]);
+        } catch (err) {
+          throw new Error(`Product saved as a draft, but the file upload failed: ${(err as Error).message}`);
+        } finally {
+          setUploading(null);
         }
-        setPendingFile(null);
-        setExistingFiles((prev) => [fileData.file, ...prev]);
       }
 
       // 3. Publish / unpublish
@@ -463,7 +453,13 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 px-4 py-4 text-sm text-zinc-300">
             <Upload className="w-4 h-4 text-emerald-400" />
             <span className="truncate">
-              {pendingFile ? `${pendingFile.name} (${formatFileSize(pendingFile.size)}) — uploads when you save` : existingFiles.length ? 'Add or replace a file' : 'Choose the file to deliver'}
+              {uploading?.startsWith('file:')
+                ? `Uploading ${pendingFile?.name ?? 'file'}… ${uploading.slice(5)}%`
+                : pendingFile
+                  ? `${pendingFile.name} (${formatFileSize(pendingFile.size)}) — uploads when you save`
+                  : existingFiles.length
+                    ? 'Add or replace a file'
+                    : 'Choose the file to deliver'}
             </span>
             <input type="file" className="hidden" onChange={(e) => setPendingFile(e.target.files?.[0] ?? null)} />
           </label>

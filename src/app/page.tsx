@@ -4,11 +4,17 @@ import { Container } from '@/components/ui/container';
 import { ProductCard } from '@/components/products/product-card';
 import { ProductService } from '@/services/product/product.service';
 import { env } from '@/lib/env';
+import { SessionService } from '@/services/auth/session.service';
+import { RBACService } from '@/services/auth/rbac.service';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
-  const { products } = await ProductService.getPublishedProducts({ page: 1, limit: 48, sort: 'newest' });
+  const [{ products }, session] = await Promise.all([
+    ProductService.getPublishedProducts({ page: 1, limit: 48, sort: 'newest' }),
+    SessionService.getCurrentSession(),
+  ]);
+  const isOwner = Boolean(session && RBACService.isAdmin(session.role));
   const hasDigital = products.some((p) => p.productKind === 'DIGITAL');
   const hasPhysical = products.some((p) => p.productKind === 'PHYSICAL');
 
@@ -55,7 +61,19 @@ export default async function HomePage() {
 
           {products.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-stone-800 px-6 py-16 text-center text-stone-400">
-              New products are coming soon.
+              {isOwner ? (
+                <>
+                  <p>You haven’t published any products yet.</p>
+                  <Link
+                    href="/admin/products/new"
+                    className="mt-4 inline-flex h-11 items-center rounded-xl bg-amber-300 px-5 font-semibold text-stone-950 hover:bg-amber-200"
+                  >
+                    Add your first product
+                  </Link>
+                </>
+              ) : (
+                'New products are coming soon.'
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:grid-cols-3 sm:gap-x-5 lg:grid-cols-4">

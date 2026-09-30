@@ -22,7 +22,10 @@ export function Footer() {
             <a href={`mailto:${env.NEXT_PUBLIC_SUPPORT_EMAIL}`} className="hover:text-white">Contact</a>
           </nav>
         </div>
-        <p className="pb-8 text-xs text-stone-600">© {new Date().getFullYear()} {name}</p>
+        <div className="flex items-center justify-between pb-8 text-xs text-stone-600">
+          <p>© {new Date().getFullYear()} {name}</p>
+          <Link href="/login" className="hover:text-stone-300">Owner login</Link>
+        </div>
       </Container>
     </footer>
   );

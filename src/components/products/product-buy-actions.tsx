@@ -87,7 +87,7 @@ export function ProductBuyActions({ slug, currency, isPhysical, basePrice, baseA
               <button type="button" aria-label="Decrease quantity" disabled={qty <= 1} onClick={() => setQuantity(Math.max(1, qty - 1))} className="flex h-11 w-11 items-center justify-center text-stone-200 disabled:opacity-30">
                 <Minus className="h-4 w-4" />
               </button>
-              <span className="w-8 text-center font-mono text-sm text-white" aria-live="polite">{qty}</span>
+              <span className="w-8 text-center tabular-nums text-sm text-white" aria-live="polite">{qty}</span>
               <button type="button" aria-label="Increase quantity" disabled={qty >= maxQuantity} onClick={() => setQuantity(Math.min(maxQuantity, qty + 1))} className="flex h-11 w-11 items-center justify-center text-stone-200 disabled:opacity-30">
                 <Plus className="h-4 w-4" />
               </button>
@@ -98,7 +98,7 @@ export function ProductBuyActions({ slug, currency, isPhysical, basePrice, baseA
 
       {initial.coupon && (
         <p className="flex items-center gap-2 text-xs text-emerald-300">
-          <Tag className="h-3.5 w-3.5" /> Code <strong className="font-mono">{initial.coupon}</strong> will be applied at checkout
+          <Tag className="h-3.5 w-3.5" /> Code <strong className="tabular-nums">{initial.coupon}</strong> will be applied at checkout
         </p>
       )}
 
@@ -106,9 +106,9 @@ export function ProductBuyActions({ slug, currency, isPhysical, basePrice, baseA
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-800 bg-stone-950/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
         <div className="mx-auto flex max-w-xl items-center gap-4">
           <div className="md:hidden">
-            <div className="font-mono text-lg font-bold text-white">{formatCurrency(price.price * (isPhysical ? qty : 1), currency)}</div>
+            <div className="tabular-nums text-lg font-bold text-white">{formatCurrency(price.price * (isPhysical ? qty : 1), currency)}</div>
             {price.compareAtPrice !== null && (
-              <div className="font-mono text-xs text-stone-500 line-through">{formatCurrency(price.compareAtPrice * (isPhysical ? qty : 1), currency)}</div>
+              <div className="tabular-nums text-xs text-stone-500 line-through">{formatCurrency(price.compareAtPrice * (isPhysical ? qty : 1), currency)}</div>
             )}
           </div>
           {soldOut ? (

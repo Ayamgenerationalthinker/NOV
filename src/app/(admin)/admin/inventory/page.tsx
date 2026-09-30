@@ -3,7 +3,7 @@ import { InventoryTable } from '@/components/admin/inventory-table';
 import { Boxes } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Inventory & Stock Ledger — NOV Merchant Console',
+  title: 'Inventory & Stock Ledger — Tomevari admin',
 };
 
 export default function InventoryPage() {

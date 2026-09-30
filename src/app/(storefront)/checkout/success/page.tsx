@@ -115,7 +115,7 @@ function SuccessContent() {
           {isPaid ? `Thank you${order.guestName ? `, ${order.guestName.split(' ')[0]}` : ''}!` : 'Confirming your payment…'}
         </h1>
         <p className="text-sm text-stone-400">
-          Order <span className="font-mono text-stone-200">{order.orderNumber}</span>
+          Order <span className="tabular-nums text-stone-200">{order.orderNumber}</span>
         </p>
         {!isPaid && (
           <p className="text-sm text-stone-400">This usually takes a few seconds. Keep this page open.</p>
@@ -163,7 +163,7 @@ function SuccessContent() {
                 {item.variantTitle && <span className="text-stone-400"> · {item.variantTitle}</span>}
                 <span className="text-stone-400"> × {item.quantity}</span>
               </span>
-              <span className="font-mono text-stone-200">{formatCurrency(item.totalPrice, order.currency)}</span>
+              <span className="tabular-nums text-stone-200">{formatCurrency(item.totalPrice, order.currency)}</span>
             </div>
           ))}
           {address && (
@@ -178,23 +178,23 @@ function SuccessContent() {
       <dl className="space-y-1.5 rounded-2xl border border-stone-800 p-4 text-sm">
         <div className="flex justify-between text-stone-400">
           <dt>Subtotal</dt>
-          <dd className="font-mono">{formatCurrency(order.subtotal, order.currency)}</dd>
+          <dd className="tabular-nums">{formatCurrency(order.subtotal, order.currency)}</dd>
         </div>
         {order.discountTotal > 0 && (
           <div className="flex justify-between text-emerald-300">
             <dt>Discount</dt>
-            <dd className="font-mono">−{formatCurrency(order.discountTotal, order.currency)}</dd>
+            <dd className="tabular-nums">−{formatCurrency(order.discountTotal, order.currency)}</dd>
           </div>
         )}
         {order.shippingFee > 0 && (
           <div className="flex justify-between text-stone-400">
             <dt>Delivery</dt>
-            <dd className="font-mono">{formatCurrency(order.shippingFee, order.currency)}</dd>
+            <dd className="tabular-nums">{formatCurrency(order.shippingFee, order.currency)}</dd>
           </div>
         )}
         <div className="flex justify-between pt-1 font-bold text-white">
           <dt>{isPaid ? 'Paid' : 'Total'}</dt>
-          <dd className="font-mono">{formatCurrency(order.total, order.currency)}</dd>
+          <dd className="tabular-nums">{formatCurrency(order.total, order.currency)}</dd>
         </div>
       </dl>
 

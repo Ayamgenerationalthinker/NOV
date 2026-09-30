@@ -9,8 +9,8 @@ import { Metadata } from 'next';
 import { ProductKind } from '@prisma/client';
 
 export const metadata: Metadata = {
-  title: 'Catalog & Collections — NOV.com',
-  description: 'Explore curated physical goods and digital assets on NOV.com.',
+  title: 'Catalog & Collections — Tomevari',
+  description: 'Explore curated physical goods and digital assets on Tomevari.',
 };
 
 export const dynamic = 'force-dynamic';

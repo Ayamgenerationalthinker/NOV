@@ -56,7 +56,7 @@ const pool = new Pool({ connectionString: databaseUrl });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {
-  console.log('🌱 Seeding NOV store...');
+  console.log('🌱 Seeding store...');
 
   const hashedPassword = await bcrypt.hash(adminPassword, 12);
 
@@ -79,15 +79,17 @@ async function main() {
   console.log(`✅ Super Admin configured: ${superAdmin.email} (${superAdmin.role})`);
 
   // Default Seller Store
+  const storeName = cleanEnvValue(process.env.NEXT_PUBLIC_APP_NAME) || 'Tomevari';
+
   // Single-owner store: if the owner email changed, hand the existing store to the new owner.
   const store = await prisma.store.upsert({
     where: { slug: 'nov-flagship-atelier' },
-    update: { sellerId: superAdmin.id },
+    update: { sellerId: superAdmin.id, name: storeName },
     create: {
       sellerId: superAdmin.id,
-      name: 'NOV Flagship Atelier',
+      name: storeName,
       slug: 'nov-flagship-atelier',
-      description: 'The official flagship collection of NOV bespoke physical merchandise and software tools.',
+      description: 'Ebooks, digital downloads and handpicked goods.',
       brandColor: '#10b981',
       isVerified: true,
       policyShipping: 'Orders are dispatched within 24 business hours using insured express logistics with live tracking.',

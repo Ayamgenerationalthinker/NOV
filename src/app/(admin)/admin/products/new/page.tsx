@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { NewProductForm } from './new-product-form';
 
 export const metadata: Metadata = {
-  title: 'New product — NOV Console',
+  title: 'New product — Tomevari admin',
 };
 
 export default function NewProductPage() {

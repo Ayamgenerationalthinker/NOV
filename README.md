@@ -1,4 +1,4 @@
-# NOV
+# Tomevari
 
 A single-owner store in the style of Selar or Gumroad, built for selling from Ghana.
 

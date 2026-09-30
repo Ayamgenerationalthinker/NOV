@@ -68,7 +68,7 @@ export default async function ProductLandingPage({ params, searchParams }: Produ
 
   const whatYouGet = product.whatsIncluded.length > 0 ? product.whatsIncluded : product.features;
   const files = product.files;
-  const storeName = product.store?.name || env.NEXT_PUBLIC_APP_NAME;
+  const storeName = env.NEXT_PUBLIC_APP_NAME;
 
   return (
     <div className="min-h-screen bg-stone-950 pb-28 text-stone-100 md:pb-16">
@@ -104,10 +104,10 @@ export default async function ProductLandingPage({ params, searchParams }: Produ
               )}
 
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="font-mono text-3xl font-bold text-white">{formatCurrency(displayPrice.price, product.currency)}</span>
+                <span className="tabular-nums text-3xl font-bold text-white">{formatCurrency(displayPrice.price, product.currency)}</span>
                 {displayPrice.compareAtPrice !== null && (
                   <>
-                    <span className="font-mono text-base text-stone-500 line-through">
+                    <span className="tabular-nums text-base text-stone-500 line-through">
                       {formatCurrency(displayPrice.compareAtPrice, product.currency)}
                     </span>
                     <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300">Save {savingsPercent}%</span>
@@ -141,7 +141,7 @@ export default async function ProductLandingPage({ params, searchParams }: Produ
                   {files.map((f) => (
                     <li key={f.id} className="flex items-center gap-3 text-sm">
                       <FileText className="h-4 w-4 shrink-0 text-amber-300" />
-                      <span className="rounded bg-stone-800 px-1.5 py-0.5 font-mono text-[11px] text-stone-200">{fileFormat(f.fileName)}</span>
+                      <span className="rounded bg-stone-800 px-1.5 py-0.5 tabular-nums text-[11px] text-stone-200">{fileFormat(f.fileName)}</span>
                       <span className="text-stone-400">{formatFileSize(f.fileSize)}</span>
                     </li>
                   ))}

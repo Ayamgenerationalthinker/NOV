@@ -6,8 +6,8 @@ import { Layers, ArrowRight, Folder } from 'lucide-react';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Product Categories | NOV.com',
-  description: 'Browse digital products by category on NOV.com.',
+  title: 'Product Categories | Tomevari',
+  description: 'Browse digital products by category on Tomevari.',
 };
 
 export const dynamic = 'force-dynamic';

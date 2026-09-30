@@ -35,9 +35,11 @@ interface ShareProductButtonsProps {
   showUrl?: boolean;
   size?: 'sm' | 'md';
   className?: string;
+  /** Extra buttons shown in the same row (e.g. Edit / Unpublish in the product list). */
+  extra?: React.ReactNode;
 }
 
-export function ShareProductButtons({ slug, title, showUrl = false, size = 'sm', className }: ShareProductButtonsProps) {
+export function ShareProductButtons({ slug, title, showUrl = false, size = 'sm', className, extra }: ShareProductButtonsProps) {
   const url = productUrl(slug);
   const [copied, setCopied] = React.useState(false);
   const [canNativeShare, setCanNativeShare] = React.useState(false);
@@ -63,10 +65,10 @@ export function ShareProductButtons({ slug, title, showUrl = false, size = 'sm',
   return (
     <div className={cn('space-y-2', className)}>
       {showUrl && (
-        <div className="break-all rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 font-mono text-xs text-zinc-300">{url}</div>
+        <div className="break-all rounded-lg border border-stone-800 bg-stone-950 px-3 py-2 font-mono text-xs text-stone-300">{url}</div>
       )}
       <div className="flex flex-wrap gap-2">
-        <button type="button" onClick={onCopy} className={cn(btn, 'border border-zinc-700 bg-zinc-800 text-zinc-100 hover:bg-zinc-700')}>
+        <button type="button" onClick={onCopy} className={cn(btn, 'border border-stone-700 bg-stone-800 text-stone-100 hover:bg-stone-700')}>
           {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
           {copied ? 'Copied!' : 'Copy link'}
         </button>
@@ -83,12 +85,14 @@ export function ShareProductButtons({ slug, title, showUrl = false, size = 'sm',
           <button
             type="button"
             onClick={() => navigator.share({ title, url }).catch(() => undefined)}
-            className={cn(btn, 'border border-zinc-700 text-zinc-200 hover:bg-zinc-800')}
+            aria-label="Share"
+            title="Share"
+            className={cn(btn, 'border border-stone-700 text-stone-200 hover:bg-stone-800')}
           >
             <Share2 className="w-3.5 h-3.5" />
-            More…
           </button>
         )}
+        {extra}
       </div>
     </div>
   );

@@ -61,7 +61,7 @@ export class FlutterwaveAdapter implements IPaymentAdapter {
       redirect_url: params.callbackUrl,
       customer: {
         email: params.customerEmail,
-        name: params.customerName || 'NOV Customer',
+        name: params.customerName || 'Customer',
       },
       customizations: {
         title: env.NEXT_PUBLIC_APP_NAME,

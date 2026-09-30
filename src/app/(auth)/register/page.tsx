@@ -20,7 +20,7 @@ export default function RegisterPage() {
         </h1>
 
         <p className="mt-3 text-xs sm:text-sm text-zinc-400 leading-relaxed max-w-sm mx-auto">
-          At NOV Atelier, customers do not need to create or manage an account. All physical and digital purchases are completed directly through secure guest checkout.
+          At Tomevari, customers do not need to create or manage an account. All physical and digital purchases are completed directly through secure guest checkout.
         </p>
 
         <Card className="mt-8 border-zinc-800/80 bg-zinc-950/80 p-6 shadow-2xl backdrop-blur-xl">

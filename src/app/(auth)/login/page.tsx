@@ -1,14 +1,13 @@
 'use client';
 
 import * as React from 'react';
-import { isSafeRedirect } from '@/lib/safe-redirect';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Container } from '@/components/ui/container';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Shield, ArrowRight, AlertCircle, CheckCircle2, Lock } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { isSafeRedirect } from '@/lib/safe-redirect';
+
+const fieldClass =
+  'w-full rounded-xl border border-stone-700 bg-stone-900 px-3.5 py-3 text-base text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-300/60';
 
 function LoginForm() {
   const router = useRouter();
@@ -19,9 +18,9 @@ function LoginForm() {
 
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,121 +31,101 @@ function LoginForm() {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
-
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        setError(data.error || 'Authentication failed. Please verify admin credentials.');
+        setError(data.error || 'Could not sign in. Please check your email and password.');
         setIsLoading(false);
         return;
       }
 
-      setSuccessMessage('Administrator authenticated. Entering Studio Console...');
-      setTimeout(() => {
-        router.push(redirectUrl);
-        router.refresh();
-      }, 500);
+      router.push(redirectUrl);
+      router.refresh();
     } catch {
-      setError('An unexpected network error occurred. Please try again.');
+      setError('Network problem. Check your connection and try again.');
       setIsLoading(false);
     }
   };
 
   return (
-    <Card className="border-zinc-800 bg-zinc-950/90 shadow-2xl backdrop-blur-xl">
-      <CardHeader className="space-y-1 pb-4">
-        <CardTitle className="text-base text-stone-100 font-serif">Admin Credentials</CardTitle>
-        <CardDescription className="text-xs text-zinc-400">
-          Sign in with your authorized store administrator account.
-        </CardDescription>
-      </CardHeader>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-900 bg-red-950/50 p-3 text-sm text-red-200">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
 
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          {error && (
-            <div className="flex items-center gap-2 rounded-xl border border-red-800/40 bg-red-950/40 p-3 text-xs text-red-300">
-              <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
-              <span>{error}</span>
-            </div>
-          )}
+      <div>
+        <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-stone-300">Email</label>
+        <input
+          id="email"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          required
+          className={fieldClass}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+      </div>
 
-          {successMessage && (
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-800/40 bg-emerald-950/40 p-3 text-xs text-emerald-300">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-              <span>{successMessage}</span>
-            </div>
-          )}
-
-          <Input
-            label="Admin Email"
-            type="email"
-            placeholder="owner@nov.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+      <div>
+        <div className="mb-1.5 flex items-center justify-between">
+          <label htmlFor="password" className="text-sm font-medium text-stone-300">Password</label>
+          <Link href="/forgot-password" className="text-xs text-stone-400 hover:text-white">Forgot password?</Link>
+        </div>
+        <div className="relative">
+          <input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
             required
-            autoComplete="email"
+            className={`${fieldClass} pr-12`}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
-
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-zinc-300">Admin Password</label>
-              <Link href="/forgot-password" className="text-xs text-stone-400 hover:text-white">
-                Forgot password?
-              </Link>
-            </div>
-            <Input
-              type="password"
-              placeholder="••••••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full gap-2 mt-2 bg-stone-200 text-zinc-950 hover:bg-white text-xs font-semibold py-2.5"
-            size="md"
-            isLoading={isLoading}
+          <button
+            type="button"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-stone-400 hover:text-white"
           >
-            Access Studio Console
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Button>
-        </CardContent>
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
 
-        <CardFooter className="flex flex-col border-t border-zinc-900 pt-4 text-center">
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            Customer registration is disabled. Customers complete orders directly via guest checkout.
-          </p>
-        </CardFooter>
-      </form>
-    </Card>
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-300 font-semibold text-stone-950 hover:bg-amber-200 disabled:opacity-60"
+      >
+        {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+        Sign in
+      </button>
+    </form>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Container className="py-20 md:py-28">
-      <div className="mx-auto max-w-md">
-        <div className="text-center mb-8">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900 text-stone-200 border border-zinc-800 mb-4 shadow-xl">
-            <Shield className="h-6 w-6 text-amber-400" />
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-serif font-medium text-white tracking-tight">
-            Administrator Sign In
-          </h1>
-          <p className="mt-2 text-xs sm:text-sm text-zinc-400">
-            Exclusive single-owner console for catalog, inventory, and order fulfillment.
-          </p>
+    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm space-y-8">
+        <div className="space-y-2 text-center">
+          <Link href="/" className="font-serif text-xl font-semibold tracking-[0.3em] text-stone-100">TOMEVARI</Link>
+          <h1 className="text-2xl font-semibold text-white">Owner sign in</h1>
+          <p className="text-sm text-stone-400">Manage your products and orders.</p>
         </div>
-
-        <React.Suspense fallback={<div className="h-64 rounded-2xl bg-zinc-900/50 animate-pulse border border-zinc-800" />}>
+        <React.Suspense fallback={<div className="h-64" />}>
           <LoginForm />
         </React.Suspense>
+        <p className="text-center text-xs text-stone-500">
+          Buying something? You don’t need an account. <Link href="/" className="text-stone-300 underline">Go to the shop</Link>
+        </p>
       </div>
-    </Container>
+    </div>
   );
 }

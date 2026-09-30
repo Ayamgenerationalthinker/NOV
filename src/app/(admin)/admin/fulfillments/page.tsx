@@ -3,7 +3,7 @@ import { FulfillmentManagement } from '@/components/admin/fulfillment-management
 import { Truck } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Order Fulfillment & Shipping — NOV Merchant Console',
+  title: 'Order Fulfillment & Shipping — Tomevari admin',
 };
 
 export default function FulfillmentsPage() {

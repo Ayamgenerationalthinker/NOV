@@ -3,7 +3,7 @@ import { ReturnsManagement } from '@/components/admin/returns-management';
 import { RotateCcw } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Returns & Refunds — NOV Merchant Console',
+  title: 'Returns & Refunds — Tomevari admin',
 };
 
 export default function ReturnsPage() {

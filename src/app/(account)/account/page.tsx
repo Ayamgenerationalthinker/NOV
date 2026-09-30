@@ -7,7 +7,7 @@ import { AccountPortal } from '@/components/account/account-portal';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Customer Dashboard & Digital Library | NOV.com',
+  title: 'Customer Dashboard & Digital Library | Tomevari',
   description: 'Manage your digital assets, download files, view order receipts, and manage account security.',
 };
 

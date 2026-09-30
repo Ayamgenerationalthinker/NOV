@@ -1,3 +1,4 @@
+import { formatCurrency } from '@/lib/utils';
 import { RBACService } from '@/services/auth/rbac.service';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
@@ -39,7 +40,7 @@ export default async function AdminOverviewPage() {
     totalCustomers: 0,
     totalDownloads: 0,
     activeEntitlements: 0,
-    currency: 'USD',
+    currency: 'GHS',
   };
 
   let timeSeries: any[] = [];
@@ -94,7 +95,7 @@ export default async function AdminOverviewPage() {
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-stone-800 text-stone-300">
             {status}
           </span>
         );
@@ -108,16 +109,16 @@ export default async function AdminOverviewPage() {
         <div>
           <div className="flex items-center gap-2">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <h1 className="text-2xl font-black text-white tracking-tight">Executive Dashboard</h1>
+            <h1 className="text-2xl font-black text-white tracking-tight">Overview</h1>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Real-time sales velocity, financial metrics, and customer insights for <strong className="text-white">NOV.com</strong>.
+          <p className="text-xs text-stone-400 mt-1">
+            Your sales at a glance.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Link href="/admin/orders">
-            <Button size="sm" variant="outline" className="border-slate-800 text-xs">
+            <Button size="sm" variant="outline" className="border-stone-800 text-xs">
               Manage Orders
             </Button>
           </Link>
@@ -133,15 +134,15 @@ export default async function AdminOverviewPage() {
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Gross Revenue */}
-        <Card className="border-slate-800 bg-slate-900/60 p-5">
+        <Card className="border-stone-800 bg-stone-900/60 p-5">
           <CardContent className="p-0 flex items-start justify-between">
             <div>
-              <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Gross Revenue</p>
+              <p className="text-[11px] text-stone-400 font-medium uppercase tracking-wider">Gross Revenue</p>
               <h3 className="text-2xl font-black text-white mt-1">
-                ${overview.grossRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                {formatCurrency(overview.grossRevenue, overview.currency)}
               </h3>
               <p className="text-[11px] text-emerald-400 font-medium mt-2 flex items-center gap-1">
-                <span>Net: ${overview.netRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span>Net: {formatCurrency(overview.netRevenue, overview.currency)}</span>
                 {overview.totalRefunds > 0 && (
                   <span className="text-purple-400 text-[10px]">(-${overview.totalRefunds})</span>
                 )}
@@ -154,12 +155,12 @@ export default async function AdminOverviewPage() {
         </Card>
 
         {/* Total Orders */}
-        <Card className="border-slate-800 bg-slate-900/60 p-5">
+        <Card className="border-stone-800 bg-stone-900/60 p-5">
           <CardContent className="p-0 flex items-start justify-between">
             <div>
-              <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Total Orders</p>
+              <p className="text-[11px] text-stone-400 font-medium uppercase tracking-wider">Total Orders</p>
               <h3 className="text-2xl font-black text-white mt-1">{overview.totalOrders}</h3>
-              <p className="text-[11px] text-slate-400 mt-2">
+              <p className="text-[11px] text-stone-400 mt-2">
                 <span className="text-white font-semibold">{overview.paidOrders} paid</span> ({overview.conversionRate}% completion)
               </p>
             </div>
@@ -170,14 +171,14 @@ export default async function AdminOverviewPage() {
         </Card>
 
         {/* Average Order Value (AOV) */}
-        <Card className="border-slate-800 bg-slate-900/60 p-5">
+        <Card className="border-stone-800 bg-stone-900/60 p-5">
           <CardContent className="p-0 flex items-start justify-between">
             <div>
-              <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Avg Order Value</p>
+              <p className="text-[11px] text-stone-400 font-medium uppercase tracking-wider">Avg Order Value</p>
               <h3 className="text-2xl font-black text-white mt-1">
-                ${overview.averageOrderValue.toFixed(2)}
+                {formatCurrency(overview.averageOrderValue, overview.currency)}
               </h3>
-              <p className="text-[11px] text-slate-400 mt-2">
+              <p className="text-[11px] text-stone-400 mt-2">
                 <span className="text-white font-semibold">{overview.activeEntitlements}</span> active licenses
               </p>
             </div>
@@ -188,12 +189,12 @@ export default async function AdminOverviewPage() {
         </Card>
 
         {/* Total Customers */}
-        <Card className="border-slate-800 bg-slate-900/60 p-5">
+        <Card className="border-stone-800 bg-stone-900/60 p-5">
           <CardContent className="p-0 flex items-start justify-between">
             <div>
-              <p className="text-[11px] text-slate-400 font-medium uppercase tracking-wider">Customers & Files</p>
+              <p className="text-[11px] text-stone-400 font-medium uppercase tracking-wider">Customers & Files</p>
               <h3 className="text-2xl font-black text-white mt-1">{overview.totalCustomers}</h3>
-              <p className="text-[11px] text-slate-400 mt-2 flex items-center gap-1">
+              <p className="text-[11px] text-stone-400 mt-2 flex items-center gap-1">
                 <Download className="w-3 h-3 text-blue-400" />
                 <span className="text-white font-semibold">{overview.totalDownloads}</span> file downloads
               </p>
@@ -211,7 +212,7 @@ export default async function AdminOverviewPage() {
       {/* Two Column Grid: Recent Orders & Top Selling Products */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Orders (2 Columns on large screens) */}
-        <div className="lg:col-span-2 rounded-xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
+        <div className="lg:col-span-2 rounded-xl border border-stone-800 bg-stone-900/60 p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <ShoppingCart className="w-4 h-4 text-blue-400" />
@@ -227,15 +228,15 @@ export default async function AdminOverviewPage() {
           </div>
 
           {recentOrders.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-500">
+            <div className="py-12 text-center text-xs text-stone-500">
               No orders recorded yet. Complete a checkout to stream transactions.
             </div>
           ) : (
-            <div className="divide-y divide-slate-800/80">
+            <div className="divide-y divide-stone-800/80">
               {recentOrders.map((order) => (
                 <div
                   key={order.id}
-                  className="py-3 flex items-center justify-between gap-4 hover:bg-slate-800/30 rounded-lg px-2 transition-colors"
+                  className="py-3 flex items-center justify-between gap-4 hover:bg-stone-800/30 rounded-lg px-2 transition-colors"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -244,9 +245,9 @@ export default async function AdminOverviewPage() {
                       </span>
                       {getStatusBadge(order.status)}
                     </div>
-                    <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                    <p className="text-[11px] text-stone-400 truncate mt-0.5">
                       {order.customer?.name || order.guestName || 'Guest'}{' '}
-                      <span className="text-slate-500">
+                      <span className="text-stone-500">
                         ({order.customer?.email || order.guestEmail || 'no-email'})
                       </span>
                     </p>
@@ -254,9 +255,9 @@ export default async function AdminOverviewPage() {
 
                   <div className="text-right shrink-0">
                     <div className="text-xs font-bold text-white">
-                      ${Number(order.total).toFixed(2)}
+                      {formatCurrency(Number(order.total), overview.currency)}
                     </div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="text-[10px] text-stone-500">
                       {new Date(order.createdAt).toLocaleDateString()}
                     </div>
                   </div>
@@ -267,7 +268,7 @@ export default async function AdminOverviewPage() {
         </div>
 
         {/* Top Selling Products */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 space-y-4">
+        <div className="rounded-xl border border-stone-800 bg-stone-900/60 p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-400" />
@@ -283,7 +284,7 @@ export default async function AdminOverviewPage() {
           </div>
 
           {topProducts.length === 0 ? (
-            <div className="py-12 text-center text-xs text-slate-500">
+            <div className="py-12 text-center text-xs text-stone-500">
               No product sales yet.
             </div>
           ) : (
@@ -291,9 +292,9 @@ export default async function AdminOverviewPage() {
               {topProducts.map((p, idx) => (
                 <div
                   key={p.productId}
-                  className="flex items-center gap-3 p-2.5 rounded-lg bg-slate-950/60 border border-slate-800/60"
+                  className="flex items-center gap-3 p-2.5 rounded-lg bg-stone-950/60 border border-stone-800/60"
                 >
-                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-800 font-bold text-xs text-slate-300 shrink-0">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-stone-800 font-bold text-xs text-stone-300 shrink-0">
                     #{idx + 1}
                   </div>
 
@@ -301,14 +302,14 @@ export default async function AdminOverviewPage() {
                     <h4 className="text-xs font-semibold text-white truncate">
                       {p.title}
                     </h4>
-                    <p className="text-[10px] text-slate-400">
-                      {p.unitsSold} {p.unitsSold === 1 ? 'sale' : 'sales'} • ${p.price.toFixed(2)} each
+                    <p className="text-[10px] text-stone-400">
+                      {p.unitsSold} {p.unitsSold === 1 ? 'sale' : 'sales'} • {formatCurrency(p.price, overview.currency)} each
                     </p>
                   </div>
 
                   <div className="text-right shrink-0">
                     <span className="text-xs font-bold text-emerald-400">
-                      ${p.totalRevenue.toFixed(2)}
+                      {formatCurrency(p.totalRevenue, overview.currency)}
                     </span>
                   </div>
                 </div>

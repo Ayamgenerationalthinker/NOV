@@ -119,7 +119,7 @@ function RetryPanel({ orderId, errorCode }: { orderId: string; errorCode: string
           {order.items.map((i) => (
             <div key={i.id} className="mt-1 text-white">{i.product.title}</div>
           ))}
-          <div className="mt-2 font-mono text-lg font-bold text-white">{formatCurrency(order.total, order.currency)}</div>
+          <div className="mt-2 tabular-nums text-lg font-bold text-white">{formatCurrency(order.total, order.currency)}</div>
         </div>
       )}
 
@@ -412,7 +412,7 @@ function CheckoutForm() {
                 {[l.optionLabel, l.kind === 'PHYSICAL' ? `Qty ${l.quantity}` : 'Instant download'].filter(Boolean).join(' · ')}
               </div>
             </div>
-            <div className="text-right font-mono text-sm text-white">
+            <div className="text-right tabular-nums text-sm text-white">
               {formatCurrency(l.unitPrice * l.quantity, l.currency)}
               {l.compareAtPrice !== null && (
                 <div className="text-xs text-stone-500 line-through">{formatCurrency(l.compareAtPrice * l.quantity, l.currency)}</div>
@@ -424,23 +424,23 @@ function CheckoutForm() {
         <dl className="space-y-1.5 border-t border-stone-800 pt-3 text-sm">
           <div className="flex justify-between text-stone-400">
             <dt>Subtotal</dt>
-            <dd className="font-mono">{formatCurrency(subtotal, currency)}</dd>
+            <dd className="tabular-nums">{formatCurrency(subtotal, currency)}</dd>
           </div>
           {coupon && (
             <div className="flex justify-between text-emerald-300">
               <dt>Discount ({coupon.code})</dt>
-              <dd className="font-mono">−{formatCurrency(discount, currency)}</dd>
+              <dd className="tabular-nums">−{formatCurrency(discount, currency)}</dd>
             </div>
           )}
           {hasPhysical && (
             <div className="flex justify-between text-stone-400">
               <dt>Delivery</dt>
-              <dd className="font-mono">{shippingFee > 0 ? formatCurrency(shippingFee, currency) : 'Free'}</dd>
+              <dd className="tabular-nums">{shippingFee > 0 ? formatCurrency(shippingFee, currency) : 'Free'}</dd>
             </div>
           )}
           <div className="flex justify-between pt-1 text-base font-bold text-white">
             <dt>Total</dt>
-            <dd className="font-mono">{formatCurrency(total, currency)}</dd>
+            <dd className="tabular-nums">{formatCurrency(total, currency)}</dd>
           </div>
         </dl>
       </section>

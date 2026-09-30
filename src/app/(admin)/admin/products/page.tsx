@@ -64,7 +64,7 @@ export default function AdminProductsPage() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Products</h1>
-          <p className="text-sm text-zinc-400">{products.length} product{products.length === 1 ? '' : 's'}</p>
+          <p className="text-sm text-stone-400">{products.length} product{products.length === 1 ? '' : 's'}</p>
         </div>
         <Link href="/admin/products/new">
           <Button variant="success">
@@ -80,8 +80,8 @@ export default function AdminProductsPage() {
           <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
         </div>
       ) : products.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-800 p-10 text-center">
-          <p className="text-zinc-300">No products yet.</p>
+        <div className="rounded-2xl border border-dashed border-stone-800 p-10 text-center">
+          <p className="text-stone-300">No products yet.</p>
           <Link href="/admin/products/new" className="mt-3 inline-block text-sm text-emerald-400 underline">
             Create your first product
           </Link>
@@ -92,14 +92,14 @@ export default function AdminProductsPage() {
             const hasSale = p.discountPrice !== null && p.discountPrice < p.price;
             const needsFile = p.productKind === 'DIGITAL' && p.files.length === 0;
             return (
-              <li key={p.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
+              <li key={p.id} className="rounded-2xl border border-stone-800 bg-stone-900/60 p-4">
                 <div className="flex gap-4">
-                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-zinc-800">
+                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-stone-800">
                     {p.coverImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={p.coverImage} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-zinc-500">
+                      <div className="flex h-full w-full items-center justify-center text-stone-500">
                         {p.productKind === 'DIGITAL' ? <BookOpen className="w-5 h-5" /> : <Package className="w-5 h-5" />}
                       </div>
                     )}
@@ -110,16 +110,16 @@ export default function AdminProductsPage() {
                       <span className="truncate font-semibold text-white">{p.title}</span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                          p.isPublished ? 'bg-emerald-500/15 text-emerald-300' : 'bg-zinc-700/60 text-zinc-300'
+                          p.isPublished ? 'bg-emerald-500/15 text-emerald-300' : 'bg-stone-700/60 text-stone-300'
                         }`}
                       >
                         {p.isPublished ? 'Published' : 'Draft'}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-400">
-                      <span className="text-zinc-200">
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-400">
+                      <span className="text-stone-200">
                         {formatCurrency(hasSale ? p.discountPrice! : p.price, p.currency)}
-                        {hasSale && <s className="ml-1 text-zinc-500">{formatCurrency(p.price, p.currency)}</s>}
+                        {hasSale && <s className="ml-1 text-stone-500">{formatCurrency(p.price, p.currency)}</s>}
                       </span>
                       <span>{p.salesCount} sold</span>
                       {p.stockAvailable !== null && (
@@ -134,28 +134,35 @@ export default function AdminProductsPage() {
                         {productUrl(p.slug)}
                       </a>
                     ) : (
-                      <span className="block truncate text-xs text-zinc-500">Link goes live when published</span>
+                      <span className="block truncate text-xs text-stone-500">Link goes live when published</span>
                     )}
                   </div>
                 </div>
 
-                {p.isPublished && <ShareProductButtons slug={p.slug} title={p.title} className="mt-3" />}
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Link href={`/admin/products/${p.id}/edit`}>
-                    <Button variant="outline" size="sm">
-                      <Pencil className="w-3.5 h-3.5" /> Edit
-                    </Button>
-                  </Link>
-                  <Button
-                    variant={p.isPublished ? 'ghost' : 'success'}
-                    size="sm"
-                    isLoading={busyId === p.id}
-                    onClick={() => togglePublish(p)}
-                  >
-                    {p.isPublished ? 'Unpublish' : 'Publish'}
-                  </Button>
-                </div>
+                {(() => {
+                  const actions = (
+                    <>
+                      <Link href={`/admin/products/${p.id}/edit`}>
+                        <Button variant="outline" size="sm">
+                          <Pencil className="w-3.5 h-3.5" /> Edit
+                        </Button>
+                      </Link>
+                      <Button
+                        variant={p.isPublished ? 'ghost' : 'success'}
+                        size="sm"
+                        isLoading={busyId === p.id}
+                        onClick={() => togglePublish(p)}
+                      >
+                        {p.isPublished ? 'Unpublish' : 'Publish'}
+                      </Button>
+                    </>
+                  );
+                  return p.isPublished ? (
+                    <ShareProductButtons slug={p.slug} title={p.title} className="mt-3" extra={actions} />
+                  ) : (
+                    <div className="mt-3 flex flex-wrap gap-2">{actions}</div>
+                  );
+                })()}
               </li>
             );
           })}

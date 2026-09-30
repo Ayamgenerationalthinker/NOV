@@ -102,7 +102,7 @@ export function StoreSettings() {
             <input
               type="text"
               required
-              placeholder="e.g. NOV Luxe Studio"
+              placeholder="e.g. Tomevari"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white"

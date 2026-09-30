@@ -296,7 +296,7 @@ export default function CartPage() {
             <div className="rounded-3xl border border-zinc-800/80 bg-zinc-950 p-5 space-y-2 text-xs text-zinc-400">
               <div className="flex items-center gap-2 font-semibold text-white">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                NOV Authenticity & Secure Checkout Guarantee
+                Secure checkout
               </div>
               <p className="text-[11px] leading-relaxed">
                 All physical orders are inspected and tracked. Digital deliverables are unlocked automatically upon multi-gateway payment confirmation.

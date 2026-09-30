@@ -80,9 +80,9 @@ interface ProductFormProps {
 }
 
 const fieldClass =
-  'w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3.5 py-3 text-base sm:text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60';
-const labelClass = 'block text-xs font-semibold text-zinc-300 mb-1.5';
-const optionalTag = <span className="ml-1 font-normal text-zinc-500">(optional)</span>;
+  'w-full rounded-xl border border-stone-800 bg-stone-900 px-3.5 py-3 text-base sm:text-sm text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60';
+const labelClass = 'block text-xs font-semibold text-stone-300 mb-1.5';
+const optionalTag = <span className="ml-1 font-normal text-stone-500">(optional)</span>;
 
 export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
   const isEdit = Boolean(initialProduct);
@@ -304,7 +304,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
   if (!kind) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-zinc-300">What are you selling?</p>
+        <p className="text-sm text-stone-300">What are you selling?</p>
         <div className="grid gap-3 sm:grid-cols-2">
           {[
             { k: 'DIGITAL' as Kind, icon: BookOpen, title: 'Digital', text: 'Ebook, course, template or any file buyers download right after paying.' },
@@ -314,11 +314,11 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
               key={k}
               type="button"
               onClick={() => setKind(k)}
-              className="text-left rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 hover:border-emerald-500/60 hover:bg-zinc-900 transition-colors"
+              className="text-left rounded-2xl border border-stone-800 bg-stone-900/70 p-5 hover:border-emerald-500/60 hover:bg-stone-900 transition-colors"
             >
               <Icon className="w-6 h-6 text-emerald-400 mb-3" />
               <div className="font-semibold text-white">{t}</div>
-              <div className="text-xs text-zinc-400 mt-1">{text}</div>
+              <div className="text-xs text-stone-400 mt-1">{text}</div>
             </button>
           ))}
         </div>
@@ -338,12 +338,12 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
       }}
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-xs text-zinc-300">
+        <span className="inline-flex items-center gap-2 rounded-full border border-stone-800 bg-stone-900 px-3 py-1 text-xs text-stone-300">
           {isPhysical ? <Package className="w-3.5 h-3.5" /> : <BookOpen className="w-3.5 h-3.5" />}
           {isPhysical ? 'Physical product' : 'Digital product'}
         </span>
         {!isEdit && (
-          <button type="button" className="text-xs text-zinc-400 underline" onClick={() => setKind(null)}>
+          <button type="button" className="text-xs text-stone-400 underline" onClick={() => setKind(null)}>
             Change
           </button>
         )}
@@ -393,17 +393,17 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
       <section className="space-y-4">
         <div>
           <span className={labelClass}>Cover image{optionalTag}</span>
-          <p className="text-xs text-zinc-500 mb-2">Shown on the product page and in the WhatsApp / social preview. A square or 1200×630 image works best.</p>
+          <p className="text-xs text-stone-500 mb-2">Shown on the product page and in the WhatsApp / social preview. A square or 1200×630 image works best.</p>
           {coverImage ? (
             <div className="relative inline-block">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={coverImage} alt="Cover" className="h-40 w-40 rounded-xl object-cover border border-zinc-800" />
-              <button type="button" aria-label="Remove cover" onClick={() => setCoverImage(null)} className="absolute -top-2 -right-2 rounded-full bg-zinc-800 p-1.5 text-zinc-200">
+              <img src={coverImage} alt="Cover" className="h-40 w-40 rounded-xl object-cover border border-stone-800" />
+              <button type="button" aria-label="Remove cover" onClick={() => setCoverImage(null)} className="absolute -top-2 -right-2 rounded-full bg-stone-800 p-1.5 text-stone-200">
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
           ) : (
-            <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 text-xs text-zinc-400">
+            <label className="flex h-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-stone-700 bg-stone-900/50 text-xs text-stone-400">
               {uploading === 'cover' ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImagePlus className="w-5 h-5" />}
               {uploading === 'cover' ? 'Uploading…' : 'Tap to add a cover image'}
               <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" className="hidden" onChange={(e) => handleCover(e.target.files?.[0])} />
@@ -418,13 +418,13 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
               {gallery.map((url) => (
                 <div key={url} className="relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt="" className="h-20 w-20 rounded-lg object-cover border border-zinc-800" />
-                  <button type="button" aria-label="Remove photo" onClick={() => setGallery((g) => g.filter((u) => u !== url))} className="absolute -top-2 -right-2 rounded-full bg-zinc-800 p-1 text-zinc-200">
+                  <img src={url} alt="" className="h-20 w-20 rounded-lg object-cover border border-stone-800" />
+                  <button type="button" aria-label="Remove photo" onClick={() => setGallery((g) => g.filter((u) => u !== url))} className="absolute -top-2 -right-2 rounded-full bg-stone-800 p-1 text-stone-200">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
               ))}
-              <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-lg border border-dashed border-zinc-700 text-zinc-400">
+              <label className="flex h-20 w-20 cursor-pointer items-center justify-center rounded-lg border border-dashed border-stone-700 text-stone-400">
                 {uploading === 'gallery' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple className="hidden" onChange={(e) => handleGallery(e.target.files)} />
               </label>
@@ -437,20 +437,20 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
       {!isPhysical && (
         <section className="space-y-3">
           <span className={labelClass}>File buyers receive</span>
-          <p className="text-xs text-zinc-500 -mt-1">PDF, EPUB, ZIP… Buyers download it right after paying and get a link by email.</p>
+          <p className="text-xs text-stone-500 -mt-1">PDF, EPUB, ZIP… Buyers download it right after paying and get a link by email.</p>
           {existingFiles.map((f) => (
-            <div key={f.id} className="flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2.5">
+            <div key={f.id} className="flex items-center justify-between gap-3 rounded-xl border border-stone-800 bg-stone-900 px-3 py-2.5">
               <div className="flex items-center gap-2 min-w-0">
                 <FileText className="w-4 h-4 shrink-0 text-emerald-400" />
-                <span className="truncate text-sm text-zinc-200">{f.fileName}</span>
-                <span className="shrink-0 text-xs text-zinc-500">{formatFileSize(f.fileSize)}</span>
+                <span className="truncate text-sm text-stone-200">{f.fileName}</span>
+                <span className="shrink-0 text-xs text-stone-500">{formatFileSize(f.fileSize)}</span>
               </div>
-              <button type="button" aria-label="Remove file" onClick={() => removeExistingFile(f.id)} className="text-zinc-500 hover:text-red-400">
+              <button type="button" aria-label="Remove file" onClick={() => removeExistingFile(f.id)} className="text-stone-500 hover:text-red-400">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
           ))}
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-zinc-700 bg-zinc-900/50 px-4 py-4 text-sm text-zinc-300">
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-stone-700 bg-stone-900/50 px-4 py-4 text-sm text-stone-300">
             <Upload className="w-4 h-4 text-emerald-400" />
             <span className="truncate">
               {uploading?.startsWith('file:')
@@ -469,7 +469,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
       {/* Stock (physical) */}
       {isPhysical && (
         <section className="space-y-4">
-          <label className="flex items-center gap-3 text-sm text-zinc-200">
+          <label className="flex items-center gap-3 text-sm text-stone-200">
             <input type="checkbox" className="h-5 w-5 accent-emerald-500" checked={hasOptions} onChange={(e) => setHasOptions(e.target.checked)} />
             This product has options (size, colour…){optionalTag}
           </label>
@@ -493,7 +493,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
               </div>
 
               {rows.map((row, idx) => (
-                <div key={row.id ?? `new-${idx}`} className="grid grid-cols-12 items-end gap-2 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3">
+                <div key={row.id ?? `new-${idx}`} className="grid grid-cols-12 items-end gap-2 rounded-xl border border-stone-800 bg-stone-900/60 p-3">
                   <div className={option2Name.trim() ? 'col-span-6 sm:col-span-3' : 'col-span-12 sm:col-span-5'}>
                     <label className={labelClass}>{option1Name || 'Option'}</label>
                     <input className={fieldClass} value={row.value1} onChange={(e) => setRows((r) => r.map((x, i) => (i === idx ? { ...x, value1: e.target.value } : x)))} placeholder="M" />
@@ -513,7 +513,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
                     <input className={fieldClass} type="number" inputMode="decimal" min="0" step="0.01" value={row.price} onChange={(e) => setRows((r) => r.map((x, i) => (i === idx ? { ...x, price: e.target.value } : x)))} placeholder={price || 'Same'} />
                   </div>
                   <div className="col-span-2 sm:col-span-1 flex justify-end pb-3">
-                    <button type="button" aria-label="Remove option" onClick={() => setRows((r) => (r.length > 1 ? r.filter((_, i) => i !== idx) : r))} className="text-zinc-500 hover:text-red-400">
+                    <button type="button" aria-label="Remove option" onClick={() => setRows((r) => (r.length > 1 ? r.filter((_, i) => i !== idx) : r))} className="text-stone-500 hover:text-red-400">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -535,7 +535,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
       )}
 
       {/* Sticky actions: easy to reach on a phone */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-zinc-800 bg-zinc-950/95 px-4 py-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-stone-800 bg-stone-950/95 px-4 py-3 backdrop-blur sm:static sm:border-0 sm:bg-transparent sm:p-0">
         <div className="mx-auto flex max-w-3xl gap-3">
           {isPublished ? (
             <>
@@ -557,7 +557,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
             </>
           )}
           {isEdit && (
-            <Link href="/admin/products" className="hidden sm:inline-flex items-center px-3 text-sm text-zinc-400 hover:text-white">
+            <Link href="/admin/products" className="hidden sm:inline-flex items-center px-3 text-sm text-stone-400 hover:text-white">
               Cancel
             </Link>
           )}

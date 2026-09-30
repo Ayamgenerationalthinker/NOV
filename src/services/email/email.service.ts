@@ -118,14 +118,14 @@ export class EmailService {
       <html>
         <head>
           <meta charset="utf-8">
-          <title>Your NOV.com Order Receipt</title>
+          <title>Your ${env.NEXT_PUBLIC_APP_NAME} Order Receipt</title>
         </head>
         <body style="margin: 0; padding: 0; background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f8fafc;">
           <div style="max-width: 600px; margin: 40px auto; background-color: #1e293b; border-radius: 16px; border: 1px solid #334155; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
             
             <!-- Header -->
             <div style="padding: 32px 32px 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 1px solid #334155;">
-              <div style="font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #3b82f6;">NOV.com</div>
+              <div style="font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #fcd34d;">${env.NEXT_PUBLIC_APP_NAME}</div>
               <h1 style="margin: 16px 0 4px; font-size: 24px; font-weight: 800; color: #ffffff;">Thank you for your purchase!</h1>
               <p style="margin: 0; font-size: 13px; color: #94a3b8;">Order #${order.orderNumber} • ${new Date(order.createdAt).toLocaleDateString()}</p>
             </div>
@@ -185,7 +185,7 @@ export class EmailService {
             <!-- Footer -->
             <div style="padding: 24px 32px; background-color: #0f172a; border-top: 1px solid #334155; text-align: center; font-size: 12px; color: #64748b;">
               <p style="margin: 0 0 8px;">Need help with your download? Contact our creator team at <a href="mailto:support@nov.com" style="color: #3b82f6; text-decoration: none;">support@nov.com</a>.</p>
-              <p style="margin: 0;">© ${new Date().getFullYear()} NOV.com. All rights reserved.</p>
+              <p style="margin: 0;">© ${new Date().getFullYear()} ${env.NEXT_PUBLIC_APP_NAME}. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -194,7 +194,7 @@ export class EmailService {
 
     const result = await this.sendEmail({
       to: recipientEmail,
-      subject: `Your receipt for Order #${order.orderNumber} - NOV.com`,
+      subject: `Your receipt for Order #${order.orderNumber} - ${env.NEXT_PUBLIC_APP_NAME}`,
       html,
       text: `Thank you for your order #${order.orderNumber} (${totalAmount}). ${hasDigital ? 'Download your files' : 'View your order'}: ${libraryUrl}`,
     });
@@ -235,7 +235,7 @@ export class EmailService {
 
     const result = await this.sendEmail({
       to: recipientEmail,
-      subject: `Refund processed for Order #${order.orderNumber} - NOV.com`,
+      subject: `Refund processed for Order #${order.orderNumber} - ${env.NEXT_PUBLIC_APP_NAME}`,
       html,
       text: `Your refund of $${refundedTotal} ${order.currency} for order #${order.orderNumber} has been processed.`,
     });
@@ -278,7 +278,7 @@ export class EmailService {
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
           <h2 style="color: #2563eb; margin-top: 0;">New Version Available: ${product.title} v${versionNumber}</h2>
-          <p>Great news! An update has been released for <strong>${product.title}</strong> which you own in your NOV.com digital library.</p>
+          <p>Great news! An update has been released for <strong>${product.title}</strong> which you own in your ${env.NEXT_PUBLIC_APP_NAME} digital library.</p>
           ${
             changelog
               ? `
@@ -300,7 +300,7 @@ export class EmailService {
 
       await this.sendEmail({
         to: entitlement.customer.email,
-        subject: `Update Available: ${product.title} v${versionNumber} - NOV.com`,
+        subject: `Update Available: ${product.title} v${versionNumber} - ${env.NEXT_PUBLIC_APP_NAME}`,
         html,
         text: `A new version (v${versionNumber}) of ${product.title} is now available in your library at: ${downloadUrl}`,
       });
@@ -319,8 +319,8 @@ export class EmailService {
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
-        <h2 style="color: #2563eb; margin-top: 0;">Reset Your NOV.com Password</h2>
-        <p>You requested a password reset for your account at NOV.com.</p>
+        <h2 style="color: #2563eb; margin-top: 0;">Reset Your ${env.NEXT_PUBLIC_APP_NAME} Password</h2>
+        <p>You requested a password reset for your account at ${env.NEXT_PUBLIC_APP_NAME}.</p>
         <p>Click the button below to choose a new password. This link will expire in 1 hour.</p>
         <div style="margin: 28px 0;">
           <a href="${resetUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
@@ -333,7 +333,7 @@ export class EmailService {
 
     const result = await this.sendEmail({
       to: email,
-      subject: 'Reset your NOV.com password',
+      subject: `Reset your ${env.NEXT_PUBLIC_APP_NAME} password`,
       html,
       text: `Reset your password at: ${resetUrl}`,
     });
@@ -349,7 +349,7 @@ export class EmailService {
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
-        <h2 style="color: #2563eb; margin-top: 0;">Welcome to NOV.com!</h2>
+        <h2 style="color: #2563eb; margin-top: 0;">Welcome to ${env.NEXT_PUBLIC_APP_NAME}!</h2>
         <p>Please confirm your email address to secure your account and digital library.</p>
         <div style="margin: 28px 0;">
           <a href="${verifyUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
@@ -362,7 +362,7 @@ export class EmailService {
 
     const result = await this.sendEmail({
       to: email,
-      subject: 'Verify your email on NOV.com',
+      subject: `Verify your email on ${env.NEXT_PUBLIC_APP_NAME}`,
       html,
       text: `Verify your email at: ${verifyUrl}`,
     });
@@ -378,7 +378,7 @@ export class EmailService {
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
-        <h2 style="color: #2563eb; margin-top: 0;">Welcome to the NOV Creator & Developer Community!</h2>
+        <h2 style="color: #2563eb; margin-top: 0;">Welcome to the ${env.NEXT_PUBLIC_APP_NAME} community!</h2>
         <p>Thanks for subscribing to our release notes, developer dispatches, and exclusive drops.</p>
         <p>As a warm welcome, here is an exclusive 10% discount on your first digital purchase:</p>
         <div style="margin: 20px 0; padding: 16px; background-color: #f1f5f9; border-radius: 8px; text-align: center;">
@@ -390,15 +390,15 @@ export class EmailService {
             Explore Digital Goods →
           </a>
         </div>
-        <p style="color: #94a3b8; font-size: 11px;">You can unsubscribe at any time. © ${new Date().getFullYear()} NOV.com</p>
+        <p style="color: #94a3b8; font-size: 11px;">You can unsubscribe at any time. © ${new Date().getFullYear()} ${env.NEXT_PUBLIC_APP_NAME}</p>
       </div>
     `;
 
     const result = await this.sendEmail({
       to: toEmail,
-      subject: `Welcome to NOV.com! Here is your 10% discount code (${discountCode})`,
+      subject: `Welcome to ${env.NEXT_PUBLIC_APP_NAME}! Here is your 10% discount code (${discountCode})`,
       html,
-      text: `Welcome to NOV.com! Use code ${discountCode} for 10% off your purchase at: ${storefrontUrl}`,
+      text: `Welcome to ${env.NEXT_PUBLIC_APP_NAME}! Use code ${discountCode} for 10% off your purchase at: ${storefrontUrl}`,
     });
 
     return result.success;
@@ -464,7 +464,7 @@ export class EmailService {
 
     const result = await this.sendEmail({
       to: toEmail,
-      subject: `Complete your purchase for order #${orderNumber} - NOV.com`,
+      subject: `Complete your purchase for order #${orderNumber} - ${env.NEXT_PUBLIC_APP_NAME}`,
       html,
       text: `Complete your checkout for order #${orderNumber} at: ${recoveryUrl}`,
     });

@@ -6,7 +6,7 @@ const DEV_DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/nov_dev?
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
-  NEXT_PUBLIC_APP_NAME: z.string().default('NOV.com'),
+  NEXT_PUBLIC_APP_NAME: z.string().default('Tomevari'),
   NEXT_PUBLIC_SUPPORT_EMAIL: z.string().email().default('support@nov.com'),
 
   DATABASE_URL: z.string().default(DEV_DATABASE_URL),
@@ -28,7 +28,7 @@ const envSchema = z.object({
 
   // Email
   RESEND_API_KEY: z.string().optional(),
-  EMAIL_FROM: z.string().default('NOV.com <noreply@nov.com>'),
+  EMAIL_FROM: z.string().default('Tomevari <noreply@example.com>'),
 
   // Storage
   R2_ACCOUNT_ID: z.string().optional(),

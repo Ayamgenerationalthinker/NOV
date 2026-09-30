@@ -115,7 +115,7 @@ export class AnalyticsService {
       totalCustomers,
       totalDownloads,
       activeEntitlements,
-      currency: paidOrders[0]?.currency || 'USD',
+      currency: paidOrders[0]?.currency || 'GHS',
     };
   }
 

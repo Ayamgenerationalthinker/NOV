@@ -12,10 +12,7 @@ export const metadata: Metadata = {
     template: `%s | ${env.NEXT_PUBLIC_APP_NAME}`,
     default: env.NEXT_PUBLIC_APP_NAME,
   },
-  description:
-    'NOV.com: Secure, direct-to-consumer digital commerce platform for premium digital goods, ebooks, courses, tools, and templates.',
-  keywords: ['NOV', 'NOV.com', 'digital products', 'ebooks', 'developer templates', 'courses', 'software downloads'],
-  authors: [{ name: 'NOV.com' }],
+  description: 'Ebooks, digital downloads and handpicked goods. Pay with Mobile Money or card, no account needed.',
   robots: {
     index: true,
     follow: true,
@@ -23,7 +20,6 @@ export const metadata: Metadata = {
 };
 
 import { CartProvider } from '@/context/cart-context';
-import { AnnouncementBanner } from '@/components/marketing/announcement-banner';
 
 export default function RootLayout({
   children,
@@ -32,9 +28,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className="min-h-screen flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-blue-600 selection:text-white">
+      <body className="min-h-screen flex flex-col bg-stone-950 text-stone-100 antialiased selection:bg-amber-300 selection:text-stone-950">
         <CartProvider>
-          <SiteChrome banner={<AnnouncementBanner />} header={<Header />} footer={<Footer />}>
+          <SiteChrome header={<Header />} footer={<Footer />}>
             {children}
           </SiteChrome>
         </CartProvider>

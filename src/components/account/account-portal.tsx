@@ -405,7 +405,7 @@ export function AccountPortal({
               <p className="text-xs text-slate-400 max-w-sm mx-auto mt-2 leading-relaxed">
                 {searchQuery
                   ? 'Try clearing your search query or check spelling.'
-                  : 'All verified digital goods purchased on NOV.com are delivered here with permanent signed access.'}
+                  : 'All verified digital goods purchased on Tomevari are delivered here with permanent signed access.'}
               </p>
               {!searchQuery && (
                 <div className="mt-6">

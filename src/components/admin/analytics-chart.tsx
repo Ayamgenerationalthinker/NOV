@@ -1,5 +1,7 @@
 'use client';
 
+import { formatCurrency } from '@/lib/utils';
+
 import React, { useState } from 'react';
 import { DailySalesData } from '@/services/admin/analytics.service';
 import { BarChart2, TrendingUp, Calendar } from 'lucide-react';
@@ -11,7 +13,7 @@ interface AnalyticsChartProps {
 
 export function AnalyticsChart({
   initialData,
-  currency = 'USD',
+  currency = 'GHS',
 }: AnalyticsChartProps) {
   const [timeframe, setTimeframe] = useState<'7' | '14' | '30'>('30');
   const [hoveredPoint, setHoveredPoint] = useState<DailySalesData | null>(null);
@@ -24,7 +26,7 @@ export function AnalyticsChart({
   const totalOrders = data.reduce((sum, d) => sum + d.orderCount, 0);
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 space-y-6">
+    <div className="rounded-xl border border-stone-800 bg-stone-900/60 p-6 space-y-6">
       {/* Chart Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -34,7 +36,7 @@ export function AnalyticsChart({
             </div>
             <div>
               <h3 className="text-sm font-bold text-white">Revenue & Sales Velocity</h3>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-stone-400">
                 Daily transaction volume for trailing {timeframe} days
               </p>
             </div>
@@ -42,7 +44,7 @@ export function AnalyticsChart({
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center rounded-lg bg-slate-950/80 p-0.5 border border-slate-800 text-xs">
+          <div className="flex items-center rounded-lg bg-stone-950/80 p-0.5 border border-stone-800 text-xs">
             {(['7', '14', '30'] as const).map((tf) => (
               <button
                 key={tf}
@@ -51,7 +53,7 @@ export function AnalyticsChart({
                 className={`px-3 py-1 rounded-md font-medium transition-all ${
                   timeframe === tf
                     ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-white'
+                    : 'text-stone-400 hover:text-white'
                 }`}
               >
                 {tf}D
@@ -59,11 +61,11 @@ export function AnalyticsChart({
             ))}
           </div>
 
-          <div className="hidden sm:block text-right border-l border-slate-800 pl-3">
+          <div className="hidden sm:block text-right border-l border-stone-800 pl-3">
             <div className="text-xs font-bold text-white">
               ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className="text-[10px] text-slate-400">{totalOrders} orders</div>
+            <div className="text-[10px] text-stone-400">{totalOrders} orders</div>
           </div>
         </div>
       </div>
@@ -72,12 +74,12 @@ export function AnalyticsChart({
       <div className="relative pt-6 pb-2">
         {/* Tooltip */}
         {hoveredPoint && (
-          <div className="absolute top-0 right-4 rounded-lg bg-slate-800/95 border border-slate-700 px-3 py-1.5 text-xs text-white shadow-lg pointer-events-none flex items-center gap-3 z-10 backdrop-blur-sm">
-            <span className="text-slate-400 text-[11px]">{hoveredPoint.date}</span>
+          <div className="absolute top-0 right-4 rounded-lg bg-stone-800/95 border border-stone-700 px-3 py-1.5 text-xs text-white shadow-lg pointer-events-none flex items-center gap-3 z-10 backdrop-blur-sm">
+            <span className="text-stone-400 text-[11px]">{hoveredPoint.date}</span>
             <span className="font-bold text-emerald-400">
-              ${hoveredPoint.revenue.toFixed(2)}
+              {formatCurrency(hoveredPoint.revenue, currency)}
             </span>
-            <span className="text-slate-300 text-[11px]">
+            <span className="text-stone-300 text-[11px]">
               {hoveredPoint.orderCount} {hoveredPoint.orderCount === 1 ? 'order' : 'orders'}
             </span>
           </div>
@@ -102,7 +104,7 @@ export function AnalyticsChart({
                       ? isHovered
                         ? 'bg-blue-400 shadow-md shadow-blue-500/50'
                         : 'bg-blue-600/80 hover:bg-blue-500'
-                      : 'bg-slate-800/40 hover:bg-slate-700/60'
+                      : 'bg-stone-800/40 hover:bg-stone-700/60'
                   }`}
                 />
               </div>
@@ -111,7 +113,7 @@ export function AnalyticsChart({
         </div>
 
         {/* X-Axis Labels */}
-        <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2 border-t border-slate-800/80 pt-2 font-mono">
+        <div className="flex justify-between items-center text-[10px] text-stone-500 mt-2 border-t border-stone-800/80 pt-2 font-mono">
           <span>{data[0]?.date}</span>
           <span className="hidden sm:inline">
             {data[Math.floor(data.length / 2)]?.date}

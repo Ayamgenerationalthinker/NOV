@@ -3,7 +3,7 @@ import { StoreSettings } from '@/components/admin/store-settings';
 import { Settings } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Merchant Store Settings — NOV Console',
+  title: 'Merchant Store Settings — Tomevari admin',
 };
 
 export default function StoreSettingsPage() {

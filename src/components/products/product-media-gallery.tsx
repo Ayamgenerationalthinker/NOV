@@ -68,7 +68,7 @@ export function ProductMediaGallery({
           productTitle={productTitle}
         />
       ) : (
-        <div className="relative aspect-square w-full overflow-hidden bg-zinc-950 md:rounded-3xl md:border md:border-zinc-800/80 flex items-center justify-center">
+        <div className="relative aspect-[4/5] w-full overflow-hidden bg-stone-900 md:rounded-3xl md:border md:border-zinc-800/80 flex items-center justify-center">
           {selectedImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

@@ -251,7 +251,7 @@ export function OrderManagement() {
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-stone-800 text-stone-300">
             {status}
           </span>
         );
@@ -276,7 +276,7 @@ export function OrderManagement() {
       {/* Filter and Search Bar */}
       <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
         {/* Status Tabs */}
-        <div className="flex items-center gap-1 overflow-x-auto bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-1 overflow-x-auto bg-stone-900/80 p-1 rounded-xl border border-stone-800">
           {(
             [
               ['ALL', 'All'],
@@ -295,8 +295,8 @@ export function OrderManagement() {
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                 selectedStatus === st
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-amber-300 text-stone-950 shadow-sm'
+                  : 'text-stone-400 hover:text-white hover:bg-stone-800/50'
               }`}
             >
               {label}
@@ -306,22 +306,79 @@ export function OrderManagement() {
 
         {/* Search Form */}
         <form onSubmit={handleSearchSubmit} className="relative flex-1 md:max-w-sm">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-stone-500 absolute left-3 top-1/2 -transtone-y-1/2" />
           <input
             type="text"
             placeholder="Search by order #, email, customer..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+            className="w-full pl-9 pr-4 py-2 bg-stone-900/90 border border-stone-800 rounded-xl text-xs text-white placeholder-stone-500 focus:outline-none focus:border-amber-300 transition-colors"
           />
         </form>
       </div>
 
       {/* Orders Data Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-slate-900/90 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800">
+      <div className="rounded-xl border border-stone-800 bg-stone-900/50 overflow-hidden">
+        {/* Phones: one card per order */}
+        <div className="divide-y divide-stone-800/60 md:hidden">
+          {loading ? (
+            <div className="py-14 text-center text-stone-500">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+              Loading orders...
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="py-14 px-4 text-center text-sm text-stone-500">No orders match this filter.</div>
+          ) : (
+            orders.map((order) => (
+              <div key={order.id} className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-white">{order.customer?.name || order.guestName || 'Guest'}</p>
+                    <p className="truncate text-xs text-stone-500">{order.orderNumber} · {new Date(order.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <p className="shrink-0 font-semibold text-white tabular-nums">{formatCurrency(order.total, order.currency)}</p>
+                </div>
+                <p className="text-sm text-stone-300">
+                  {order.items
+                    .map((i) => `${i.product.title}${i.variant?.option1Value ? ` (${i.variant.title})` : ''}${i.quantity > 1 ? ` × ${i.quantity}` : ''}`)
+                    .join(', ')}
+                </p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {getStatusBadge(order.status)}
+                  {needsShipping(order) && (
+                    <span className="rounded-full border border-amber-800/60 bg-amber-950/60 px-2 py-0.5 text-[10px] font-bold text-amber-300">TO SHIP</span>
+                  )}
+                  {isShipped(order) && (
+                    <span className="rounded-full border border-sky-800/60 bg-sky-950/60 px-2 py-0.5 text-[10px] font-bold text-sky-300">SHIPPED</span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => setActiveOrder(order)}>
+                    <Eye className="w-3.5 h-3.5" /> View
+                  </Button>
+                  {needsShipping(order) && (
+                    <Button
+                      size="sm"
+                      variant="success"
+                      className="flex-1"
+                      onClick={() => {
+                        setShipError(null);
+                        setShipOrder(order);
+                      }}
+                    >
+                      <Truck className="w-3.5 h-3.5" /> Mark shipped
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Larger screens: table */}
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full text-left text-xs text-stone-300">
+            <thead className="bg-stone-900/90 text-[11px] font-bold text-stone-400 uppercase tracking-wider border-b border-stone-800">
               <tr>
                 <th className="py-3.5 px-4">Order Number</th>
                 <th className="py-3.5 px-4">Customer</th>
@@ -332,17 +389,17 @@ export function OrderManagement() {
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-stone-800/60">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center text-slate-500">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500 mb-2" />
+                  <td colSpan={7} className="py-16 text-center text-stone-500">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-amber-300 mb-2" />
                     Loading orders...
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center text-slate-500">
+                  <td colSpan={7} className="py-16 text-center text-stone-500">
                     No orders match your current filter or search criteria.
                   </td>
                 </tr>
@@ -356,20 +413,20 @@ export function OrderManagement() {
                   return (
                     <tr
                       key={order.id}
-                      className="hover:bg-slate-800/30 transition-colors"
+                      className="hover:bg-stone-800/30 transition-colors"
                     >
                       <td className="py-3 px-4 font-mono font-bold text-white">
                         {order.orderNumber}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-slate-200">
+                        <div className="font-semibold text-stone-200">
                           {customerDisplay}
                         </div>
-                        <div className="text-[11px] text-slate-500">
+                        <div className="text-[11px] text-stone-500">
                           {emailDisplay}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-slate-400">
+                      <td className="py-3 px-4 text-stone-400">
                         {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
                       </td>
                       <td className="py-3 px-4">
@@ -386,7 +443,7 @@ export function OrderManagement() {
                       <td className="py-3 px-4 font-bold text-white">
                         {formatCurrency(order.total, order.currency)}
                       </td>
-                      <td className="py-3 px-4 text-[11px] text-slate-400">
+                      <td className="py-3 px-4 text-[11px] text-stone-400">
                         {new Date(order.createdAt).toLocaleDateString()}
                       </td>
                       <td className="py-3 px-4 text-right">
@@ -395,7 +452,7 @@ export function OrderManagement() {
                             size="sm"
                             variant="ghost"
                             onClick={() => setActiveOrder(order)}
-                            className="h-7 px-2 text-[11px] text-slate-300 hover:text-white"
+                            className="h-7 px-2 text-[11px] text-stone-300 hover:text-white"
                           >
                             <Eye className="w-3.5 h-3.5 mr-1" />
                             View
@@ -441,7 +498,7 @@ export function OrderManagement() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-800 bg-slate-900/80 text-xs text-slate-400">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-stone-800 bg-stone-900/80 text-xs text-stone-400">
           <div>
             Showing <strong className="text-white">{orders.length}</strong> of{' '}
             <strong className="text-white">{totalCount}</strong> orders
@@ -452,11 +509,11 @@ export function OrderManagement() {
               variant="outline"
               disabled={page <= 1 || loading}
               onClick={() => setPage((p) => p - 1)}
-              className="h-7 px-2 border-slate-800"
+              className="h-7 px-2 border-stone-800"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </Button>
-            <span className="text-xs text-slate-300">
+            <span className="text-xs text-stone-300">
               Page {page} of {totalPages}
             </span>
             <Button
@@ -464,7 +521,7 @@ export function OrderManagement() {
               variant="outline"
               disabled={page >= totalPages || loading}
               onClick={() => setPage((p) => p + 1)}
-              className="h-7 px-2 border-slate-800"
+              className="h-7 px-2 border-stone-800"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </Button>
@@ -475,8 +532,8 @@ export function OrderManagement() {
       {/* Order Detail Modal */}
       {activeOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl space-y-6">
-            <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-stone-800 bg-stone-900 p-6 shadow-2xl space-y-6">
+            <div className="flex items-start justify-between border-b border-stone-800 pb-4">
               <div>
                 <div className="flex items-center gap-3">
                   <h3 className="text-lg font-bold text-white font-mono">
@@ -484,13 +541,13 @@ export function OrderManagement() {
                   </h3>
                   {getStatusBadge(activeOrder.status)}
                 </div>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-stone-400 mt-1">
                   Placed on {new Date(activeOrder.createdAt).toLocaleString()}
                 </p>
               </div>
               <button
                 onClick={() => setActiveOrder(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg text-lg"
+                className="text-stone-400 hover:text-white p-1 rounded-lg text-lg"
               >
                 ✕
               </button>
@@ -498,14 +555,14 @@ export function OrderManagement() {
 
             {/* Customer & Payment Grid */}
             <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+              <div className="p-3 rounded-lg bg-stone-950/60 border border-stone-800/80">
+                <span className="text-[10px] uppercase font-bold text-stone-500 tracking-wider">
                   Customer Information
                 </span>
                 <p className="font-semibold text-white mt-1">
                   {activeOrder.customer?.name || activeOrder.guestName || 'Guest User'}
                 </p>
-                <p className="text-slate-400">
+                <p className="text-stone-400">
                   {activeOrder.customer?.email || activeOrder.guestEmail}
                 </p>
                 {(activeOrder.billingAddress?.phone || activeOrder.shippingAddress?.phone) && (
@@ -518,23 +575,23 @@ export function OrderManagement() {
                 )}
               </div>
 
-              <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80">
-                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+              <div className="p-3 rounded-lg bg-stone-950/60 border border-stone-800/80">
+                <span className="text-[10px] uppercase font-bold text-stone-500 tracking-wider">
                   Payment Details
                 </span>
                 <p className="font-semibold text-white mt-1">
                   Provider: {activeOrder.paymentProvider || 'Direct / Unknown'}
                 </p>
-                <p className="text-slate-400">Currency: {activeOrder.currency}</p>
+                <p className="text-stone-400">Currency: {activeOrder.currency}</p>
               </div>
             </div>
 
             {/* Delivery */}
             {activeOrder.shippingAddress && (
-              <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-xs space-y-1">
-                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Deliver to</span>
+              <div className="p-3 rounded-lg bg-stone-950/60 border border-stone-800/80 text-xs space-y-1">
+                <span className="text-[10px] uppercase font-bold text-stone-500 tracking-wider">Deliver to</span>
                 <p className="font-semibold text-white">{activeOrder.shippingAddress.fullName}</p>
-                <p className="text-slate-300">
+                <p className="text-stone-300">
                   {[activeOrder.shippingAddress.street, activeOrder.shippingAddress.city, activeOrder.shippingAddress.state, activeOrder.shippingAddress.postalCode]
                     .filter(Boolean)
                     .join(', ')}
@@ -551,10 +608,10 @@ export function OrderManagement() {
 
             {/* Itemized Line Items */}
             <div className="space-y-3">
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+              <h4 className="text-xs font-bold text-stone-300 uppercase tracking-wider">
                 Line Items ({activeOrder.items.length})
               </h4>
-              <div className="divide-y divide-slate-800 border border-slate-800 rounded-xl overflow-hidden bg-slate-950/40">
+              <div className="divide-y divide-stone-800 border border-stone-800 rounded-xl overflow-hidden bg-stone-950/40">
                 {activeOrder.items.map((item) => (
                   <div
                     key={item.id}
@@ -562,7 +619,7 @@ export function OrderManagement() {
                   >
                     <div>
                       <p className="font-semibold text-white">{item.product.title}</p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-[11px] text-stone-500">
                         {item.variant?.option1Value ? `${item.variant.title} · ` : ''}Qty {item.quantity}
                       </p>
                     </div>
@@ -577,8 +634,8 @@ export function OrderManagement() {
             </div>
 
             {/* Financial Summary */}
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1 text-xs">
-              <div className="flex justify-between text-slate-400">
+            <div className="p-4 rounded-xl bg-stone-950 border border-stone-800 space-y-1 text-xs">
+              <div className="flex justify-between text-stone-400">
                 <span>Subtotal</span>
                 <span>{formatCurrency(activeOrder.subtotal, activeOrder.currency)}</span>
               </div>
@@ -588,7 +645,7 @@ export function OrderManagement() {
                   <span>-{formatCurrency(activeOrder.discountTotal, activeOrder.currency)}</span>
                 </div>
               )}
-              <div className="flex justify-between font-bold text-white text-sm border-t border-slate-800 pt-2 mt-2">
+              <div className="flex justify-between font-bold text-white text-sm border-t border-stone-800 pt-2 mt-2">
                 <span>Total Amount</span>
                 <span className="text-emerald-400">
                   {formatCurrency(activeOrder.total, activeOrder.currency)}
@@ -597,13 +654,13 @@ export function OrderManagement() {
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-between pt-2 border-t border-stone-800">
               <Button
                 size="sm"
                 variant="outline"
                 disabled={sendingReceipt}
                 onClick={() => handleResendReceipt(activeOrder.id)}
-                className="gap-1.5 text-xs border-slate-800"
+                className="gap-1.5 text-xs border-stone-800"
               >
                 {sendingReceipt ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -644,7 +701,7 @@ export function OrderManagement() {
       {/* Refund Confirmation Modal */}
       {refundModalOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-md rounded-2xl border border-red-900/50 bg-slate-900 p-6 shadow-2xl space-y-4">
+          <div className="relative w-full max-w-md rounded-2xl border border-red-900/50 bg-stone-900 p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-red-400">
               <AlertTriangle className="w-6 h-6 shrink-0" />
               <h3 className="text-base font-bold text-white">
@@ -652,7 +709,7 @@ export function OrderManagement() {
               </h3>
             </div>
 
-            <div className="p-3 rounded-xl bg-red-950/20 border border-red-900/40 text-xs text-slate-300 space-y-2">
+            <div className="p-3 rounded-xl bg-red-950/20 border border-red-900/40 text-xs text-stone-300 space-y-2">
               <p>
                 You are about to refund order{' '}
                 <strong className="text-white font-mono">
@@ -672,19 +729,19 @@ export function OrderManagement() {
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-stone-300 mb-1">
                 Refund Reason / Audit Note
               </label>
               <input
                 type="text"
                 value={refundReason}
                 onChange={(e) => setRefundReason(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2 bg-stone-950 border border-stone-800 rounded-lg text-xs text-white focus:outline-none focus:border-amber-300"
                 placeholder="e.g. Customer duplicate charge or requested cancellation"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-stone-800">
               <Button
                 size="sm"
                 variant="ghost"
@@ -715,30 +772,30 @@ export function OrderManagement() {
       {/* Mark Shipped Modal */}
       {shipOrder && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-5 space-y-4">
+          <div className="w-full max-w-md rounded-2xl border border-stone-800 bg-stone-900 p-5 space-y-4">
             <div>
               <h3 className="text-base font-bold text-white">Mark {shipOrder.orderNumber} as shipped</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-stone-400 mt-1">
                 {shipOrder.shippingAddress
                   ? [shipOrder.shippingAddress.fullName, shipOrder.shippingAddress.street, shipOrder.shippingAddress.city].filter(Boolean).join(', ')
                   : 'No delivery address on this order.'}
               </p>
             </div>
-            <label className="block text-xs text-slate-300">
-              Courier <span className="text-slate-500">(optional)</span>
+            <label className="block text-xs text-stone-300">
+              Courier <span className="text-stone-500">(optional)</span>
               <input
                 value={trackingCarrier}
                 onChange={(e) => setTrackingCarrier(e.target.value)}
                 placeholder="e.g. Ghana Post, Yango, own rider"
-                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-stone-700 bg-stone-950 px-3 py-2.5 text-sm text-white"
               />
             </label>
-            <label className="block text-xs text-slate-300">
-              Tracking number <span className="text-slate-500">(optional)</span>
+            <label className="block text-xs text-stone-300">
+              Tracking number <span className="text-stone-500">(optional)</span>
               <input
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-stone-700 bg-stone-950 px-3 py-2.5 text-sm text-white"
               />
             </label>
             {shipError && <p className="text-xs text-red-400">{shipError}</p>}

@@ -67,8 +67,8 @@ describe('OrderService & Order State Machine', () => {
       const orderNumber1 = OrderService.generateOrderNumber();
       const orderNumber2 = OrderService.generateOrderNumber();
 
-      expect(orderNumber1).toMatch(/^NOV-\d+-\d{4}$/);
-      expect(orderNumber2).toMatch(/^NOV-\d+-\d{4}$/);
+      expect(orderNumber1).toMatch(/^TMV-\d+-\d{4}$/);
+      expect(orderNumber2).toMatch(/^TMV-\d+-\d{4}$/);
       expect(orderNumber1).not.toBe(orderNumber2);
     });
   });

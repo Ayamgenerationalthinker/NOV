@@ -1,123 +1,75 @@
 import Link from 'next/link';
+import { BookOpen, Package } from 'lucide-react';
 import { productPath } from '@/lib/product-url';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
-import { ArrowRight, Package, FileCode } from 'lucide-react';
-import { ProductType, ProductKind } from '@prisma/client';
+import { availableStock } from '@/lib/product-purchase';
 
 export interface ProductCardProps {
   product: {
     id: string;
     title: string;
     slug: string;
-    description: string;
-    shortDescription?: string | null;
-    brand?: string | null;
-    productKind?: ProductKind;
+    productKind?: 'DIGITAL' | 'PHYSICAL';
+    productType?: string;
     coverImage?: string | null;
-    model3dUrl?: string | null;
     price: number;
     discountPrice?: number | null;
     currency: string;
-    isFeatured?: boolean;
-    productType: ProductType;
-    categories?: Array<{ category: { name: string; slug: string } }>;
+    variants?: Array<{ inventoryQuantity: number; reservedQuantity: number; isAvailable: boolean }>;
   };
 }
 
-export function ProductCard({ product }: ProductCardProps) {
-  const hasDiscount =
-    product.discountPrice !== null &&
-    product.discountPrice !== undefined &&
-    product.discountPrice < product.price;
+const TYPE_LABELS: Record<string, string> = {
+  EBOOK: 'Ebook',
+  COURSE: 'Course',
+  TEMPLATE: 'Template',
+  AUDIO: 'Audio',
+  VIDEO: 'Video',
+  SOFTWARE: 'Software',
+  GRAPHICS: 'Graphics',
+};
 
-  const isPhysical = product.productKind === ProductKind.PHYSICAL;
+export function ProductCard({ product }: ProductCardProps) {
+  const onSale = product.discountPrice != null && product.discountPrice < product.price;
+  const price = onSale ? product.discountPrice! : product.price;
+  const isPhysical = product.productKind === 'PHYSICAL';
+  const soldOut = isPhysical && (product.variants ?? []).reduce((sum, v) => sum + availableStock(v), 0) === 0;
+  const label = isPhysical ? 'Delivered' : TYPE_LABELS[product.productType ?? ''] ?? 'Download';
 
   return (
-    <Card className="group relative flex flex-col overflow-hidden rounded-xl border border-stone-800/80 bg-stone-950/90 hover:border-stone-700 transition-all duration-300">
-      {/* Editorial Image Area */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-stone-900 border-b border-stone-800/70">
+    <Link href={productPath(product.slug)} className="group block">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-stone-800/80 bg-stone-900">
         {product.coverImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={product.coverImage}
             alt={product.title}
-            className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+            loading="lazy"
+            className={`h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03] ${soldOut ? 'opacity-50' : ''}`}
           />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center text-stone-600 p-6">
-            <div className="rounded-xl bg-stone-950 p-4 border border-stone-800 mb-2">
-              {isPhysical ? <Package className="w-6 h-6 text-stone-500" /> : <FileCode className="w-6 h-6 text-stone-500" />}
-            </div>
-            <span className="text-[10px] uppercase tracking-widest font-mono text-stone-500">
-              {isPhysical ? 'Physical Piece' : 'Digital Edition'}
-            </span>
+          <div className="flex h-full w-full items-center justify-center text-stone-600">
+            {isPhysical ? <Package className="h-10 w-10" /> : <BookOpen className="h-10 w-10" />}
           </div>
         )}
-
-        {/* Minimalist Subtle Badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1">
-          {product.isFeatured && (
-            <span className="inline-flex px-2 py-0.5 rounded text-[9px] font-mono tracking-wider uppercase bg-stone-900/90 text-amber-300 border border-amber-900/40 backdrop-blur-sm">
-              Featured
+        <div className="absolute left-2 top-2 flex gap-1.5">
+          {soldOut ? (
+            <span className="rounded-full bg-stone-950/85 px-2 py-0.5 text-[11px] font-semibold text-stone-200">Sold out</span>
+          ) : onSale ? (
+            <span className="rounded-full bg-amber-300 px-2 py-0.5 text-[11px] font-bold text-stone-950">
+              −{Math.round((1 - price / product.price) * 100)}%
             </span>
-          )}
-          {hasDiscount && (
-            <span className="inline-flex px-2 py-0.5 rounded text-[9px] font-mono tracking-wider uppercase bg-stone-900/90 text-stone-300 border border-stone-800 backdrop-blur-sm">
-              Sale
-            </span>
-          )}
-        </div>
-
-        <div className="absolute top-3 right-3">
-          <span className="inline-flex px-2 py-0.5 rounded text-[9px] font-mono tracking-widest uppercase bg-stone-950/80 text-stone-400 border border-stone-800/80 backdrop-blur-sm">
-            {isPhysical ? 'Physical' : 'Digital'}
-          </span>
+          ) : null}
         </div>
       </div>
-
-      <CardContent className="flex-1 p-4 space-y-1.5">
-        {product.brand && (
-          <p className="text-[10px] font-mono uppercase tracking-widest text-stone-500">
-            {product.brand}
-          </p>
-        )}
-
-        <Link href={productPath(product.slug)} className="block">
-          <h3 className="font-serif text-sm font-medium text-stone-100 group-hover:text-amber-200 transition-colors line-clamp-1">
-            {product.title}
-          </h3>
-        </Link>
-
-        <p className="text-[11px] text-stone-400 line-clamp-2 leading-relaxed font-sans">
-          {product.shortDescription || product.description}
+      <div className="mt-2.5 space-y-0.5 px-0.5">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-stone-500">{label}</p>
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-stone-100 group-hover:text-amber-200">{product.title}</h3>
+        <p className="text-sm tabular-nums text-stone-200">
+          {formatCurrency(price, product.currency)}
+          {onSale && <s className="ml-1.5 text-xs text-stone-500">{formatCurrency(product.price, product.currency)}</s>}
         </p>
-      </CardContent>
-
-      <CardFooter className="p-4 pt-0 flex items-center justify-between border-t border-stone-900 mt-auto">
-        <div className="flex items-baseline gap-1.5 pt-2">
-          {hasDiscount ? (
-            <>
-              <span className="text-sm font-medium font-mono text-stone-100">
-                {formatCurrency(product.discountPrice!, product.currency)}
-              </span>
-              <span className="text-[11px] font-mono text-stone-500 line-through">
-                {formatCurrency(product.price, product.currency)}
-              </span>
-            </>
-          ) : (
-            <span className="text-sm font-medium font-mono text-stone-100">
-              {formatCurrency(product.price, product.currency)}
-            </span>
-          )}
-        </div>
-
-        <Link href={productPath(product.slug)} className="pt-2">
-          <span className="text-xs font-medium text-stone-400 hover:text-white flex items-center gap-1 transition-colors">
-            Inspect <ArrowRight className="w-3 h-3" />
-          </span>
-        </Link>
-      </CardFooter>
-    </Card>
+      </div>
+    </Link>
   );
 }

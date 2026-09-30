@@ -5,6 +5,8 @@ import { ProductCard } from '@/components/products/product-card';
 import { AnnouncementBanner } from '@/components/marketing/announcement-banner';
 import { NewsletterSignup } from '@/components/marketing/newsletter-signup';
 import { ProductService } from '@/services/product/product.service';
+import { formatCurrency } from '@/lib/utils';
+import { productPath } from '@/lib/product-url';
 import {
   ArrowRight,
   ShieldCheck,
@@ -34,6 +36,8 @@ export default async function HomePage() {
   const featuredProducts = publishedData.products;
   const physicalGoods = physicalData.products;
   const digitalAssets = digitalData.products;
+  // Hero shows the owner's newest product that has a cover image (no stock photos).
+  const heroProduct = featuredProducts.find((p) => p.coverImage) ?? null;
 
   return (
     <div className="space-y-24 pb-24 text-stone-100 selection:bg-amber-400 selection:text-black bg-[#09090b]">
@@ -109,34 +113,45 @@ export default async function HomePage() {
               </div>
             </div>
 
-            {/* Right Hero Product Photograph (Editorial Showcase) */}
+            {/* Right: the owner's newest product (or a simple panel before any are published) */}
             <div className="lg:col-span-6 relative">
-              <div className="relative aspect-[4/5] w-full max-w-lg mx-auto rounded-2xl overflow-hidden border border-stone-800/80 bg-stone-900 shadow-2xl group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/hero-product.jpg"
-                  alt="Titanium Chrono Edition 01"
-                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
-                />
+              {heroProduct ? (
+                <div className="relative aspect-[4/5] w-full max-w-lg mx-auto rounded-2xl overflow-hidden border border-stone-800/80 bg-stone-900 shadow-2xl group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={heroProduct.coverImage!}
+                    alt={heroProduct.title}
+                    className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                  />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
 
-                {/* Floating Editorial Label */}
-                <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl bg-stone-950/90 backdrop-blur-md border border-stone-800 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-medium">
-                      Featured Piece
-                    </span>
-                    <h3 className="text-xs font-medium text-stone-100">Titanium Chrono Edition 01</h3>
-                    <p className="text-[11px] text-stone-400 font-mono mt-0.5">$385.00 USD • In Stock</p>
+                  <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl bg-stone-950/90 backdrop-blur-md border border-stone-800 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 font-medium">New</span>
+                      <h3 className="truncate text-xs font-medium text-stone-100">{heroProduct.title}</h3>
+                      <p className="text-[11px] text-stone-400 font-mono mt-0.5">
+                        {formatCurrency(
+                          heroProduct.discountPrice !== null && heroProduct.discountPrice < heroProduct.price
+                            ? heroProduct.discountPrice
+                            : heroProduct.price,
+                          heroProduct.currency
+                        )}
+                      </p>
+                    </div>
+                    <Link href={productPath(heroProduct.slug)}>
+                      <Button size="sm" className="bg-stone-100 hover:bg-white text-stone-900 text-xs px-3.5 py-1.5 rounded-lg font-medium">
+                        View
+                      </Button>
+                    </Link>
                   </div>
-                  <Link href="/products/titanium-chrono-edition-01">
-                    <Button size="sm" className="bg-stone-100 hover:bg-white text-stone-900 text-xs px-3.5 py-1.5 rounded-lg font-medium">
-                      Inspect
-                    </Button>
-                  </Link>
                 </div>
-              </div>
+              ) : (
+                <div className="relative aspect-[4/5] w-full max-w-lg mx-auto rounded-2xl border border-stone-800/80 bg-gradient-to-br from-stone-900 via-stone-950 to-amber-950/40 p-8 flex flex-col justify-end shadow-2xl">
+                  <span className="font-serif text-6xl tracking-[0.25em] text-stone-100">NOV</span>
+                  <p className="mt-4 text-sm text-stone-400">Ebooks, digital downloads and handpicked goods. Pay with Mobile Money or card.</p>
+                </div>
+              )}
             </div>
           </div>
         </Container>
@@ -260,13 +275,9 @@ export default async function HomePage() {
             </div>
 
             <div className="lg:col-span-5 relative">
-              <div className="aspect-[4/3] rounded-2xl overflow-hidden border border-stone-800 bg-stone-900 shadow-xl group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/product-2.jpg"
-                  alt="Artisanal craftsmanship"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+              <div className="aspect-[4/3] rounded-2xl border border-stone-800 bg-gradient-to-br from-stone-900 to-stone-950 p-8 flex flex-col justify-center gap-4 shadow-xl">
+                <p className="font-serif text-2xl text-stone-100">Buy in under a minute.</p>
+                <p className="text-sm text-stone-400">No account needed. Pay with Mobile Money or card and get your download instantly, or your order delivered.</p>
               </div>
             </div>
           </div>

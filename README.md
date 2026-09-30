@@ -42,7 +42,7 @@ Open `.env` and set at least these:
 | `DATABASE_URL` | Your Postgres connection string. The default works with the Docker command above. |
 | `AUTH_SECRET` | A long random string. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 | `INITIAL_ADMIN_EMAIL` | The email you'll sign in with. |
-| `INITIAL_ADMIN_PASSWORD` | Your password (at least 12 characters). |
+| `INITIAL_ADMIN_PASSWORD` | Your password (at least 8 characters). |
 | `PAYMENT_SIMULATION` | Leave as `true` to test purchases without any Paystack keys. |
 
 Every variable is explained in `.env.example`.
@@ -123,7 +123,7 @@ One-time setup in the Vercel dashboard (**your project → Storage** and **→ S
    | --- | --- |
    | `AUTH_SECRET` | A long random string, 64 characters. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
    | `INITIAL_ADMIN_EMAIL` | Your login email. |
-   | `INITIAL_ADMIN_PASSWORD` | Your password (12+ characters). Changing it and redeploying resets your password. |
+   | `INITIAL_ADMIN_PASSWORD` | Your password (8+ characters). Changing it and redeploying resets your password. |
    | `PAYSTACK_SECRET_KEY` | `sk_test_…` to take test payments, `sk_live_…` for real money. |
    | `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | The matching `pk_test_…` / `pk_live_…`. |
    | `RESEND_API_KEY` *(optional)* | From resend.com, so buyers get receipt emails. Without it, the download link is still shown on the success page. |

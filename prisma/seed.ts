@@ -4,24 +4,29 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 
-const MIN_PASSWORD_LENGTH = 12;
+const MIN_PASSWORD_LENGTH = 8;
+
+/** Env values pasted into dashboards often carry stray spaces or quotes: ignore them. */
+function cleanEnvValue(value: string | undefined): string {
+  return (value ?? '').trim().replace(/^(['"])(.*)\1$/, '$2');
+}
 
 function requireOwnerCredentials(): { email: string; password: string } {
-  const email = process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase();
-  const password = process.env.INITIAL_ADMIN_PASSWORD;
+  const email = cleanEnvValue(process.env.INITIAL_ADMIN_EMAIL).toLowerCase();
+  const password = cleanEnvValue(process.env.INITIAL_ADMIN_PASSWORD);
   const problems: string[] = [];
+
+  // Deploy builds: seeding is optional only when the owner details are not configured at all.
+  if (!email && !password && process.argv.includes('--if-configured')) {
+    console.log('ℹ️  Skipping owner setup: INITIAL_ADMIN_EMAIL / INITIAL_ADMIN_PASSWORD are not set.');
+    process.exit(0);
+  }
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     problems.push('INITIAL_ADMIN_EMAIL must be set to your email address.');
   }
   if (!password || password.length < MIN_PASSWORD_LENGTH) {
     problems.push(`INITIAL_ADMIN_PASSWORD must be set and at least ${MIN_PASSWORD_LENGTH} characters long.`);
-  }
-
-  if (problems.length > 0 && process.argv.includes('--if-configured')) {
-    // Deploy builds: seeding is optional once the owner exists.
-    console.log('ℹ️  Skipping seed: INITIAL_ADMIN_EMAIL / INITIAL_ADMIN_PASSWORD not set.');
-    process.exit(0);
   }
 
   if (problems.length > 0) {
@@ -74,9 +79,10 @@ async function main() {
   console.log(`✅ Super Admin configured: ${superAdmin.email} (${superAdmin.role})`);
 
   // Default Seller Store
+  // Single-owner store: if the owner email changed, hand the existing store to the new owner.
   const store = await prisma.store.upsert({
-    where: { sellerId: superAdmin.id },
-    update: {},
+    where: { slug: 'nov-flagship-atelier' },
+    update: { sellerId: superAdmin.id },
     create: {
       sellerId: superAdmin.id,
       name: 'NOV Flagship Atelier',

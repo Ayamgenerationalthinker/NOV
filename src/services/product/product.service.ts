@@ -7,12 +7,14 @@ import {
 } from '@/lib/validators/product';
 import { OrderStatus, Prisma, ProductKind, StockMovementType } from '@prisma/client';
 import crypto from 'crypto';
+import { DEFAULT_VARIANT_TITLE } from '@/lib/product-purchase';
 
 /**
- * A physical product without options keeps its stock on one hidden variant with this title,
- * so it shares the same reservation / stock-movement machinery as products with variants.
+ * A physical product without options keeps its stock on one hidden variant titled
+ * DEFAULT_VARIANT_TITLE, so it shares the same reservation / stock-movement machinery as
+ * products with variants.
  */
-export const DEFAULT_VARIANT_TITLE = 'Default';
+export { DEFAULT_VARIANT_TITLE };
 
 export function isDefaultVariant(variant: { title: string; option1Value?: string | null }): boolean {
   return variant.title === DEFAULT_VARIANT_TITLE && !variant.option1Value;

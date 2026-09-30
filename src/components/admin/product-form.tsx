@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatFileSize } from '@/lib/utils';
+import { DEFAULT_VARIANT_TITLE } from '@/lib/product-purchase';
 
 type Kind = 'DIGITAL' | 'PHYSICAL';
 
@@ -29,7 +30,6 @@ const DIGITAL_TYPES = [
   { value: 'GRAPHICS', label: 'Graphics' },
 ] as const;
 
-const DEFAULT_VARIANT_TITLE = 'Default';
 
 interface VariantRow {
   id?: string;

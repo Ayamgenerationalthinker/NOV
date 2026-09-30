@@ -164,6 +164,6 @@ describe('CouponService', () => {
     });
 
     expect(result.valid).toBe(false);
-    expect(result.message).toContain('Minimum order amount');
+    expect(result.message).toContain('needs an order of at least');
   });
 });

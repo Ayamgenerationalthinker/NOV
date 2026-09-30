@@ -2,9 +2,10 @@
 
 import { usePathname } from 'next/navigation';
 
-/** Routes that render without the shop header, footer and banner (focused product pages). */
+/** Routes that render without the shop header, footer and banner: product landing pages and checkout. */
 export function isFocusedRoute(pathname: string | null): boolean {
-  return Boolean(pathname && (pathname === '/p' || pathname.startsWith('/p/')));
+  if (!pathname) return false;
+  return ['/p', '/checkout'].some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
 interface SiteChromeProps {

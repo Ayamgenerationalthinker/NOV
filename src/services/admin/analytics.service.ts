@@ -251,6 +251,8 @@ export class AnalyticsService {
     limit?: number;
     status?: OrderStatus;
     search?: string;
+    /** to_ship: paid physical orders not yet dispatched; shipped: dispatched physical orders. */
+    shipping?: 'to_ship' | 'shipped';
   }) {
     const page = Math.max(1, params.page || 1);
     const limit = Math.max(1, Math.min(100, params.limit || 15));
@@ -260,6 +262,16 @@ export class AnalyticsService {
 
     if (params.status) {
       where.status = params.status;
+    }
+
+    if (params.shipping) {
+      where.items = { some: { productKind: 'PHYSICAL' } };
+      if (params.shipping === 'to_ship') {
+        where.status = OrderStatus.PAID;
+        where.fulfillmentStatus = { in: ['UNFULFILLED', 'PARTIALLY_FULFILLED'] };
+      } else {
+        where.fulfillmentStatus = 'FULFILLED';
+      }
     }
 
     if (params.search && params.search.trim()) {
@@ -288,9 +300,15 @@ export class AnalyticsService {
               product: {
                 select: { id: true, title: true, slug: true, coverImage: true },
               },
+              variant: { select: { title: true, option1Value: true } },
             },
           },
           refunds: true,
+          fulfillments: {
+            select: { trackingNumber: true, trackingCarrier: true, dispatchedAt: true },
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
         },
       }),
       prisma.order.count({ where }),

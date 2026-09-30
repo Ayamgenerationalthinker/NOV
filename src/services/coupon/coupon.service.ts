@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { formatCurrency } from '@/lib/utils';
 import { DiscountType } from '@prisma/client';
 
 export interface ValidateCouponParams {
@@ -80,7 +81,7 @@ export class CouponService {
         valid: false,
         discountAmount: 0,
         finalTotal: subtotal,
-        message: `Minimum order amount of $${minAmount.toFixed(2)} required for this coupon.`,
+        message: `This code needs an order of at least ${formatCurrency(minAmount)}.`,
       };
     }
 

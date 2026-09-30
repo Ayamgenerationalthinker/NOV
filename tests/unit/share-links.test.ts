@@ -34,11 +34,13 @@ describe('Shareable product links', () => {
     expect(decodeURIComponent(link.split('text=')[1])).toBe('Kente Tote & Bag\nhttps://shop.example.com/p/kente-tote');
   });
 
-  it('hides the shop header/footer only on /p/ pages', () => {
+  it('hides the shop header/footer only on product landing pages and checkout', () => {
     expect(isFocusedRoute('/p/kente-tote')).toBe(true);
+    expect(isFocusedRoute('/checkout')).toBe(true);
+    expect(isFocusedRoute('/checkout/success')).toBe(true);
     expect(isFocusedRoute('/products')).toBe(false);
     expect(isFocusedRoute('/pricing')).toBe(false);
-    expect(isFocusedRoute('/checkout')).toBe(false);
+    expect(isFocusedRoute('/checkouts-archive')).toBe(false);
   });
 
   it('redirects /products/[slug] to /p/[slug] and keeps coupon/quantity/variant', async () => {

@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import { CheckCircle2, Download, FileText, Star, Truck, Lock } from 'lucide-react';
 import { ProductService } from '@/services/product/product.service';
 import { ReviewService } from '@/services/review/review.service';
+import { InventoryService } from '@/services/inventory/inventory.service';
 import { ProductBuyActions } from '@/components/products/product-buy-actions';
 import { ProductMediaGallery } from '@/components/products/product-media-gallery';
 import { formatCurrency, formatFileSize } from '@/lib/utils';
@@ -30,7 +31,13 @@ function fileFormat(fileName: string): string {
 
 export default async function ProductLandingPage({ params, searchParams }: ProductLandingProps) {
   const { slug } = await params;
-  const product = await ProductService.getProductBySlug(slug);
+  let product = await ProductService.getProductBySlug(slug);
+
+  // Stock held by abandoned checkouts is freed before we show "In stock" / "Sold out".
+  if (product?.isPublished && product.productKind === 'PHYSICAL' && product.variants.some((v) => v.reservedQuantity > 0)) {
+    const { releasedCount } = await InventoryService.releaseExpiredReservations().catch(() => ({ releasedCount: 0 }));
+    if (releasedCount > 0) product = await ProductService.getProductBySlug(slug);
+  }
 
   // Drafts and unknown slugs look identical to the public.
   if (!product || !product.isPublished) {

@@ -10,6 +10,10 @@ import crypto from 'crypto';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
+    $executeRaw: vi.fn().mockResolvedValue(1),
+    shippingZone: {
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
     product: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -131,9 +135,10 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
         price: 200,
         discountPrice: null,
         productKind: ProductKind.PHYSICAL,
+        currency: 'GHS',
         isPublished: true,
         variants: [
-          { id: 'var-1', price: 200, salePrice: null, inventoryQuantity: 10, isAvailable: true },
+          { id: 'var-1', title: 'Default', sku: 'W-1', price: 200, salePrice: null, inventoryQuantity: 10, reservedQuantity: 0, isAvailable: true },
         ],
       };
 
@@ -147,12 +152,14 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
 
       const order = await OrderService.createOrder({
         items: [{ productId: 'prod-1', variantId: 'var-1', quantity: 1 }],
-        currency: 'USD',
         guestName: 'Collector',
         guestEmail: 'collector@nov.com',
+        contactPhone: '0241234567',
+        shippingAddress: { fullName: 'Collector', street: '12 Lagos Ave', city: 'Accra', country: 'GH', phone: '0241234567' },
       });
 
       expect(order.orderNumber).toBe('NOV-101');
+      expect(prisma.$executeRaw).toHaveBeenCalled();
       expect(prisma.inventoryReservation.create).toHaveBeenCalled();
     });
 
@@ -162,6 +169,7 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
         title: 'Sold Out Item',
         price: 150,
         productKind: ProductKind.PHYSICAL,
+        currency: 'GHS',
         isPublished: true,
         variants: [
           {
@@ -181,10 +189,10 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
       await expect(
         OrderService.createOrder({
           items: [{ productId: 'prod-soldout', variantId: 'var-empty', quantity: 1 }],
-          currency: 'USD',
           guestEmail: 'shopper@nov.com',
+          shippingAddress: { fullName: 'Shopper', street: '1 High St', city: 'Kumasi', country: 'GH', phone: '0200000000' },
         })
-      ).rejects.toThrow(/Insufficient stock/);
+      ).rejects.toThrow(/no longer available|sold out/);
     });
   });
 

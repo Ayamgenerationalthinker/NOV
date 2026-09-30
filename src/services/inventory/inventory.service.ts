@@ -137,7 +137,8 @@ export class InventoryService {
           reservedQuantity: { decrement: quantity },
           inventoryQuantity: { decrement: quantity },
           soldQuantity: { increment: quantity },
-          isAvailable: variant.inventoryQuantity - quantity > 0,
+          // isAvailable stays as the owner set it: selling out must not hide an option (it could no
+          // longer be restocked from the product form). Availability comes from the stock numbers.
         },
       });
 

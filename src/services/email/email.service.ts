@@ -1,5 +1,6 @@
 import { env } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
+import { formatCurrency } from '@/lib/utils';
 
 export interface SendEmailOptions {
   to: string;
@@ -64,6 +65,7 @@ export class EmailService {
                 title: true,
                 slug: true,
                 productType: true,
+                productKind: true,
               },
             },
           },
@@ -88,9 +90,11 @@ export class EmailService {
 
     const customerName = order.customer?.name || order.guestName || 'Valued Customer';
     const transaction = order.transactions?.[0];
-    const totalAmount = Number(order.total).toFixed(2);
-    const subtotalAmount = Number(order.subtotal).toFixed(2);
-    const discountAmount = Number(order.discountTotal).toFixed(2);
+    const money = (amount: unknown) => formatCurrency(Number(amount), order.currency);
+    const totalAmount = money(order.total);
+    const subtotalAmount = money(order.subtotal);
+    const discountAmount = Number(order.discountTotal);
+    const hasDigital = order.items.some((i) => i.product.productKind === 'DIGITAL');
     const libraryUrl = `${env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${order.id}&orderNumber=${order.orderNumber}`;
 
     const itemsRowsHtml = order.items
@@ -102,7 +106,7 @@ export class EmailService {
             <div style="font-size: 11px; color: #94a3b8; font-weight: normal;">${item.product.productType}</div>
           </td>
           <td style="padding: 12px 0; text-align: right; color: #f8fafc; font-weight: bold;">
-            $${Number(item.totalPrice).toFixed(2)}
+            ${money(item.totalPrice)}
           </td>
         </tr>
       `
@@ -130,13 +134,13 @@ export class EmailService {
             <div style="padding: 32px;">
               <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #cbd5e1;">
                 Hi <strong>${customerName}</strong>,<br>
-                Your order has been confirmed and lifetime digital entitlements have been unlocked on your account.
+                ${hasDigital ? 'Your payment is confirmed. Use the button below to download your files any time.' : 'Your payment is confirmed. We will contact you on your phone number to arrange delivery.'}
               </p>
 
               <!-- CTA Button -->
               <div style="margin: 28px 0; text-align: center;">
                 <a href="${libraryUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 14px 32px; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);">
-                  Access Digital Library & Downloads →
+                  ${hasDigital ? 'Download your files →' : 'View your order →'}
                 </a>
               </div>
 
@@ -150,21 +154,21 @@ export class EmailService {
                   <tfoot>
                     <tr>
                       <td style="padding: 10px 0 4px; color: #94a3b8;">Subtotal</td>
-                      <td style="padding: 10px 0 4px; text-align: right; color: #cbd5e1;">$${subtotalAmount}</td>
+                      <td style="padding: 10px 0 4px; text-align: right; color: #cbd5e1;">${subtotalAmount}</td>
                     </tr>
                     ${
-                      Number(discountAmount) > 0
+                      discountAmount > 0
                         ? `
                       <tr>
                         <td style="padding: 4px 0; color: #10b981;">Coupon Discount</td>
-                        <td style="padding: 4px 0; text-align: right; color: #10b981;">-$${discountAmount}</td>
+                        <td style="padding: 4px 0; text-align: right; color: #10b981;">-${money(discountAmount)}</td>
                       </tr>
                     `
                         : ''
                     }
                     <tr>
                       <td style="padding: 12px 0 0; font-size: 16px; font-weight: 800; color: #ffffff; border-top: 1px solid #334155;">Total</td>
-                      <td style="padding: 12px 0 0; text-align: right; font-size: 16px; font-weight: 800; color: #3b82f6; border-top: 1px solid #334155;">$${totalAmount} ${order.currency}</td>
+                      <td style="padding: 12px 0 0; text-align: right; font-size: 16px; font-weight: 800; color: #3b82f6; border-top: 1px solid #334155;">${totalAmount}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -192,7 +196,7 @@ export class EmailService {
       to: recipientEmail,
       subject: `Your receipt for Order #${order.orderNumber} - NOV.com`,
       html,
-      text: `Thank you for your order #${order.orderNumber} ($${totalAmount} ${order.currency}). Access your digital products at: ${libraryUrl}`,
+      text: `Thank you for your order #${order.orderNumber} (${totalAmount}). ${hasDigital ? 'Download your files' : 'View your order'}: ${libraryUrl}`,
     });
 
     return result.success;

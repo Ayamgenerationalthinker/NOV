@@ -32,7 +32,7 @@ export default async function AdminLayout({
     redirect('/login?redirect=/admin');
   }
 
-  if (!RBACService.isSellerOrAdmin(session.role)) {
+  if (!RBACService.isAdmin(session.role)) {
     return (
       <Container className="py-24">
         <div className="max-w-md mx-auto rounded-3xl border border-red-900/40 bg-red-950/20 p-8 text-center shadow-2xl backdrop-blur-md">

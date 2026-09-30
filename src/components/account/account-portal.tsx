@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { productPath } from '@/lib/product-url';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -435,7 +436,7 @@ export function AccountPortal({
                           <div className="space-y-1.5">
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="text-base font-bold text-white">
-                                <Link href={`/products/${item.product.slug}`} className="hover:text-blue-400 transition-colors">
+                                <Link href={productPath(item.product.slug)} className="hover:text-blue-400 transition-colors">
                                   {item.product.title}
                                 </Link>
                               </h3>
@@ -465,7 +466,7 @@ export function AccountPortal({
                                 <Key className="w-3 h-3 text-amber-400" />
                                 View License Key
                               </Button>
-                              <Link href={`/products/${item.product.slug}`} target="_blank">
+                              <Link href={productPath(item.product.slug)} target="_blank">
                                 <Button
                                   variant="ghost"
                                   size="sm"

@@ -1,257 +1,134 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { useCart } from '@/context/cart-context';
-import { ShoppingBag, ArrowRight, Check, Plus, Minus, Package, ShieldCheck } from 'lucide-react';
-import { ProductKind } from '@prisma/client';
-import { formatCurrency } from '@/lib/utils';
-
-export interface ProductVariantData {
-  id: string;
-  sku: string;
-  title: string;
-  option1Name?: string | null;
-  option1Value?: string | null;
-  option2Name?: string | null;
-  option2Value?: string | null;
-  price: number;
-  salePrice?: number | null;
-  inventoryQuantity: number;
-  isAvailable: boolean;
-}
+import Link from 'next/link';
+import { Minus, Plus, Tag, Lock } from 'lucide-react';
+import { formatCurrency, cn } from '@/lib/utils';
+import { BuyState, MAX_QUANTITY_PER_ORDER, buildCheckoutUrl } from '@/lib/product-purchase';
 
 interface ProductBuyActionsProps {
-  product: {
-    id: string;
-    title: string;
-    slug: string;
-    price: number;
-    discountPrice?: number | null;
-    currency: string;
-    coverImage?: string | null;
-    productType: string;
-    productKind: ProductKind;
-    variants?: ProductVariantData[];
-  };
+  slug: string;
+  currency: string;
+  isPhysical: boolean;
+  /** Price shown when there are no options to choose. */
+  basePrice: { price: number; compareAtPrice: number | null };
+  /** Stock for products without options (null for digital). */
+  baseAvailable: number | null;
+  initial: BuyState;
 }
 
-export function ProductBuyActions({ product }: ProductBuyActionsProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { addItem, isInCart } = useCart();
-  const [justAdded, setJustAdded] = React.useState(false);
+/**
+ * The single purchase control on the product landing page: option picker and quantity for
+ * physical items (driven by real stock), and one "Buy now" button that goes straight to checkout.
+ */
+export function ProductBuyActions({ slug, currency, isPhysical, basePrice, baseAvailable, initial }: ProductBuyActionsProps) {
+  const [selectedId, setSelectedId] = React.useState<string | null>(initial.selectedId);
+  const [quantity, setQuantity] = React.useState(initial.quantity);
 
-  const urlVariant = searchParams?.get('variant') || searchParams?.get('sku') || null;
-  const parsedQty = searchParams?.get('quantity') ? parseInt(searchParams.get('quantity')!, 10) : 1;
-  const initialQty = !isNaN(parsedQty) && parsedQty > 0 ? parsedQty : 1;
-  const urlCoupon = searchParams?.get('coupon') || searchParams?.get('discount_code') || '';
+  const selectedOption = initial.options.find((o) => o.id === selectedId) ?? null;
+  const price = selectedOption ? { price: selectedOption.price, compareAtPrice: selectedOption.compareAtPrice } : basePrice;
+  const available = selectedOption ? selectedOption.available : baseAvailable;
+  const maxQuantity = Math.min(MAX_QUANTITY_PER_ORDER, Math.max(1, available ?? 1));
+  const soldOut = isPhysical && (available ?? 0) <= 0;
+  const qty = Math.min(quantity, maxQuantity);
 
-  const isPhysical = product.productKind === ProductKind.PHYSICAL;
-  const hasVariants = Boolean(product.variants && product.variants.length > 0);
-
-  const initialVariant = React.useMemo(() => {
-    if (!hasVariants || !product.variants) return null;
-    if (urlVariant) {
-      const match = product.variants.find(
-        (v) =>
-          v.id === urlVariant ||
-          v.sku.toLowerCase() === urlVariant.toLowerCase() ||
-          v.title.toLowerCase() === urlVariant.toLowerCase()
-      );
-      if (match) return match;
-    }
-    return product.variants[0];
-  }, [hasVariants, product.variants, urlVariant]);
-
-  const [selectedVariant, setSelectedVariant] = React.useState<ProductVariantData | null>(initialVariant);
-  const [quantity, setQuantity] = React.useState(initialQty);
-
-  // Active price based on variant or product base
-  const activePrice = selectedVariant
-    ? selectedVariant.salePrice ?? selectedVariant.price
-    : product.discountPrice ?? product.price;
-
-  const inStock = selectedVariant
-    ? selectedVariant.inventoryQuantity
-    : isPhysical ? 10 : 999;
-
-  const isSoldOut = isPhysical && inStock <= 0;
-  const isAlreadyInCart = isInCart(product.id, selectedVariant?.id);
-
-  const handleAddToCart = () => {
-    if (isSoldOut) return;
-
-    addItem({
-      productId: product.id,
-      variantId: selectedVariant?.id,
-      variantTitle: selectedVariant?.title,
-      sku: selectedVariant?.sku,
-      productKind: product.productKind,
-      title: product.title,
-      slug: product.slug,
-      price: selectedVariant ? selectedVariant.price : product.price,
-      discountPrice: selectedVariant
-        ? selectedVariant.salePrice
-        : product.discountPrice,
-      coverImage: product.coverImage,
-      productType: product.productType,
-      quantity: isPhysical ? quantity : 1,
-      currency: product.currency,
-    });
-
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 2000);
-  };
-
-  const handleBuyNow = () => {
-    if (isSoldOut) return;
-
-    addItem({
-      productId: product.id,
-      variantId: selectedVariant?.id,
-      variantTitle: selectedVariant?.title,
-      sku: selectedVariant?.sku,
-      productKind: product.productKind,
-      title: product.title,
-      slug: product.slug,
-      price: selectedVariant ? selectedVariant.price : product.price,
-      discountPrice: selectedVariant
-        ? selectedVariant.salePrice
-        : product.discountPrice,
-      coverImage: product.coverImage,
-      productType: product.productType,
-      quantity: isPhysical ? quantity : 1,
-      currency: product.currency,
-    });
-
-    const checkoutUrl = urlCoupon ? `/checkout?coupon=${encodeURIComponent(urlCoupon)}` : '/checkout';
-    router.push(checkoutUrl);
-  };
+  const checkoutHref = buildCheckoutUrl({
+    slug,
+    variantId: isPhysical ? selectedId : null,
+    quantity: isPhysical ? qty : 1,
+    coupon: initial.coupon,
+  });
 
   return (
-    <div className="space-y-6">
-      {/* Variant Selector (if available) */}
-      {hasVariants && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs font-mono uppercase tracking-wider">
-            <span className="text-zinc-400">Select Option / Size</span>
-            <span className="text-emerald-400 font-semibold">{selectedVariant?.sku}</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            {product.variants!.map((variant) => {
-              const isSelected = selectedVariant?.id === variant.id;
-              const isVarOutOfStock = isPhysical && variant.inventoryQuantity <= 0;
-
+    <div className="space-y-5">
+      {initial.options.length > 0 && (
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium text-stone-300">Choose an option</legend>
+          <div className="flex flex-wrap gap-2">
+            {initial.options.map((option) => {
+              const isSelected = option.id === selectedId;
+              const isOut = option.available <= 0;
               return (
                 <button
-                  key={variant.id}
+                  key={option.id}
                   type="button"
-                  disabled={isVarOutOfStock}
-                  onClick={() => setSelectedVariant(variant)}
-                  className={`p-3 rounded-2xl border text-left transition-all ${
-                    isSelected
-                      ? 'border-emerald-500 bg-emerald-950/30 text-white shadow-lg shadow-emerald-950/30'
-                      : isVarOutOfStock
-                      ? 'border-zinc-900 bg-zinc-950 text-zinc-600 cursor-not-allowed opacity-50'
-                      : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700 hover:text-white'
-                  }`}
+                  aria-pressed={isSelected}
+                  onClick={() => {
+                    setSelectedId(option.id);
+                    setQuantity(1);
+                  }}
+                  className={cn(
+                    'min-h-11 min-w-14 rounded-xl border px-4 py-2 text-sm font-medium transition-colors',
+                    isSelected ? 'border-amber-300 bg-amber-300 text-stone-950' : 'border-stone-700 bg-stone-900 text-stone-100 hover:border-stone-500',
+                    isOut && !isSelected && 'text-stone-500 line-through'
+                  )}
                 >
-                  <div className="text-xs font-semibold">{variant.title}</div>
-                  <div className="text-[11px] font-mono text-zinc-400 mt-1">
-                    {formatCurrency(variant.salePrice ?? variant.price, product.currency)}
-                  </div>
+                  {option.label}
                 </button>
               );
             })}
           </div>
-        </div>
+        </fieldset>
       )}
 
-      {/* Stock Availability & Quantity Controls */}
       {isPhysical && (
-        <div className="flex items-center justify-between p-4 bg-zinc-950 rounded-2xl border border-zinc-800/80">
-          <div className="space-y-0.5">
-            <span className="text-xs font-mono uppercase tracking-wider text-zinc-500">Availability</span>
-            <p className="text-xs font-medium text-white flex items-center gap-1.5">
-              <Package className="w-3.5 h-3.5 text-emerald-400" />
-              {inStock > 5 ? (
-                <span className="text-emerald-400">In Stock Ready to Dispatch</span>
-              ) : inStock > 0 ? (
-                <span className="text-amber-400 font-bold">Only {inStock} units left!</span>
-              ) : (
-                <span className="text-red-400">Out of Stock</span>
-              )}
-            </p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="text-sm">
+            {soldOut ? (
+              <span className="font-semibold text-red-400">Sold out</span>
+            ) : available !== null && available <= 5 ? (
+              <span className="text-amber-300">Only {available} left</span>
+            ) : (
+              <span className="text-emerald-400">In stock</span>
+            )}
           </div>
-
-          {inStock > 0 && (
-            <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 rounded-xl p-1">
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors"
-              >
-                <Minus className="w-3.5 h-3.5" />
+          {!soldOut && (
+            <div className="flex items-center rounded-xl border border-stone-700 bg-stone-900" role="group" aria-label="Quantity">
+              <button type="button" aria-label="Decrease quantity" disabled={qty <= 1} onClick={() => setQuantity(Math.max(1, qty - 1))} className="flex h-11 w-11 items-center justify-center text-stone-200 disabled:opacity-30">
+                <Minus className="h-4 w-4" />
               </button>
-              <span className="w-8 text-center text-xs font-mono font-bold text-white">
-                {quantity}
-              </span>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.min(inStock, q + 1))}
-                className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
+              <span className="w-8 text-center font-mono text-sm text-white" aria-live="polite">{qty}</span>
+              <button type="button" aria-label="Increase quantity" disabled={qty >= maxQuantity} onClick={() => setQuantity(Math.min(maxQuantity, qty + 1))} className="flex h-11 w-11 items-center justify-center text-stone-200 disabled:opacity-30">
+                <Plus className="h-4 w-4" />
               </button>
             </div>
           )}
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-2">
-        <Button
-          size="lg"
-          disabled={isSoldOut}
-          onClick={handleBuyNow}
-          className="flex-1 gap-2 text-xs font-bold uppercase tracking-wider bg-emerald-500 hover:bg-emerald-400 text-black rounded-2xl shadow-xl shadow-emerald-950/40 py-4 transition-all"
-        >
-          {isSoldOut ? 'Sold Out' : 'Instant Checkout'}
-          <ArrowRight className="w-4 h-4" />
-        </Button>
+      {initial.coupon && (
+        <p className="flex items-center gap-2 text-xs text-emerald-300">
+          <Tag className="h-3.5 w-3.5" /> Code <strong className="font-mono">{initial.coupon}</strong> will be applied at checkout
+        </p>
+      )}
 
-        <Button
-          size="lg"
-          variant="secondary"
-          disabled={isSoldOut}
-          onClick={handleAddToCart}
-          className="gap-2 text-xs font-bold uppercase tracking-wider bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-800 rounded-2xl py-4"
-        >
-          {justAdded ? (
-            <>
-              <Check className="w-4 h-4 text-emerald-400" />
-              Added to Cart!
-            </>
+      {/* Fixed to the bottom of the screen on phones, inline on larger screens */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-800 bg-stone-950/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
+        <div className="mx-auto flex max-w-xl items-center gap-4">
+          <div className="md:hidden">
+            <div className="font-mono text-lg font-bold text-white">{formatCurrency(price.price * (isPhysical ? qty : 1), currency)}</div>
+            {price.compareAtPrice !== null && (
+              <div className="font-mono text-xs text-stone-500 line-through">{formatCurrency(price.compareAtPrice * (isPhysical ? qty : 1), currency)}</div>
+            )}
+          </div>
+          {soldOut ? (
+            <span className="flex h-12 flex-1 items-center justify-center rounded-xl bg-stone-800 text-base font-semibold text-stone-400">
+              Sold out
+            </span>
           ) : (
-            <>
-              <ShoppingBag className="w-4 h-4 text-zinc-400" />
-              Add to Bag
-            </>
+            <Link
+              href={checkoutHref}
+              className="flex h-12 flex-1 items-center justify-center rounded-xl bg-amber-300 text-base font-bold text-stone-950 shadow-lg shadow-amber-900/20 transition-colors hover:bg-amber-200 active:bg-amber-400"
+            >
+              Buy now
+            </Link>
           )}
-        </Button>
+        </div>
       </div>
 
-      <div className="flex items-center justify-center gap-4 text-[11px] text-zinc-500 font-mono tracking-tight pt-2 border-t border-zinc-900">
-        <span className="flex items-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-          Encrypted Multi-Gateway Checkout
-        </span>
-        <span>•</span>
-        <span>{isPhysical ? 'Tracked Express Shipping' : 'Instant File Access'}</span>
-      </div>
+      <p className="hidden items-center gap-1.5 text-xs text-stone-400 md:flex">
+        <Lock className="h-3.5 w-3.5" /> Pay securely with Mobile Money or card. No account needed.
+      </p>
     </div>
   );
 }

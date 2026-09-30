@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { loginSchema } from '@/lib/validators/auth';
 import { PasswordService } from '@/services/auth/password.service';
 import { SessionService } from '@/services/auth/session.service';
-import { DevUserStore } from '@/lib/dev-store';
 
 export async function POST(request: Request) {
   try {
@@ -22,25 +21,10 @@ export async function POST(request: Request) {
 
     const { email, password } = parseResult.data;
 
-    // Retrieve user with password hash
-    let user: { id: string; email: string; name: string | null; role: any; passwordHash: string | null } | null = null;
-
-    try {
-      user = await prisma.user.findUnique({
-        where: { email },
-      });
-    } catch (dbErr) {
-      console.warn('⚠️ PostgreSQL unavailable, checking local development store:', dbErr);
-      user = DevUserStore.findByEmail(email);
-    }
-
-    if (!user || !user.passwordHash) {
-      // Fallback check if user was created in DevUserStore
-      const devUser = DevUserStore.findByEmail(email);
-      if (devUser) {
-        user = devUser;
-      }
-    }
+    // Users come only from the database. There is no fallback account.
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
 
     if (!user || !user.passwordHash) {
       return NextResponse.json(
@@ -56,6 +40,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
+      );
+    }
+
+    // Single-owner store: guest buyers get a customer record for their orders, but only the
+    // owner/admin may sign in.
+    if (user.role !== 'ADMIN' && user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Sign-in is for the store owner only. You can buy without an account.' },
+        { status: 403 }
       );
     }
 

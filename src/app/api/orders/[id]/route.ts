@@ -22,13 +22,18 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const isPaid = order.status === 'PAID';
+    const address = order.shippingAddress as Record<string, string> | null;
+
     return NextResponse.json({
       order: {
         id: order.id,
         orderNumber: order.orderNumber,
         status: order.status,
+        fulfillmentStatus: order.fulfillmentStatus,
         subtotal: Number(order.subtotal),
         discountTotal: Number(order.discountTotal),
+        shippingFee: Number(order.shippingFee),
         taxTotal: Number(order.taxTotal),
         total: Number(order.total),
         currency: order.currency,
@@ -37,8 +42,14 @@ export async function GET(
         guestName: order.guestName,
         paidAt: order.paidAt,
         createdAt: order.createdAt,
+        shippingAddress: address
+          ? { street: address.street, city: address.city, state: address.state, postalCode: address.postalCode }
+          : null,
         items: order.items.map((i) => ({
           id: i.id,
+          quantity: i.quantity,
+          productKind: i.productKind,
+          variantTitle: i.variant && i.variant.option1Value ? i.variant.title : null,
           unitPrice: Number(i.unitPrice),
           totalPrice: Number(i.totalPrice),
           product: {
@@ -47,12 +58,15 @@ export async function GET(
             slug: i.product.slug,
             coverImage: i.product.coverImage,
             productType: i.product.productType,
-            files: i.product.files.map((f) => ({
-              id: f.id,
-              fileName: f.fileName,
-              fileSize: Number(f.fileSize),
-              versionNumber: f.versionNumber,
-            })),
+            // Download list only once payment is confirmed
+            files: isPaid
+              ? i.product.files.map((f) => ({
+                  id: f.id,
+                  fileName: f.fileName,
+                  fileSize: Number(f.fileSize),
+                  versionNumber: f.versionNumber,
+                }))
+              : [],
           },
         })),
       },

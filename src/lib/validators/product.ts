@@ -1,9 +1,15 @@
 import { z } from 'zod';
 import { ProductType, ProductKind } from '@prisma/client';
 
+/** Absolute URL (R2/CDN) or a root-relative path (local dev uploads such as /uploads/...). */
+export const mediaUrlSchema = z
+  .string()
+  .refine((v) => v.startsWith('/') && !v.startsWith('//') || /^https?:\/\//.test(v), 'Must be an uploaded file or a full https URL');
+
 export const productVariantSchema = z.object({
   id: z.string().optional(),
-  sku: z.string().min(2, 'SKU must be at least 2 characters').max(50),
+  // Generated from the product slug and variant title when omitted.
+  sku: z.string().min(2, 'SKU must be at least 2 characters').max(80).optional(),
   title: z.string().min(1, 'Variant title is required').max(100),
   option1Name: z.string().optional().nullable(),
   option1Value: z.string().optional().nullable(),
@@ -26,13 +32,13 @@ export const productVariantSchema = z.object({
     .nullable(),
   inventoryQuantity: z.coerce.number().int().min(0).default(0),
   barcode: z.string().optional().nullable(),
-  imageUrl: z.string().url().optional().nullable().or(z.literal('')),
+  imageUrl: mediaUrlSchema.optional().nullable().or(z.literal('')),
   isAvailable: z.boolean().default(true),
 });
 
 export const productImageSchema = z.object({
   id: z.string().optional(),
-  url: z.string().url('Image URL must be valid'),
+  url: mediaUrlSchema,
   altText: z.string().optional().nullable(),
   displayOrder: z.number().int().default(0),
   isCover: z.boolean().default(false),
@@ -50,12 +56,12 @@ export const productCreateSchema = z.object({
   shortDescription: z.string().max(300).optional(),
   brand: z.string().max(100).optional().nullable(),
   productKind: z.nativeEnum(ProductKind).default(ProductKind.DIGITAL),
-  coverImage: z.string().url('Cover image must be a valid URL').optional().or(z.literal('')),
-  galleryImages: z.array(z.string().url()).default([]),
+  coverImage: mediaUrlSchema.optional().nullable().or(z.literal('')),
+  galleryImages: z.array(mediaUrlSchema).default([]),
   images: z.array(productImageSchema).optional(),
   price: z.coerce.number().min(0, 'Price must be greater than or equal to 0'),
   discountPrice: z.coerce.number().min(0).optional().nullable(),
-  currency: z.string().length(3).default('USD'),
+  currency: z.string().length(3).default('GHS'),
   isPublished: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
   productType: z.nativeEnum(ProductType).default(ProductType.EBOOK),
@@ -68,10 +74,12 @@ export const productCreateSchema = z.object({
   storeId: z.string().optional().nullable(),
   shippingProfileId: z.string().optional().nullable(),
   variants: z.array(productVariantSchema).optional(),
+  // Physical products without variants: stock held on a hidden default variant.
+  stockQuantity: z.coerce.number().int().min(0).optional(),
 
   // 3D Model Configuration
-  model3dUrl: z.string().url().optional().nullable().or(z.literal('')),
-  model3dPoster: z.string().url().optional().nullable().or(z.literal('')),
+  model3dUrl: mediaUrlSchema.optional().nullable().or(z.literal('')),
+  model3dPoster: mediaUrlSchema.optional().nullable().or(z.literal('')),
   model3dConfig: z
     .object({
       autoRotate: z.boolean().optional(),
@@ -83,7 +91,22 @@ export const productCreateSchema = z.object({
     .nullable(),
 });
 
-export const productUpdateSchema = productCreateSchema.partial();
+type OptionalWithoutDefaults<T extends z.ZodRawShape> = {
+  [K in keyof T]: z.ZodOptional<T[K] extends z.ZodDefault<infer Inner> ? Inner : T[K]>;
+};
+
+// Zod 4 applies .default() even inside .partial(), which would silently reset omitted fields
+// (isPublished, features, currency...) on every partial update. Strip defaults first.
+function withoutDefaults<T extends z.ZodRawShape>(shape: T): OptionalWithoutDefaults<T> {
+  return Object.fromEntries(
+    Object.entries(shape).map(([key, schema]) => [
+      key,
+      ((schema instanceof z.ZodDefault ? schema.removeDefault() : schema) as z.ZodType).optional(),
+    ])
+  ) as unknown as OptionalWithoutDefaults<T>;
+}
+
+export const productUpdateSchema = z.object(withoutDefaults(productCreateSchema.shape));
 
 export const productFilterSchema = z.object({
   category: z.string().optional(),

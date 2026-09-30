@@ -4,7 +4,7 @@ import { InventoryService } from '@/services/inventory/inventory.service';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
-  const auth = await RBACService.requireSellerOrAdmin();
+  const auth = await RBACService.requireAdmin();
   if ('error' in auth) return auth.error;
 
   try {

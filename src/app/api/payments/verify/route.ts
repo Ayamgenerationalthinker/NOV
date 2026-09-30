@@ -1,99 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PaymentService } from '@/services/payment/payment.service';
 import { PaymentProviderType } from '@/services/payment/payment.interface';
-import { OrderService } from '@/services/order/order.service';
-import { OrderStatus } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
+const PROVIDERS: PaymentProviderType[] = ['PAYSTACK', 'FLUTTERWAVE'];
+
+/**
+ * Customer redirect back from the gateway. Nothing in this URL is trusted: the reference is
+ * looked up against our own Transaction rows and re-verified with the gateway by
+ * PaymentService.confirmOrderPayment before any order is marked PAID.
+ */
 export async function GET(request: NextRequest) {
+  const appUrl = env.NEXT_PUBLIC_APP_URL;
+  const searchParams = request.nextUrl.searchParams;
+  const providerParam = searchParams.get('provider')?.toUpperCase() as PaymentProviderType | undefined;
+  const provider = providerParam && PROVIDERS.includes(providerParam) ? providerParam : undefined;
+  const orderId = searchParams.get('order_id') || undefined;
+  // Paystack returns `reference`/`trxref`; Flutterwave returns `tx_ref`. All are our own transactionRef.
+  const reference = searchParams.get('reference') || searchParams.get('trxref') || searchParams.get('tx_ref');
+  const gatewayStatus = searchParams.get('status')?.toLowerCase();
+
+  const failureRedirect = (error: string, failedOrderId?: string) => {
+    const url = new URL('/checkout', appUrl);
+    url.searchParams.set('error', error);
+    if (failedOrderId) url.searchParams.set('order_id', failedOrderId);
+    return NextResponse.redirect(url);
+  };
+
+  if (!reference) {
+    return failureRedirect(gatewayStatus === 'cancelled' ? 'payment_cancelled' : 'missing_verification_reference', orderId);
+  }
+
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const provider = (searchParams.get('provider')?.toUpperCase() || 'FLUTTERWAVE') as PaymentProviderType;
-    const orderId = searchParams.get('order_id');
-    const txRef = searchParams.get('tx_ref') || searchParams.get('reference') || searchParams.get('trxref');
-    const transactionId = searchParams.get('transaction_id');
-    const statusParam = searchParams.get('status');
+    const result = await PaymentService.confirmOrderPayment({
+      reference,
+      provider,
+      expectedOrderId: orderId,
+      source: 'redirect',
+    });
 
-    // Paystack uses `reference`, Flutterwave uses `transaction_id` or `tx_ref`
-    const verificationRef = provider === 'FLUTTERWAVE' ? (transactionId || txRef) : (txRef || transactionId);
-
-    if (!verificationRef && !orderId) {
-      return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/checkout?error=missing_verification_reference`);
+    if ((result.outcome === 'PAID' || result.outcome === 'ALREADY_PAID') && result.orderId) {
+      const url = new URL('/checkout/success', appUrl);
+      url.searchParams.set('orderId', result.orderId);
+      if (result.orderNumber) url.searchParams.set('orderNumber', result.orderNumber);
+      return NextResponse.redirect(url);
     }
 
-    // Attempt gateway verification
-    let isVerified = false;
-    let verifiedTransactionRef = txRef;
-
-    if (verificationRef) {
-      // In development or test environments, allow simulated test reference verification
-      if (
-        process.env.NODE_ENV !== 'production' &&
-        typeof verificationRef === 'string' &&
-        verificationRef.startsWith('test_simulated_')
-      ) {
-        isVerified = true;
-      } else {
-        try {
-          const verifyResult = await PaymentService.verifyPaymentStatus({
-            provider,
-            reference: verificationRef,
-          });
-          isVerified = Boolean(verifyResult.success);
-          if (verifyResult.transactionRef) {
-            verifiedTransactionRef = verifyResult.transactionRef;
-          }
-        } catch (verifyErr) {
-          console.error('Authoritative gateway payment verification failed:', verifyErr);
-          isVerified = false;
-        }
-      }
+    if (result.outcome === 'PENDING') {
+      return failureRedirect('payment_pending', result.orderId);
     }
 
-    // Find the target order
-    let targetOrder = null;
-    if (orderId) {
-      targetOrder = await prisma.order.findUnique({ where: { id: orderId } });
-    }
-    if (!targetOrder && verifiedTransactionRef) {
-      const tx = await prisma.transaction.findUnique({
-        where: { transactionRef: verifiedTransactionRef },
-        include: { order: true },
-      });
-      if (tx) targetOrder = tx.order;
+    if (result.outcome === 'FAILED') {
+      return failureRedirect(gatewayStatus === 'cancelled' ? 'payment_cancelled' : 'payment_failed', result.orderId);
     }
 
-    if (!targetOrder) {
-      return NextResponse.redirect(`${env.NEXT_PUBLIC_APP_URL}/checkout?error=order_not_found`);
-    }
-
-    if (isVerified) {
-      // Transition order to PAID (safe no-op if already transitioned by webhook)
-      if (targetOrder.status !== OrderStatus.PAID) {
-        await OrderService.transitionOrderStatus({
-          orderId: targetOrder.id,
-          toStatus: OrderStatus.PAID,
-          paymentProvider: provider,
-          transactionRef: verifiedTransactionRef || undefined,
-          notes: `Verified via customer redirect callback (${provider})`,
-        });
-      }
-
-      return NextResponse.redirect(
-        `${env.NEXT_PUBLIC_APP_URL}/checkout/success?orderId=${targetOrder.id}&orderNumber=${targetOrder.orderNumber}`
-      );
-    } else {
-      return NextResponse.redirect(
-        `${env.NEXT_PUBLIC_APP_URL}/checkout?error=payment_incomplete&order_id=${targetOrder.id}`
-      );
-    }
-  } catch (error: any) {
+    // REJECTED: don't reveal which check failed; it's logged and audited server-side.
+    return failureRedirect('payment_verification_failed', orderId);
+  } catch (error) {
     console.error('Payment verification redirect error:', error);
-    return NextResponse.redirect(
-      `${env.NEXT_PUBLIC_APP_URL}/checkout?error=verification_exception`
-    );
+    return failureRedirect('verification_exception', orderId);
   }
 }

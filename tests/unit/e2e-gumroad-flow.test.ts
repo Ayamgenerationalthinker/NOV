@@ -10,6 +10,10 @@ import crypto from 'crypto';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
+    $executeRaw: vi.fn().mockResolvedValue(1),
+    shippingZone: {
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
     product: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
@@ -31,6 +35,7 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     orderItem: {
       findMany: vi.fn(),
@@ -130,9 +135,10 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
         price: 200,
         discountPrice: null,
         productKind: ProductKind.PHYSICAL,
+        currency: 'GHS',
         isPublished: true,
         variants: [
-          { id: 'var-1', price: 200, salePrice: null, inventoryQuantity: 10, isAvailable: true },
+          { id: 'var-1', title: 'Default', sku: 'W-1', price: 200, salePrice: null, inventoryQuantity: 10, reservedQuantity: 0, isAvailable: true },
         ],
       };
 
@@ -146,12 +152,14 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
 
       const order = await OrderService.createOrder({
         items: [{ productId: 'prod-1', variantId: 'var-1', quantity: 1 }],
-        currency: 'USD',
         guestName: 'Collector',
         guestEmail: 'collector@nov.com',
+        contactPhone: '0241234567',
+        shippingAddress: { fullName: 'Collector', street: '12 Lagos Ave', city: 'Accra', country: 'GH', phone: '0241234567' },
       });
 
       expect(order.orderNumber).toBe('NOV-101');
+      expect(prisma.$executeRaw).toHaveBeenCalled();
       expect(prisma.inventoryReservation.create).toHaveBeenCalled();
     });
 
@@ -161,6 +169,7 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
         title: 'Sold Out Item',
         price: 150,
         productKind: ProductKind.PHYSICAL,
+        currency: 'GHS',
         isPublished: true,
         variants: [
           {
@@ -180,10 +189,10 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
       await expect(
         OrderService.createOrder({
           items: [{ productId: 'prod-soldout', variantId: 'var-empty', quantity: 1 }],
-          currency: 'USD',
           guestEmail: 'shopper@nov.com',
+          shippingAddress: { fullName: 'Shopper', street: '1 High St', city: 'Kumasi', country: 'GH', phone: '0200000000' },
         })
-      ).rejects.toThrow(/Insufficient stock/);
+      ).rejects.toThrow(/no longer available|sold out/);
     });
   });
 
@@ -240,7 +249,10 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
         data: { id: 'evt_dup_999' },
       });
 
-      const headers = new Headers({ 'verif-hash': 'flutterwave-secret-hash-dev' });
+      const { PaymentService } = await import('@/services/payment/payment.service');
+      const { FlutterwaveAdapter } = await import('@/services/payment/flutterwave.adapter');
+      PaymentService.setAdapter('FLUTTERWAVE', new FlutterwaveAdapter({ secretKey: 'k', webhookSecret: 'e2e-hash' }));
+      const headers = new Headers({ 'verif-hash': 'e2e-hash' });
 
       vi.mocked(prisma.paymentWebhookEvent.findFirst).mockResolvedValue({
         id: 'proc-1',
@@ -253,15 +265,16 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
       const result = await WebhookService.processWebhook('FLUTTERWAVE', headers, rawBody);
       expect(result.isDuplicate).toBe(true);
       expect(result.message).toContain('idempotent skip');
+      PaymentService.setAdapter('FLUTTERWAVE', new FlutterwaveAdapter());
     });
   });
 
   describe('TEST 8: Customer Security & Isolation (RBAC)', () => {
     it('should allow only owner/admin roles to access studio dashboard', () => {
-      expect(RBACService.isSellerOrAdmin(Role.SUPER_ADMIN)).toBe(true);
-      expect(RBACService.isSellerOrAdmin(Role.ADMIN)).toBe(true);
-      expect(RBACService.isSellerOrAdmin(Role.SELLER)).toBe(true);
-      expect(RBACService.isSellerOrAdmin(Role.CUSTOMER)).toBe(false);
+      expect(RBACService.isAdmin(Role.SUPER_ADMIN)).toBe(true);
+      expect(RBACService.isAdmin(Role.ADMIN)).toBe(true);
+      expect(RBACService.isAdmin(Role.SELLER)).toBe(false);
+      expect(RBACService.isAdmin(Role.CUSTOMER)).toBe(false);
     });
 
     it('should reject public customer registration requests with 403 Forbidden', async () => {

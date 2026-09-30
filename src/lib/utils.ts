@@ -13,7 +13,7 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatCurrency(
   amount: number | string,
-  currency: string = 'USD',
+  currency: string = 'GHS',
   locale: string = 'en-US'
 ): string {
   const numericAmount = typeof amount === 'string' ? parseFloat(amount) : amount;

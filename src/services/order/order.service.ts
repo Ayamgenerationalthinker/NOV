@@ -28,6 +28,8 @@ export interface CreateOrderParams {
   customerId?: string;
   guestEmail?: string;
   guestName?: string;
+  /** Buyer phone for Mobile Money / delivery contact (stored on billingAddress). */
+  contactPhone?: string;
   items: CreateOrderItemInput[];
   couponCode?: string;
   currency?: string;
@@ -49,6 +51,17 @@ export interface TransitionOrderStatusParams {
   restockPhysicalItems?: boolean;
 }
 
+/** A problem the buyer can fix (bad option, not enough stock, missing address...). Returned as HTTP 400. */
+export class OrderValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'OrderValidationError';
+  }
+}
+
+/** How long stock is held for a buyer who is paying. */
+const RESERVATION_MINUTES = 30;
+
 export class OrderService {
   /**
    * Generate an audit-friendly, unique order identifier
@@ -66,9 +79,10 @@ export class OrderService {
     customerId,
     guestEmail,
     guestName,
+    contactPhone,
     items,
     couponCode,
-    currency = 'USD',
+    currency,
     shippingAddress,
     shippingMethod,
     customerNotes,
@@ -77,14 +91,21 @@ export class OrderService {
     utmCampaign,
   }: CreateOrderParams) {
     if (!items || items.length === 0) {
-      throw new Error('Cannot create an empty order. Cart has no items.');
+      throw new OrderValidationError('Your order is empty.');
     }
 
     if (!customerId && !guestEmail) {
-      throw new Error('A customer account or guest email address is required to place an order.');
+      throw new OrderValidationError('Please enter your email address.');
     }
 
-    const productIds = items.map((i) => i.productId);
+    // Free stock held by checkouts that were abandoned more than RESERVATION_MINUTES ago.
+    try {
+      await InventoryService.releaseExpiredReservations();
+    } catch (err) {
+      console.error('Failed to release expired reservations:', err);
+    }
+
+    const productIds = Array.from(new Set(items.map((i) => i.productId)));
 
     // Fetch live product records directly from database
     const products = await prisma.product.findMany({
@@ -98,7 +119,17 @@ export class OrderService {
     });
 
     if (products.length !== productIds.length) {
-      throw new Error('One or more selected products are unavailable or unpublished.');
+      throw new OrderValidationError('This product is no longer available.');
+    }
+
+    const currencies = Array.from(new Set(products.map((p) => p.currency.toUpperCase())));
+    if (currencies.length > 1) {
+      throw new OrderValidationError('These products are priced in different currencies and must be bought separately.');
+    }
+    // Always charge in the products' own currency, whatever the client sent.
+    const orderCurrency = currencies[0];
+    if (currency && currency.toUpperCase() !== orderCurrency) {
+      console.warn(`Ignoring requested currency ${currency}; products are priced in ${orderCurrency}.`);
     }
 
     let subtotal = 0;
@@ -112,14 +143,16 @@ export class OrderService {
       discountAmount: number;
       totalPrice: number;
       storeId?: string | null;
+      label: string;
     }> = [];
 
     let hasPhysicalItems = false;
 
     for (const item of items) {
       const product = products.find((p) => p.id === item.productId)!;
-      const quantity = Math.max(1, item.quantity || 1);
       const isPhysical = product.productKind === ProductKind.PHYSICAL;
+      // Digital items are always quantity 1.
+      const quantity = isPhysical ? Math.max(1, Math.floor(item.quantity || 1)) : 1;
       if (isPhysical) hasPhysicalItems = true;
 
       let unitPrice =
@@ -128,22 +161,39 @@ export class OrderService {
           : Number(product.price);
 
       let sku: string | undefined = undefined;
-      let selectedVariantId = item.variantId;
+      let variantId: string | undefined = undefined;
+      let label = product.title;
 
-      if (selectedVariantId) {
-        const variant = product.variants.find((v) => v.id === selectedVariantId);
-        if (variant) {
-          unitPrice = variant.salePrice !== null ? Number(variant.salePrice) : Number(variant.price);
-          sku = variant.sku;
+      if (isPhysical) {
+        const sellable = product.variants.filter((v) => v.isAvailable);
+        let variant = item.variantId ? sellable.find((v) => v.id === item.variantId) : undefined;
 
-          // Check physical stock availability
-          if (isPhysical) {
-            const availableStock = variant.inventoryQuantity - variant.reservedQuantity;
-            if (availableStock < quantity) {
-              throw new Error(`Insufficient stock for ${variant.title} (SKU: ${variant.sku}). Available: ${Math.max(0, availableStock)}`);
-            }
-          }
+        if (item.variantId && !variant) {
+          throw new OrderValidationError(`The option you chose for "${product.title}" is no longer available.`);
         }
+        if (!variant) {
+          // Products without options have exactly one (hidden default) variant.
+          if (sellable.length === 1) variant = sellable[0];
+          else if (sellable.length === 0) throw new OrderValidationError(`"${product.title}" is sold out.`);
+          else throw new OrderValidationError(`Please choose an option for "${product.title}".`);
+        }
+
+        const available = variant.inventoryQuantity - variant.reservedQuantity;
+        if (available < quantity) {
+          throw new OrderValidationError(
+            available <= 0
+              ? `"${product.title}" is sold out.`
+              : `Only ${available} of "${product.title}" left. Please lower the quantity.`
+          );
+        }
+
+        unitPrice =
+          variant.salePrice !== null && Number(variant.salePrice) < Number(variant.price)
+            ? Number(variant.salePrice)
+            : Number(variant.price);
+        sku = variant.sku;
+        variantId = variant.id;
+        if (variant.option1Value) label = `${product.title} (${variant.title})`;
       }
 
       const itemTotal = Math.round(unitPrice * quantity * 100) / 100;
@@ -151,7 +201,7 @@ export class OrderService {
 
       orderItemsData.push({
         productId: product.id,
-        variantId: selectedVariantId || undefined,
+        variantId,
         productKind: product.productKind,
         sku,
         quantity,
@@ -159,10 +209,15 @@ export class OrderService {
         discountAmount: 0,
         totalPrice: itemTotal,
         storeId: product.storeId,
+        label,
       });
     }
 
     subtotal = Math.round(subtotal * 100) / 100;
+
+    if (hasPhysicalItems && !shippingAddress) {
+      throw new OrderValidationError('Please enter a delivery address.');
+    }
 
     // Calculate shipping fee if order includes physical items
     let shippingFee = 0;
@@ -182,22 +237,29 @@ export class OrderService {
     let discountTotal = 0;
     let validatedCouponId: string | undefined;
 
-    if (couponCode) {
+    if (couponCode && couponCode.trim()) {
       const couponResult = await CouponService.validateCoupon({
         code: couponCode,
         subtotal,
         customerId,
       });
 
-      if (couponResult.valid && couponResult.coupon) {
-        discountTotal = couponResult.discountAmount;
-        validatedCouponId = couponResult.coupon.id;
+      // Never silently charge full price when the buyer expected a discount.
+      if (!couponResult.valid || !couponResult.coupon) {
+        throw new OrderValidationError(couponResult.message || 'That discount code is not valid.');
       }
+      discountTotal = couponResult.discountAmount;
+      validatedCouponId = couponResult.coupon.id;
     }
 
     const total = Math.max(0, Math.round((subtotal - discountTotal + shippingFee) * 100) / 100);
     const orderNumber = this.generateOrderNumber();
     const primaryStoreId = orderItemsData.find((i) => i.storeId)?.storeId || null;
+    const contact = {
+      fullName: guestName || shippingAddress?.fullName || null,
+      email: guestEmail || null,
+      phone: contactPhone || shippingAddress?.phone || null,
+    };
 
     // Execute atomic creation transaction
     const order = await prisma.$transaction(async (tx) => {
@@ -215,9 +277,10 @@ export class OrderService {
           shippingFee,
           taxTotal: 0,
           total,
-          currency,
+          currency: orderCurrency,
           shippingMethod: shippingMethod || (hasPhysicalItems ? 'Standard Courier' : 'Instant Digital Delivery'),
           shippingAddress: shippingAddress ? (shippingAddress as unknown as Prisma.InputJsonValue) : Prisma.JsonNull,
+          billingAddress: contact as Prisma.InputJsonValue,
           customerNotes: customerNotes || null,
           utmSource: utmSource || null,
           utmMedium: utmMedium || null,
@@ -243,20 +306,26 @@ export class OrderService {
         },
       });
 
-      // Reserve physical inventory stock
+      // Hold physical stock while the buyer pays. The conditional update makes the stock check and
+      // the hold a single atomic step, so two buyers can never both get the last unit.
       for (const item of orderItemsData) {
         if (item.variantId && item.productKind === ProductKind.PHYSICAL) {
-          await tx.productVariant.update({
-            where: { id: item.variantId },
-            data: { reservedQuantity: { increment: item.quantity } },
-          });
+          const held = await tx.$executeRaw`
+            UPDATE "ProductVariant"
+            SET "reservedQuantity" = "reservedQuantity" + ${item.quantity}
+            WHERE "id" = ${item.variantId}
+              AND "inventoryQuantity" - "reservedQuantity" >= ${item.quantity}`;
+
+          if (held === 0) {
+            throw new OrderValidationError(`Sorry, "${item.label}" just sold out.`);
+          }
 
           await tx.inventoryReservation.create({
             data: {
               variantId: item.variantId,
               quantity: item.quantity,
               orderId: newOrder.id,
-              expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes reservation window
+              expiresAt: new Date(Date.now() + RESERVATION_MINUTES * 60 * 1000),
             },
           });
         }
@@ -332,7 +401,8 @@ export class OrderService {
       [OrderStatus.PAID]: [OrderStatus.PENDING, OrderStatus.CANCELLED],
       [OrderStatus.REFUNDED]: [OrderStatus.PENDING, OrderStatus.PAID],
       [OrderStatus.CANCELLED]: [OrderStatus.PAID],
-      [OrderStatus.FAILED]: [OrderStatus.PAID],
+      // FAILED -> PAID is allowed: the customer can retry after a declined attempt.
+      [OrderStatus.FAILED]: [],
       [OrderStatus.PENDING]: [],
       [OrderStatus.REFUND_PENDING]: [OrderStatus.PENDING],
       [OrderStatus.PARTIALLY_REFUNDED]: [OrderStatus.PENDING],
@@ -348,14 +418,24 @@ export class OrderService {
     const isTransitioningToCancelled = toStatus === OrderStatus.CANCELLED;
 
     const updatedOrder = await prisma.$transaction(async (tx) => {
-      const updated = await tx.order.update({
-        where: { id: orderId },
+      // Compare-and-set on the status we read, so concurrent callers (e.g. redirect + webhook)
+      // cannot both run the side effects below.
+      const { count } = await tx.order.updateMany({
+        where: { id: orderId, status: order.status },
         data: {
           status: toStatus,
           paymentProvider: paymentProvider || order.paymentProvider,
           paidAt: isTransitioningToPaid ? new Date() : order.paidAt,
           cancelledAt: isTransitioningToCancelled ? new Date() : order.cancelledAt,
         },
+      });
+
+      if (count === 0) {
+        return null;
+      }
+
+      const updated = await tx.order.findUnique({
+        where: { id: orderId },
         include: {
           items: { include: { product: true, variant: true } },
         },
@@ -375,15 +455,48 @@ export class OrderService {
       return updated;
     });
 
+    if (!updatedOrder) {
+      // Another request changed the status first. If it reached the same target, that request
+      // owns the side effects; anything else is a genuine conflict.
+      const current = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { items: { include: { product: true, variant: true } } },
+      });
+      if (current?.status === toStatus) {
+        return current;
+      }
+      throw new Error(`Order ${orderId} status changed concurrently (now ${current?.status}); transition to ${toStatus} aborted.`);
+    }
+
     // Side effect upon payment:
     if (isTransitioningToPaid) {
-      // 1. Commit inventory reservations for physical items
+      // 1. Take physical items out of stock: commit active holds; if a hold already lapsed
+      //    (buyer paid after RESERVATION_MINUTES), deduct the stock directly.
       const reservations = await prisma.inventoryReservation.findMany({
         where: { orderId: order.id, isReleased: false },
       });
 
+      const heldByVariant = new Map<string, number>();
       for (const res of reservations) {
         await InventoryService.commitReservation(res.id, order.id);
+        heldByVariant.set(res.variantId, (heldByVariant.get(res.variantId) ?? 0) + res.quantity);
+      }
+
+      for (const item of order.items) {
+        if (!item.variantId || item.product.productKind !== ProductKind.PHYSICAL) continue;
+        const held = heldByVariant.get(item.variantId) ?? 0;
+        const covered = Math.min(held, item.quantity);
+        heldByVariant.set(item.variantId, held - covered);
+        const missing = item.quantity - covered;
+        if (missing > 0) {
+          await InventoryService.adjustStock({
+            variantId: item.variantId,
+            quantityChange: -missing,
+            movementType: 'ORDER_FULFILLMENT',
+            referenceId: order.id,
+            note: 'Paid after the stock hold expired',
+          });
+        }
       }
 
       // 2. Grant entitlements for digital items

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { productPath } from '@/lib/product-url';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/utils';
 import { ArrowRight, Package, FileCode } from 'lucide-react';
@@ -82,7 +83,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </p>
         )}
 
-        <Link href={`/products/${product.slug}`} className="block">
+        <Link href={productPath(product.slug)} className="block">
           <h3 className="font-serif text-sm font-medium text-stone-100 group-hover:text-amber-200 transition-colors line-clamp-1">
             {product.title}
           </h3>
@@ -111,7 +112,7 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
 
-        <Link href={`/products/${product.slug}`} className="pt-2">
+        <Link href={productPath(product.slug)} className="pt-2">
           <span className="text-xs font-medium text-stone-400 hover:text-white flex items-center gap-1 transition-colors">
             Inspect <ArrowRight className="w-3 h-3" />
           </span>

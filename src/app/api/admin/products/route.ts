@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { RBACService } from '@/services/auth/rbac.service';
-import { ProductService } from '@/services/product/product.service';
+import { ProductService, ProductValidationError } from '@/services/product/product.service';
 import { productCreateSchema } from '@/lib/validators/product';
 
 export async function GET(request: Request) {
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') || '20', 10) || 20));
 
     const result = await ProductService.getAllProductsAdmin(page, limit);
     return NextResponse.json(result);
@@ -38,6 +38,9 @@ export async function POST(request: Request) {
     const product = await ProductService.createProduct(parsed.data, auth.session.userId);
     return NextResponse.json({ product, message: 'Product created successfully' }, { status: 201 });
   } catch (error) {
+    if (error instanceof ProductValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error('Admin product creation error:', error);
     return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
   }

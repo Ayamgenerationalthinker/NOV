@@ -16,6 +16,7 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       findUnique: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     inventoryReservation: {
       create: vi.fn(),
@@ -39,6 +40,7 @@ vi.mock('@/lib/prisma', () => ({
     user: {
       findUnique: vi.fn(),
     },
+    $executeRaw: vi.fn().mockResolvedValue(1),
     $transaction: vi.fn((arg) => {
       if (typeof arg === 'function') {
         return arg(prisma);
@@ -80,6 +82,7 @@ describe('OrderService & Order State Machine', () => {
           price: 99 as any,
           discountPrice: 79 as any,
           productKind: ProductKind.DIGITAL,
+          currency: 'GHS',
           isPublished: true,
           variants: [],
         } as any,
@@ -89,6 +92,7 @@ describe('OrderService & Order State Machine', () => {
           price: 49 as any,
           discountPrice: null,
           productKind: ProductKind.DIGITAL,
+          currency: 'GHS',
           isPublished: true,
           variants: [],
         } as any,
@@ -125,7 +129,7 @@ describe('OrderService & Order State Machine', () => {
           guestEmail: 'customer@example.com',
           items: [],
         })
-      ).rejects.toThrow('Cannot create an empty order');
+      ).rejects.toThrow('Your order is empty');
     });
 
     it('rejects order creation if neither customerId nor guestEmail is provided', async () => {
@@ -133,7 +137,7 @@ describe('OrderService & Order State Machine', () => {
         OrderService.createOrder({
           items: [{ productId: 'prod-1' }],
         })
-      ).rejects.toThrow('A customer account or guest email address is required');
+      ).rejects.toThrow('Please enter your email address');
     });
   });
 
@@ -150,12 +154,10 @@ describe('OrderService & Order State Machine', () => {
         ],
       };
 
-      vi.mocked(prisma.order.findUnique).mockResolvedValue(mockPendingOrder as any);
-      vi.mocked(prisma.order.update).mockResolvedValue({
-        ...mockPendingOrder,
-        status: OrderStatus.PAID,
-        paidAt: new Date(),
-      } as any);
+      vi.mocked(prisma.order.findUnique)
+        .mockResolvedValueOnce(mockPendingOrder as any)
+        .mockResolvedValueOnce({ ...mockPendingOrder, status: OrderStatus.PAID, paidAt: new Date() } as any);
+      vi.mocked(prisma.order.updateMany).mockResolvedValue({ count: 1 });
 
       const updated = await OrderService.transitionOrderStatus({
         orderId: 'order-1',
@@ -178,6 +180,46 @@ describe('OrderService & Order State Machine', () => {
         productId: 'prod-2',
         orderId: 'order-1',
       });
+    });
+
+    it('runs payment side effects only once when two confirmations race', async () => {
+      const mockPendingOrder = {
+        id: 'order-race',
+        orderNumber: 'NOV-RACE',
+        status: OrderStatus.PENDING,
+        customerId: 'customer-1',
+        items: [{ id: 'item-1', productId: 'prod-1', product: { productKind: ProductKind.DIGITAL } }],
+      };
+
+      // This caller read PENDING, but another request flipped it to PAID first.
+      vi.mocked(prisma.order.findUnique)
+        .mockResolvedValueOnce(mockPendingOrder as any)
+        .mockResolvedValueOnce({ ...mockPendingOrder, status: OrderStatus.PAID } as any);
+      vi.mocked(prisma.order.updateMany).mockResolvedValue({ count: 0 });
+
+      const result = await OrderService.transitionOrderStatus({
+        orderId: 'order-race',
+        toStatus: OrderStatus.PAID,
+      });
+
+      expect(result.status).toBe(OrderStatus.PAID);
+      expect(prisma.order.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'order-race', status: OrderStatus.PENDING } })
+      );
+      expect(EntitlementService.grantEntitlement).not.toHaveBeenCalled();
+      expect(prisma.auditLog.create).not.toHaveBeenCalled();
+    });
+
+    it('allows a FAILED order to be paid on retry', async () => {
+      const failedOrder = { id: 'order-retry', orderNumber: 'NOV-R', status: OrderStatus.FAILED, customerId: 'c', items: [] };
+      vi.mocked(prisma.order.findUnique)
+        .mockResolvedValueOnce(failedOrder as any)
+        .mockResolvedValueOnce({ ...failedOrder, status: OrderStatus.PAID } as any);
+      vi.mocked(prisma.order.updateMany).mockResolvedValue({ count: 1 });
+
+      const result = await OrderService.transitionOrderStatus({ orderId: 'order-retry', toStatus: OrderStatus.PAID });
+
+      expect(result.status).toBe(OrderStatus.PAID);
     });
 
     it('blocks illegal status transition from PAID back to PENDING', async () => {

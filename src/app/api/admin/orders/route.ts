@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '15', 10);
     const statusParam = searchParams.get('status');
     const search = searchParams.get('search') || undefined;
+    const shippingParam = searchParams.get('shipping');
+    const shipping = shippingParam === 'to_ship' || shippingParam === 'shipped' ? shippingParam : undefined;
 
     let status: OrderStatus | undefined = undefined;
     if (statusParam && Object.values(OrderStatus).includes(statusParam as OrderStatus)) {
@@ -32,6 +34,7 @@ export async function GET(request: NextRequest) {
       limit,
       status,
       search,
+      shipping,
     });
 
     return NextResponse.json({

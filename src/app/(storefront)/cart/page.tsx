@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { productPath } from '@/lib/product-url';
 import Link from 'next/link';
 import { useCart } from '@/context/cart-context';
 import { Container } from '@/components/ui/container';
@@ -216,7 +217,7 @@ export default function CartPage() {
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <Link
-                            href={`/products/${item.slug}`}
+                            href={productPath(item.slug)}
                             className="text-sm font-semibold text-white hover:text-emerald-400 transition-colors line-clamp-1"
                           >
                             {item.title}

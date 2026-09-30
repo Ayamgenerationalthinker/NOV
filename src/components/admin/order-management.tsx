@@ -17,13 +17,18 @@ import {
   ChevronRight,
   ShieldAlert,
   Download,
+  Truck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { formatCurrency } from '@/lib/utils';
 
 interface OrderItemSummary {
   id: string;
+  quantity: number;
+  productKind: 'DIGITAL' | 'PHYSICAL';
   unitPrice: number;
   totalPrice: number;
+  variant: { title: string; option1Value: string | null } | null;
   product: {
     id: string;
     title: string;
@@ -39,10 +44,15 @@ interface OrderRecord {
   guestEmail: string | null;
   guestName: string | null;
   status: OrderStatus;
+  fulfillmentStatus: string;
   subtotal: number;
   discountTotal: number;
+  shippingFee: number;
   taxTotal: number;
   total: number;
+  shippingAddress: { fullName?: string; street?: string; city?: string; state?: string; postalCode?: string; phone?: string } | null;
+  billingAddress: { fullName?: string; email?: string; phone?: string } | null;
+  fulfillments: Array<{ trackingNumber: string | null; trackingCarrier: string | null; dispatchedAt: string | null }>;
   currency: string;
   paymentProvider: string | null;
   createdAt: string;
@@ -78,6 +88,13 @@ export function OrderManagement() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [sendingReceipt, setSendingReceipt] = useState(false);
 
+  // Mark shipped
+  const [shipOrder, setShipOrder] = useState<OrderRecord | null>(null);
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [trackingCarrier, setTrackingCarrier] = useState('');
+  const [shipping, setShipping] = useState(false);
+  const [shipError, setShipError] = useState<string | null>(null);
+
   const fetchOrders = async () => {
     setLoading(true);
     try {
@@ -85,7 +102,9 @@ export function OrderManagement() {
       params.set('page', page.toString());
       params.set('limit', '12');
       if (search.trim()) params.set('search', search.trim());
-      if (selectedStatus !== 'ALL') params.set('status', selectedStatus);
+      if (selectedStatus === 'TO_SHIP') params.set('shipping', 'to_ship');
+      else if (selectedStatus === 'SHIPPED') params.set('shipping', 'shipped');
+      else if (selectedStatus !== 'ALL') params.set('status', selectedStatus);
 
       const res = await fetch(`/api/admin/orders?${params.toString()}`);
       const json = await res.json();
@@ -140,6 +159,44 @@ export function OrderManagement() {
       setRefunding(false);
     }
   };
+
+  const handleMarkShipped = async () => {
+    if (!shipOrder) return;
+    setShipping(true);
+    setShipError(null);
+    try {
+      const res = await fetch('/api/seller/fulfillments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: shipOrder.id,
+          trackingNumber: trackingNumber.trim() || undefined,
+          trackingCarrier: trackingCarrier.trim() || undefined,
+          status: 'FULFILLED',
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || 'Could not mark as shipped');
+      setActionSuccess(`Order ${shipOrder.orderNumber} marked as shipped.`);
+      setShipOrder(null);
+      setTrackingNumber('');
+      setTrackingCarrier('');
+      fetchOrders();
+      setTimeout(() => setActionSuccess(null), 5000);
+    } catch (err: any) {
+      setShipError(err.message || 'Could not mark as shipped');
+    } finally {
+      setShipping(false);
+    }
+  };
+
+  const needsShipping = (order: OrderRecord) =>
+    order.status === OrderStatus.PAID &&
+    order.items.some((i) => i.productKind === 'PHYSICAL') &&
+    order.fulfillmentStatus !== 'FULFILLED';
+
+  const isShipped = (order: OrderRecord) =>
+    order.items.some((i) => i.productKind === 'PHYSICAL') && order.fulfillmentStatus === 'FULFILLED';
 
   const handleResendReceipt = async (orderId: string) => {
     setSendingReceipt(true);
@@ -220,7 +277,16 @@ export function OrderManagement() {
       <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
         {/* Status Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto bg-slate-900/80 p-1 rounded-xl border border-slate-800">
-          {(['ALL', 'PAID', 'PENDING', 'REFUNDED', 'CANCELLED'] as const).map((st) => (
+          {(
+            [
+              ['ALL', 'All'],
+              ['PAID', 'Paid'],
+              ['PENDING', 'Pending'],
+              ['TO_SHIP', 'To ship'],
+              ['SHIPPED', 'Shipped'],
+              ['REFUNDED', 'Refunded'],
+            ] as const
+          ).map(([st, label]) => (
             <button
               key={st}
               onClick={() => {
@@ -233,7 +299,7 @@ export function OrderManagement() {
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}
             >
-              {st}
+              {label}
             </button>
           ))}
         </div>
@@ -306,9 +372,19 @@ export function OrderManagement() {
                       <td className="py-3 px-4 text-slate-400">
                         {order.items.length} {order.items.length === 1 ? 'item' : 'items'}
                       </td>
-                      <td className="py-3 px-4">{getStatusBadge(order.status)}</td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-wrap items-center gap-1">
+                          {getStatusBadge(order.status)}
+                          {needsShipping(order) && (
+                            <span className="rounded-full border border-amber-800/60 bg-amber-950/60 px-2 py-0.5 text-[10px] font-bold text-amber-300">TO SHIP</span>
+                          )}
+                          {isShipped(order) && (
+                            <span className="rounded-full border border-sky-800/60 bg-sky-950/60 px-2 py-0.5 text-[10px] font-bold text-sky-300">SHIPPED</span>
+                          )}
+                        </div>
+                      </td>
                       <td className="py-3 px-4 font-bold text-white">
-                        ${Number(order.total).toFixed(2)}
+                        {formatCurrency(order.total, order.currency)}
                       </td>
                       <td className="py-3 px-4 text-[11px] text-slate-400">
                         {new Date(order.createdAt).toLocaleDateString()}
@@ -324,6 +400,21 @@ export function OrderManagement() {
                             <Eye className="w-3.5 h-3.5 mr-1" />
                             View
                           </Button>
+
+                          {needsShipping(order) && (
+                            <Button
+                              size="sm"
+                              variant="success"
+                              onClick={() => {
+                                setShipError(null);
+                                setShipOrder(order);
+                              }}
+                              className="h-7 px-2 text-[11px]"
+                            >
+                              <Truck className="w-3.5 h-3.5 mr-1" />
+                              Mark shipped
+                            </Button>
+                          )}
 
                           {order.status === OrderStatus.PAID && (
                             <Button
@@ -417,6 +508,14 @@ export function OrderManagement() {
                 <p className="text-slate-400">
                   {activeOrder.customer?.email || activeOrder.guestEmail}
                 </p>
+                {(activeOrder.billingAddress?.phone || activeOrder.shippingAddress?.phone) && (
+                  <a
+                    href={`tel:${activeOrder.billingAddress?.phone || activeOrder.shippingAddress?.phone}`}
+                    className="text-emerald-400 underline"
+                  >
+                    {activeOrder.billingAddress?.phone || activeOrder.shippingAddress?.phone}
+                  </a>
+                )}
               </div>
 
               <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80">
@@ -429,6 +528,26 @@ export function OrderManagement() {
                 <p className="text-slate-400">Currency: {activeOrder.currency}</p>
               </div>
             </div>
+
+            {/* Delivery */}
+            {activeOrder.shippingAddress && (
+              <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-xs space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Deliver to</span>
+                <p className="font-semibold text-white">{activeOrder.shippingAddress.fullName}</p>
+                <p className="text-slate-300">
+                  {[activeOrder.shippingAddress.street, activeOrder.shippingAddress.city, activeOrder.shippingAddress.state, activeOrder.shippingAddress.postalCode]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+                {activeOrder.fulfillments[0]?.dispatchedAt && (
+                  <p className="text-sky-300">
+                    Shipped {new Date(activeOrder.fulfillments[0].dispatchedAt).toLocaleDateString()}
+                    {activeOrder.fulfillments[0].trackingNumber &&
+                      ` · ${activeOrder.fulfillments[0].trackingCarrier ? `${activeOrder.fulfillments[0].trackingCarrier} ` : ''}${activeOrder.fulfillments[0].trackingNumber}`}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Itemized Line Items */}
             <div className="space-y-3">
@@ -444,12 +563,12 @@ export function OrderManagement() {
                     <div>
                       <p className="font-semibold text-white">{item.product.title}</p>
                       <p className="text-[11px] text-slate-500">
-                        Item ID: {item.product.id}
+                        {item.variant?.option1Value ? `${item.variant.title} · ` : ''}Qty {item.quantity}
                       </p>
                     </div>
                     <div className="text-right">
                       <span className="font-bold text-white">
-                        ${Number(item.totalPrice).toFixed(2)}
+                        {formatCurrency(item.totalPrice, activeOrder.currency)}
                       </span>
                     </div>
                   </div>
@@ -461,18 +580,18 @@ export function OrderManagement() {
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-1 text-xs">
               <div className="flex justify-between text-slate-400">
                 <span>Subtotal</span>
-                <span>${Number(activeOrder.subtotal).toFixed(2)}</span>
+                <span>{formatCurrency(activeOrder.subtotal, activeOrder.currency)}</span>
               </div>
               {Number(activeOrder.discountTotal) > 0 && (
                 <div className="flex justify-between text-emerald-400">
                   <span>Discount</span>
-                  <span>-${Number(activeOrder.discountTotal).toFixed(2)}</span>
+                  <span>-{formatCurrency(activeOrder.discountTotal, activeOrder.currency)}</span>
                 </div>
               )}
               <div className="flex justify-between font-bold text-white text-sm border-t border-slate-800 pt-2 mt-2">
                 <span>Total Amount</span>
                 <span className="text-emerald-400">
-                  ${Number(activeOrder.total).toFixed(2)} {activeOrder.currency}
+                  {formatCurrency(activeOrder.total, activeOrder.currency)}
                 </span>
               </div>
             </div>
@@ -539,7 +658,7 @@ export function OrderManagement() {
                 <strong className="text-white font-mono">
                   {refundModalOrder.orderNumber}
                 </strong>{' '}
-                for <strong className="text-emerald-400">${Number(refundModalOrder.total).toFixed(2)}</strong>.
+                for <strong className="text-emerald-400">{formatCurrency(refundModalOrder.total, refundModalOrder.currency)}</strong>.
               </p>
               <p className="text-[11px] text-amber-300">
                 ⚠️ This will immediately revoke all customer license keys and digital download entitlements issued for this order.
@@ -587,6 +706,48 @@ export function OrderManagement() {
                   <RotateCcw className="w-3.5 h-3.5" />
                 )}
                 Confirm Full Refund
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mark Shipped Modal */}
+      {shipOrder && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-5 space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-white">Mark {shipOrder.orderNumber} as shipped</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                {shipOrder.shippingAddress
+                  ? [shipOrder.shippingAddress.fullName, shipOrder.shippingAddress.street, shipOrder.shippingAddress.city].filter(Boolean).join(', ')
+                  : 'No delivery address on this order.'}
+              </p>
+            </div>
+            <label className="block text-xs text-slate-300">
+              Courier <span className="text-slate-500">(optional)</span>
+              <input
+                value={trackingCarrier}
+                onChange={(e) => setTrackingCarrier(e.target.value)}
+                placeholder="e.g. Ghana Post, Yango, own rider"
+                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white"
+              />
+            </label>
+            <label className="block text-xs text-slate-300">
+              Tracking number <span className="text-slate-500">(optional)</span>
+              <input
+                value={trackingNumber}
+                onChange={(e) => setTrackingNumber(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white"
+              />
+            </label>
+            {shipError && <p className="text-xs text-red-400">{shipError}</p>}
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setShipOrder(null)} disabled={shipping}>
+                Cancel
+              </Button>
+              <Button variant="success" className="flex-1" onClick={handleMarkShipped} isLoading={shipping}>
+                Mark shipped
               </Button>
             </div>
           </div>

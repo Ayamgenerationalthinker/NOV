@@ -1,8 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Product3DViewer } from '@/components/3d/product-3d-viewer';
-import { Box, Image as ImageIcon, Sparkles } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { Box, Image as ImageIcon } from 'lucide-react';
+
+// three.js is large: only download it when a product actually has a 3D model and the buyer opens it.
+const Product3DViewer = dynamic(
+  () => import('@/components/3d/product-3d-viewer').then((m) => m.Product3DViewer),
+  { ssr: false, loading: () => <div className="aspect-square w-full animate-pulse rounded-3xl bg-zinc-900" /> }
+);
 
 interface ProductMediaGalleryProps {
   coverImage?: string | null;
@@ -62,13 +68,14 @@ export function ProductMediaGallery({
           productTitle={productTitle}
         />
       ) : (
-        <div className="relative aspect-square w-full rounded-3xl overflow-hidden bg-zinc-950 border border-zinc-800/80 shadow-2xl flex items-center justify-center group">
+        <div className="relative aspect-square w-full overflow-hidden bg-zinc-950 md:rounded-3xl md:border md:border-zinc-800/80 flex items-center justify-center">
           {selectedImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={selectedImage}
               alt={productTitle}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-cover"
+              fetchPriority="high"
             />
           ) : (
             <div className="text-center text-zinc-600 p-8">
@@ -81,7 +88,7 @@ export function ProductMediaGallery({
 
       {/* Thumbnail Strip */}
       {allImages.length > 1 && (
-        <div className="flex items-center gap-3 overflow-x-auto pb-2">
+        <div className="flex items-center gap-3 overflow-x-auto px-4 pb-2 md:px-0">
           {allImages.map((img, idx) => (
             <button
               key={idx}
@@ -97,7 +104,7 @@ export function ProductMediaGallery({
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img} alt={`${productTitle} thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+              <img src={img} alt={`${productTitle} thumbnail ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
             </button>
           ))}
         </div>

@@ -102,11 +102,6 @@ export function Footer() {
             <h4 className="text-xs font-mono font-semibold uppercase tracking-widest text-stone-200">Client Services</h4>
             <ul className="mt-4 space-y-2.5 text-xs">
               <li>
-                <Link href="/account" className="hover:text-stone-100 transition-colors">
-                  My Orders & Downloads
-                </Link>
-              </li>
-              <li>
                 <Link href="/faq" className="hover:text-stone-100 transition-colors">
                   Shipping & Delivery FAQs
                 </Link>

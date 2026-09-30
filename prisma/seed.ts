@@ -1,24 +1,58 @@
-import { PrismaClient, Role, ProductKind, ProductType } from '@prisma/client';
+import 'dotenv/config';
+import { PrismaClient, Role } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const MIN_PASSWORD_LENGTH = 12;
+
+function requireOwnerCredentials(): { email: string; password: string } {
+  const email = process.env.INITIAL_ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.INITIAL_ADMIN_PASSWORD;
+  const problems: string[] = [];
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    problems.push('INITIAL_ADMIN_EMAIL must be set to your email address.');
+  }
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    problems.push(`INITIAL_ADMIN_PASSWORD must be set and at least ${MIN_PASSWORD_LENGTH} characters long.`);
+  }
+
+  if (problems.length > 0) {
+    console.error('❌ Cannot create the store owner account:');
+    for (const problem of problems) console.error(`   - ${problem}`);
+    console.error('   Add them to your .env file (or export them) and run `npm run prisma:seed` again.');
+    process.exit(1);
+  }
+
+  return { email: email!, password: password! };
+}
+
+const { email: adminEmail, password: adminPassword } = requireOwnerCredentials();
+
+if (!process.env.DATABASE_URL) {
+  console.error('❌ DATABASE_URL is not set.');
+  process.exit(1);
+}
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {
-  console.log('🌱 Starting database seed for NOV.com Hybrid Commerce...');
+  console.log('🌱 Seeding NOV store...');
 
-  // Default Super Admin credentials
-  const adminEmail = process.env.INITIAL_ADMIN_EMAIL || 'admin@nov.com';
-  const adminPassword = process.env.INITIAL_ADMIN_PASSWORD || 'SuperAdmin123!';
   const hashedPassword = await bcrypt.hash(adminPassword, 12);
 
+  // Re-running the seed resets the owner's password to INITIAL_ADMIN_PASSWORD.
   const superAdmin = await prisma.user.upsert({
     where: { email: adminEmail },
     update: {
       role: Role.SUPER_ADMIN,
+      passwordHash: hashedPassword,
     },
     create: {
       email: adminEmail,
-      name: 'Super Administrator',
+      name: 'Store Owner',
       passwordHash: hashedPassword,
       role: Role.SUPER_ADMIN,
       emailVerified: new Date(),
@@ -46,7 +80,11 @@ async function main() {
   console.log(`✅ Default Store created: ${store.name} (/${store.slug})`);
 
   // Shipping Profile & Zones
-  const defaultProfile = await prisma.shippingProfile.create({
+  const existingProfile = await prisma.shippingProfile.findFirst({
+    where: { storeId: store.id, isDefault: true },
+  });
+
+  if (!existingProfile) await prisma.shippingProfile.create({
     data: {
       storeId: store.id,
       name: 'Standard Insured Courier',
@@ -115,4 +153,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

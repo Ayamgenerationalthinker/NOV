@@ -1,210 +1,234 @@
 'use client';
 
 import * as React from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Container } from '@/components/ui/container';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useSearchParams } from 'next/navigation';
+import { CheckCircle2, Download, FileText, Loader2, Mail, Truck, Clock } from 'lucide-react';
 import { formatCurrency, formatFileSize } from '@/lib/utils';
-import {
-  CheckCircle2,
-  Download,
-  ArrowRight,
-  Package,
-  Layers,
-  Loader2,
-  FileCode,
-  Mail,
-} from 'lucide-react';
+import { productPath } from '@/lib/product-url';
 
 interface OrderReceipt {
   id: string;
   orderNumber: string;
   status: string;
-  total: number;
   subtotal: number;
+  discountTotal: number;
+  shippingFee: number;
+  total: number;
   currency: string;
-  guestEmail?: string;
+  guestEmail: string | null;
+  guestName: string | null;
+  shippingAddress: { street?: string; city?: string; state?: string; postalCode?: string } | null;
   items: Array<{
     id: string;
+    quantity: number;
+    productKind: 'DIGITAL' | 'PHYSICAL';
+    variantTitle: string | null;
     totalPrice: number;
     product: {
       id: string;
       title: string;
       slug: string;
-      productType: string;
+      coverImage: string | null;
       files: Array<{ id: string; fileName: string; fileSize: number }>;
     };
   }>;
 }
 
+const POLL_INTERVAL_MS = 3000;
+const POLL_LIMIT = 20;
+
 function SuccessContent() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId') || searchParams.get('order_id');
-  const orderNumberParam = searchParams.get('orderNumber') || searchParams.get('order_number');
 
   const [order, setOrder] = React.useState<OrderReceipt | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [state, setState] = React.useState<'loading' | 'ready' | 'missing'>('loading');
 
   React.useEffect(() => {
     if (!orderId) {
-      setIsLoading(false);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setState('missing');
       return;
     }
 
-    fetch(`/api/orders/${orderId}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.order) setOrder(data.order);
-      })
-      .catch((err) => console.error('Failed to load order receipt:', err))
-      .finally(() => setIsLoading(false));
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let cancelled = false;
+
+    const load = async () => {
+      attempts += 1;
+      try {
+        const res = await fetch(`/api/orders/${orderId}`);
+        if (!res.ok) throw new Error('not found');
+        const data = await res.json();
+        if (cancelled) return;
+        setOrder(data.order);
+        setState('ready');
+        // A webhook may confirm a moment after the redirect: keep checking briefly.
+        if (data.order.status === 'PENDING' && attempts < POLL_LIMIT) {
+          timer = setTimeout(load, POLL_INTERVAL_MS);
+        }
+      } catch {
+        if (!cancelled) setState('missing');
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
   }, [orderId]);
 
-  return (
-    <div className="mx-auto max-w-2xl text-center space-y-8">
-      {/* Success Badge & Header */}
-      <div className="space-y-4">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-xl shadow-emerald-950/20">
-          <CheckCircle2 className="h-10 w-10" />
-        </div>
+  if (state === 'loading') {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="h-7 w-7 animate-spin text-amber-300" />
+      </div>
+    );
+  }
 
-        <div>
-          <Badge variant="success" className="mb-2">
-            Order Confirmed
-          </Badge>
-          <h1 className="text-3xl font-extrabold text-white">Thank You for Your Order!</h1>
-          <p className="mt-2 text-xs text-slate-400">
-            Order Reference:{' '}
-            <span className="font-mono font-bold text-white">
-              {order?.orderNumber || orderNumberParam || 'Processing...'}
-            </span>
-          </p>
-        </div>
+  if (state === 'missing' || !order) {
+    return (
+      <div className="space-y-3 py-16 text-center">
+        <p className="text-stone-200">We couldn’t find this order.</p>
+        <p className="text-sm text-stone-400">If you paid, check your email for your receipt.</p>
+      </div>
+    );
+  }
+
+  const isPaid = order.status === 'PAID';
+  const digitalItems = order.items.filter((i) => i.productKind === 'DIGITAL');
+  const physicalItems = order.items.filter((i) => i.productKind === 'PHYSICAL');
+  const address = order.shippingAddress;
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2 text-center">
+        {isPaid ? (
+          <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-400" />
+        ) : (
+          <Clock className="mx-auto h-14 w-14 text-amber-300" />
+        )}
+        <h1 className="text-2xl font-bold text-white">
+          {isPaid ? `Thank you${order.guestName ? `, ${order.guestName.split(' ')[0]}` : ''}!` : 'Confirming your payment…'}
+        </h1>
+        <p className="text-sm text-stone-400">
+          Order <span className="font-mono text-stone-200">{order.orderNumber}</span>
+        </p>
+        {!isPaid && (
+          <p className="text-sm text-stone-400">This usually takes a few seconds. Keep this page open.</p>
+        )}
       </div>
 
-      {/* Order Details Card */}
-      <Card className="border-slate-800 bg-slate-900/70 text-left overflow-hidden shadow-2xl">
-        <CardContent className="p-6 space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-            <div>
-              <p className="text-xs font-semibold text-white">Digital Delivery Status</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Lifetime entitlements granted to your account.
-              </p>
+      {isPaid && digitalItems.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-stone-400">Your downloads</h2>
+          {digitalItems.map((item) => (
+            <div key={item.id} className="space-y-2 rounded-2xl border border-stone-800 bg-stone-900/60 p-4">
+              <div className="font-medium text-white">{item.product.title}</div>
+              {item.product.files.length === 0 ? (
+                <p className="text-sm text-stone-400">The file is being prepared. We’ll email it to you.</p>
+              ) : (
+                item.product.files.map((file) => (
+                  <a
+                    key={file.id}
+                    href={`/api/orders/${order.id}/download/${file.id}`}
+                    className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-amber-300 px-4 py-3 font-semibold text-stone-950 hover:bg-amber-200"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <FileText className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{file.fileName}</span>
+                      <span className="shrink-0 text-xs font-normal opacity-70">{formatFileSize(file.fileSize)}</span>
+                    </span>
+                    <Download className="h-5 w-5 shrink-0" />
+                  </a>
+                ))
+              )}
             </div>
-            <Badge variant="secondary" className="text-[10px]">
-              Instant Access
-            </Badge>
+          ))}
+        </section>
+      )}
+
+      {physicalItems.length > 0 && (
+        <section className="space-y-3 rounded-2xl border border-stone-800 bg-stone-900/60 p-4">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-stone-400">
+            <Truck className="h-4 w-4" /> Delivery
+          </h2>
+          {physicalItems.map((item) => (
+            <div key={item.id} className="flex justify-between gap-3 text-sm">
+              <span className="text-white">
+                {item.product.title}
+                {item.variantTitle && <span className="text-stone-400"> · {item.variantTitle}</span>}
+                <span className="text-stone-400"> × {item.quantity}</span>
+              </span>
+              <span className="font-mono text-stone-200">{formatCurrency(item.totalPrice, order.currency)}</span>
+            </div>
+          ))}
+          {address && (
+            <p className="border-t border-stone-800 pt-3 text-sm text-stone-300">
+              {[address.street, address.city, address.state, address.postalCode].filter(Boolean).join(', ')}
+            </p>
+          )}
+          {isPaid && <p className="text-sm text-stone-400">We’ll call or WhatsApp you when it’s on the way.</p>}
+        </section>
+      )}
+
+      <dl className="space-y-1.5 rounded-2xl border border-stone-800 p-4 text-sm">
+        <div className="flex justify-between text-stone-400">
+          <dt>Subtotal</dt>
+          <dd className="font-mono">{formatCurrency(order.subtotal, order.currency)}</dd>
+        </div>
+        {order.discountTotal > 0 && (
+          <div className="flex justify-between text-emerald-300">
+            <dt>Discount</dt>
+            <dd className="font-mono">−{formatCurrency(order.discountTotal, order.currency)}</dd>
           </div>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8 text-slate-400">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
-              <span className="text-xs">Loading order items...</span>
-            </div>
-          ) : order?.items && order.items.length > 0 ? (
-            <div className="space-y-3">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
-                Purchased Digital Deliverables ({order.items.length})
-              </p>
-
-              <div className="divide-y divide-slate-800/80 rounded-lg border border-slate-800 bg-slate-950/60 overflow-hidden">
-                {order.items.map((item) => (
-                  <div key={item.id} className="p-4 space-y-3">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                          <Package className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-white truncate">
-                            {item.product.title}
-                          </p>
-                          <p className="text-[10px] text-slate-400">
-                            {item.product.files?.length || 0}{' '}
-                            {(item.product.files?.length || 0) === 1 ? 'file' : 'files'} included
-                          </p>
-                        </div>
-                      </div>
-
-                      <span className="text-xs font-semibold text-white shrink-0">
-                        {formatCurrency(item.totalPrice, order.currency)}
-                      </span>
-                    </div>
-
-                    {/* Direct File Download Buttons */}
-                    {item.product.files && item.product.files.length > 0 && (
-                      <div className="pt-2 border-t border-slate-800/60 space-y-1.5">
-                        {item.product.files.map((file) => (
-                          <a
-                            key={file.id}
-                            href={`/api/orders/${order.id}/download/${file.id}`}
-                            className="flex items-center justify-between w-full px-3 py-2 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/60 text-xs text-white transition-all group"
-                          >
-                            <div className="flex items-center gap-2 truncate">
-                              <FileCode className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                              <span className="truncate font-mono">{file.fileName}</span>
-                              <span className="text-[10px] text-zinc-400 font-mono">({formatFileSize(file.fileSize)})</span>
-                            </div>
-                            <span className="flex items-center gap-1 text-[11px] font-mono text-emerald-400 group-hover:underline shrink-0 font-medium">
-                              <Download className="w-3.5 h-3.5" /> Download
-                            </span>
-                          </a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex justify-between items-center pt-2 text-xs">
-                <span className="font-semibold text-slate-300">Total Paid</span>
-                <span className="text-base font-bold text-white">
-                  {formatCurrency(order.total, order.currency)}
-                </span>
-              </div>
-            </div>
-          ) : null}
-
-          {/* Direct Library Actions */}
-          <div className="pt-2 space-y-3">
-            {order?.guestEmail && (
-              <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center gap-2.5 text-xs text-zinc-300">
-                <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>
-                  Receipt and permanent download links sent to <strong className="text-white">{order.guestEmail}</strong>.
-                </span>
-              </div>
-            )}
-
-            <Link href="/products" className="block text-center">
-              <Button size="lg" className="w-full gap-2 shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-500 text-white font-medium">
-                <Layers className="w-4 h-4 mr-1" />
-                Continue Exploring Catalog
-              </Button>
-            </Link>
+        )}
+        {order.shippingFee > 0 && (
+          <div className="flex justify-between text-stone-400">
+            <dt>Delivery</dt>
+            <dd className="font-mono">{formatCurrency(order.shippingFee, order.currency)}</dd>
           </div>
-        </CardContent>
-      </Card>
+        )}
+        <div className="flex justify-between pt-1 font-bold text-white">
+          <dt>{isPaid ? 'Paid' : 'Total'}</dt>
+          <dd className="font-mono">{formatCurrency(order.total, order.currency)}</dd>
+        </div>
+      </dl>
+
+      {isPaid && order.guestEmail && (
+        <p className="flex items-start gap-2 text-sm text-stone-400">
+          <Mail className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+          <span>
+            A receipt{digitalItems.length > 0 ? ' with your download link' : ''} is on its way to{' '}
+            <strong className="text-stone-200">{order.guestEmail}</strong>.
+          </span>
+        </p>
+      )}
+
+      {order.items[0] && (
+        <Link href={productPath(order.items[0].product.slug)} className="block text-center text-sm text-stone-500 underline">
+          Back to the product page
+        </Link>
+      )}
     </div>
   );
 }
 
 export default function CheckoutSuccessPage() {
   return (
-    <div className="py-16 md:py-24">
-      <Container>
-        <React.Suspense
-          fallback={
-            <div className="mx-auto max-w-md h-64 rounded-xl bg-slate-900/50 animate-pulse border border-slate-800" />
-          }
-        >
-          <SuccessContent />
-        </React.Suspense>
-      </Container>
+    <div className="mx-auto w-full max-w-lg px-4 py-10">
+      <React.Suspense
+        fallback={
+          <div className="flex justify-center py-24">
+            <Loader2 className="h-7 w-7 animate-spin text-amber-300" />
+          </div>
+        }
+      >
+        <SuccessContent />
+      </React.Suspense>
     </div>
   );
 }

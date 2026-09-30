@@ -1,463 +1,586 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { AlertCircle, ArrowLeft, Loader2, Lock, Tag, X } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
-import { Container } from '@/components/ui/container';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/utils';
-import {
-  CreditCard,
-  Lock,
-  ArrowRight,
-  ShieldCheck,
-  AlertCircle,
-  Package,
-  Truck,
-  FileCode,
-} from 'lucide-react';
-import { Suspense } from 'react';
+import { productPath } from '@/lib/product-url';
+
+const GHANA_REGIONS = [
+  'Greater Accra', 'Ashanti', 'Central', 'Eastern', 'Western', 'Western North', 'Volta', 'Oti',
+  'Northern', 'Savannah', 'North East', 'Upper East', 'Upper West', 'Bono', 'Bono East', 'Ahafo',
+];
+
+const PENDING_KEY = 'nov_pending_checkout';
+const PENDING_MAX_AGE_MS = 25 * 60 * 1000;
+
+const PAYMENT_MESSAGES: Record<string, { title: string; body: string; canRetry: boolean }> = {
+  payment_cancelled: { title: 'Payment cancelled', body: 'You cancelled the payment, so no money was taken. You can try again whenever you’re ready.', canRetry: true },
+  payment_failed: { title: 'Payment didn’t go through', body: 'The payment was declined or timed out and no money was taken. Please try again, or use a different number or card.', canRetry: true },
+  payment_pending: { title: 'Payment still processing', body: 'If you approved the Mobile Money prompt on your phone, give it a minute and tap “Check again”.', canRetry: false },
+};
+const UNCONFIRMED_MESSAGE = {
+  title: 'We couldn’t confirm your payment',
+  body: 'If money left your account, don’t pay again. Contact us with your order number and we’ll sort it out. Otherwise you can try again.',
+  canRetry: true,
+};
+
+interface Line {
+  productId: string;
+  variantId?: string;
+  slug: string;
+  title: string;
+  optionLabel?: string;
+  kind: 'DIGITAL' | 'PHYSICAL';
+  quantity: number;
+  unitPrice: number;
+  compareAtPrice: number | null;
+  coverImage: string | null;
+  currency: string;
+}
+
+const fieldClass =
+  'w-full rounded-xl border border-stone-700 bg-stone-900 px-3.5 py-3 text-base text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-300/60';
+const labelClass = 'mb-1.5 block text-sm font-medium text-stone-300';
+
+async function readJson(res: Response) {
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
+}
+
+function RetryPanel({ orderId, errorCode }: { orderId: string; errorCode: string }) {
+  const router = useRouter();
+  const message = PAYMENT_MESSAGES[errorCode] ?? UNCONFIRMED_MESSAGE;
+  const [order, setOrder] = React.useState<{ orderNumber: string; status: string; total: number; currency: string; items: Array<{ id: string; product: { title: string; slug: string } }> } | null>(null);
+  const [busy, setBusy] = React.useState<'retry' | 'check' | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const load = React.useCallback(async () => {
+    const res = await fetch(`/api/orders/${orderId}`);
+    const data = await readJson(res);
+    if (!res.ok) {
+      setError('We couldn’t find this order.');
+      return null;
+    }
+    setOrder(data.order);
+    if (data.order.status === 'PAID') {
+      router.replace(`/checkout/success?orderId=${orderId}&orderNumber=${data.order.orderNumber}`);
+    }
+    return data.order;
+  }, [orderId, router]);
+
+  React.useEffect(() => {
+    // Fetching on mount; state is only set after the request resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [load]);
+
+  const retry = async () => {
+    setBusy('retry');
+    setError(null);
+    const res = await fetch('/api/payments/initialize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId, provider: 'PAYSTACK' }),
+    });
+    const data = await readJson(res);
+    if (res.ok && data.paymentUrl) {
+      window.location.href = data.paymentUrl;
+      return;
+    }
+    setBusy(null);
+    setError(data.error || 'Could not restart the payment. Please try again.');
+  };
+
+  const checkAgain = async () => {
+    setBusy('check');
+    const current = await load();
+    setBusy(null);
+    if (current && current.status !== 'PAID') setError('Not confirmed yet. Please wait a little longer, then check again.');
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl border border-amber-800/60 bg-amber-950/30 p-4">
+        <h1 className="flex items-center gap-2 text-lg font-semibold text-amber-200">
+          <AlertCircle className="h-5 w-5" /> {message.title}
+        </h1>
+        <p className="mt-1 text-sm text-stone-300">{message.body}</p>
+      </div>
+
+      {order && (
+        <div className="rounded-2xl border border-stone-800 p-4 text-sm">
+          <div className="text-stone-400">Order {order.orderNumber}</div>
+          {order.items.map((i) => (
+            <div key={i.id} className="mt-1 text-white">{i.product.title}</div>
+          ))}
+          <div className="mt-2 font-mono text-lg font-bold text-white">{formatCurrency(order.total, order.currency)}</div>
+        </div>
+      )}
+
+      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+
+      <div className="flex flex-col gap-3">
+        {message.canRetry && order && order.status !== 'PAID' && (
+          <button type="button" onClick={retry} disabled={busy !== null} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-amber-300 font-bold text-stone-950 disabled:opacity-60">
+            {busy === 'retry' && <Loader2 className="h-4 w-4 animate-spin" />} Try again
+          </button>
+        )}
+        <button type="button" onClick={checkAgain} disabled={busy !== null} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-stone-700 font-semibold text-stone-100 disabled:opacity-60">
+          {busy === 'check' && <Loader2 className="h-4 w-4 animate-spin" />} Check again
+        </button>
+        {order?.items[0] && (
+          <Link href={productPath(order.items[0].product.slug)} className="text-center text-sm text-stone-400 underline">
+            Back to the product
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function CheckoutForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialCoupon = searchParams.get('coupon') || searchParams.get('discount_code') || '';
-  const initialEmail = searchParams.get('email') || '';
-  const initialName = searchParams.get('name') || '';
-  const initialPhone = searchParams.get('phone') || '';
+  const cart = useCart();
 
-  const { items, subtotal, hasPhysicalItems, clearCart, isLoaded } = useCart();
+  const productSlug = searchParams.get('product');
+  const variantParam = searchParams.get('variant');
+  const quantityParam = parseInt(searchParams.get('quantity') || '1', 10);
+  const initialCoupon = (searchParams.get('coupon') || searchParams.get('discount_code') || '').trim();
 
-  // Contact Info
-  const [email, setEmail] = React.useState(initialEmail);
-  const [name, setName] = React.useState(initialName);
+  const [productLines, setProductLines] = React.useState<Line[] | null>(null);
+  const [loadError, setLoadError] = React.useState<string | null>(null);
 
-  // Shipping Address State (for physical goods)
-  const [street, setStreet] = React.useState('');
+  // Cart fallback (when checkout is opened without ?product=)
+  const cartLines = React.useMemo<Line[]>(
+    () =>
+      cart.items.map((i) => {
+        const onSale = i.discountPrice !== null && i.discountPrice !== undefined && i.discountPrice < i.price;
+        return {
+          productId: i.productId,
+          variantId: i.variantId ?? undefined,
+          slug: i.slug,
+          title: i.title,
+          optionLabel: i.variantTitle && i.variantTitle !== 'Default' ? i.variantTitle : undefined,
+          kind: i.productKind as Line['kind'],
+          quantity: i.quantity,
+          unitPrice: onSale ? i.discountPrice! : i.price,
+          compareAtPrice: onSale ? i.price : null,
+          coverImage: i.coverImage ?? null,
+          currency: i.currency || 'GHS',
+        };
+      }),
+    [cart.items]
+  );
+  const lines = productSlug ? productLines : cartLines;
+
+  const [name, setName] = React.useState(searchParams.get('name') || '');
+  const [email, setEmail] = React.useState(searchParams.get('email') || '');
+  const [phone, setPhone] = React.useState(searchParams.get('phone') || '');
+  const [region, setRegion] = React.useState('Greater Accra');
   const [city, setCity] = React.useState('');
-  const [state, setState] = React.useState('');
-  const [postalCode, setPostalCode] = React.useState('');
-  const [country, setCountry] = React.useState('GH');
-  const [phone, setPhone] = React.useState(initialPhone);
+  const [street, setStreet] = React.useState('');
+  const [landmark, setLandmark] = React.useState('');
+  const [gps, setGps] = React.useState('');
 
-  // Shipping Calculation State
+  const [couponInput, setCouponInput] = React.useState(initialCoupon);
+  const [coupon, setCoupon] = React.useState<{ code: string; discount: number } | null>(null);
+  const [couponMessage, setCouponMessage] = React.useState<string | null>(null);
   const [shippingFee, setShippingFee] = React.useState(0);
-  const [shippingMethod, setShippingMethod] = React.useState('Standard Delivery');
-  const [isCalculatingShipping, setIsCalculatingShipping] = React.useState(false);
 
-  // Payment Selection
-  const [paymentProvider, setPaymentProvider] = React.useState<'FLUTTERWAVE' | 'PAYSTACK'>('FLUTTERWAVE');
-  const [couponCode, setCouponCode] = React.useState(initialCoupon);
-  const [discountAmount, setDiscountAmount] = React.useState(0);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Pre-fill user profile
+  // Load the single product being bought from the link.
   React.useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.user?.email) {
-          setEmail(data.user.email);
-          if (data.user.name) setName(data.user.name);
+    if (!productSlug) return;
+    fetch(`/api/products/${encodeURIComponent(productSlug)}`)
+      .then(async (res) => {
+        const data = await readJson(res);
+        if (!res.ok) throw new Error('This product is no longer available.');
+        const p = data.product;
+        const isPhysical = p.productKind === 'PHYSICAL';
+        let variant = null;
+        if (isPhysical) {
+          variant = p.variants.find((v: { id: string }) => v.id === variantParam) ?? (p.variants.length === 1 ? p.variants[0] : null);
+          if (!variant) throw new Error('Please go back and choose an option.');
+          if (variant.available <= 0) throw new Error('Sorry, this item is sold out.');
         }
+        const base = variant ? variant.price : p.price;
+        const sale = variant ? variant.salePrice : p.discountPrice;
+        const onSale = sale !== null && sale !== undefined && sale < base;
+        setProductLines([
+          {
+            productId: p.id,
+            variantId: variant?.id,
+            slug: p.slug,
+            title: p.title,
+            optionLabel: variant && variant.option1Value ? variant.title : undefined,
+            kind: p.productKind,
+            quantity: isPhysical ? Math.max(1, Math.min(Number.isFinite(quantityParam) ? quantityParam : 1, variant.available, 20)) : 1,
+            unitPrice: onSale ? sale : base,
+            compareAtPrice: onSale ? base : null,
+            coverImage: p.coverImage,
+            currency: p.currency,
+          },
+        ]);
       })
-      .catch(() => {});
-  }, []);
+      .catch((err: Error) => setLoadError(err.message));
+  }, [productSlug, variantParam, quantityParam]);
 
-  // Validate coupon if passed in query
+  const hasPhysical = Boolean(lines?.some((l) => l.kind === 'PHYSICAL'));
+  const currency = lines?.[0]?.currency || 'GHS';
+  const subtotal = Math.round((lines ?? []).reduce((sum, l) => sum + l.unitPrice * l.quantity, 0) * 100) / 100;
+  const discount = coupon?.discount ?? 0;
+  const total = Math.max(0, Math.round((subtotal - discount + (hasPhysical ? shippingFee : 0)) * 100) / 100);
+
+  // Delivery fee for physical items (Ghana)
   React.useEffect(() => {
-    if (initialCoupon && subtotal > 0) {
-      fetch('/api/coupons/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: initialCoupon, subtotal }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.valid) {
-            setCouponCode(data.coupon.code);
-            setDiscountAmount(data.discountAmount);
-          }
-        })
-        .catch(() => {});
+    if (!lines || !hasPhysical) return;
+    fetch('/api/shipping/calculate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        countryCode: 'GH',
+        items: lines.map((l) => ({ productId: l.productId, variantId: l.variantId, quantity: l.quantity })),
+      }),
+    })
+      .then(readJson)
+      .then((data) => setShippingFee(Number(data.shippingFee) || 0))
+      .catch(() => setShippingFee(0));
+  }, [lines, hasPhysical]);
+
+  const applyCoupon = async (code: string) => {
+    const trimmed = code.trim();
+    if (!trimmed || subtotal <= 0) return;
+    const res = await fetch('/api/coupons/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: trimmed, subtotal }),
+    });
+    const data = await readJson(res);
+    if (data.valid) {
+      setCoupon({ code: trimmed.toUpperCase(), discount: Number(data.discountAmount) || 0 });
+      setCouponMessage(null);
+    } else {
+      setCoupon(null);
+      setCouponMessage(data.message || 'That code is not valid.');
     }
+  };
+
+  // Apply ?coupon= automatically once, as soon as the price is known.
+  const autoApplied = React.useRef(false);
+  React.useEffect(() => {
+    if (!autoApplied.current && initialCoupon && subtotal > 0) {
+      autoApplied.current = true;
+      applyCoupon(initialCoupon);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCoupon, subtotal]);
 
-  // Dynamic shipping calculation
-  React.useEffect(() => {
-    if (!hasPhysicalItems) {
-      setShippingFee(0);
-      setShippingMethod('Instant Digital Delivery');
-      return;
-    }
-
-    async function updateShipping() {
-      setIsCalculatingShipping(true);
-      try {
-        const res = await fetch('/api/shipping/calculate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            countryCode: country,
-            items: items.map((i) => ({
-              productId: i.productId,
-              variantId: i.variantId || undefined,
-              quantity: i.quantity,
-            })),
-          }),
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-          setShippingFee(data.shippingFee);
-          setShippingMethod(data.method);
-        }
-      } catch (err) {
-        console.error('Failed to calculate shipping', err);
-      } finally {
-        setIsCalculatingShipping(false);
-      }
-    }
-
-    updateShipping();
-  }, [hasPhysicalItems, country, items]);
-
-  const finalTotal = Math.max(0, subtotal - discountAmount + shippingFee);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!lines || lines.length === 0 || submitting) return;
+    setSubmitting(true);
     setError(null);
-    setIsLoading(true);
 
-    if (items.length === 0) {
-      setError('Your shopping bag is empty.');
-      setIsLoading(false);
-      return;
-    }
-
-    if (hasPhysicalItems && (!street.trim() || !city.trim() || !phone.trim())) {
-      setError('Please provide a complete shipping address and contact phone number.');
-      setIsLoading(false);
-      return;
-    }
+    const payload = {
+      items: lines.map((l) => ({ productId: l.productId, variantId: l.variantId, quantity: l.quantity })),
+      guestName: name.trim(),
+      guestEmail: email.trim(),
+      phone: phone.trim(),
+      couponCode: coupon?.code,
+      paymentProvider: 'PAYSTACK',
+      shippingAddress: hasPhysical
+        ? { street: street.trim(), city: city.trim(), state: region, postalCode: gps.trim() || undefined, landmark: landmark.trim() || undefined, country: 'GH' }
+        : undefined,
+    };
 
     try {
-      const payload = {
-        items: items.map((item) => ({
-          productId: item.productId,
-          variantId: item.variantId || undefined,
-          quantity: item.quantity,
-        })),
-        guestEmail: email.trim(),
-        guestName: name.trim() || undefined,
-        couponCode: couponCode ? couponCode.trim() : undefined,
-        currency: 'USD',
-        paymentProvider,
-        shippingAddress: hasPhysicalItems
-          ? {
-              fullName: name.trim() || 'Valued Customer',
-              street: street.trim(),
-              city: city.trim(),
-              state: state.trim() || undefined,
-              postalCode: postalCode.trim() || undefined,
-              country,
-              phone: phone.trim(),
-            }
-          : undefined,
-        shippingMethod,
-      };
+      // If this exact checkout already created an order (e.g. the buyer came back from the
+      // payment page), restart payment on that order instead of creating a duplicate.
+      const signature = JSON.stringify(payload);
+      let pending: { signature: string; orderId: string; at: number } | null = null;
+      try {
+        pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null');
+      } catch {
+        pending = null;
+      }
+
+      if (pending && pending.signature === signature && Date.now() - pending.at < PENDING_MAX_AGE_MS) {
+        const res = await fetch('/api/payments/initialize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: pending.orderId, provider: 'PAYSTACK' }),
+        });
+        const data = await readJson(res);
+        if (res.ok && data.paymentUrl) {
+          window.location.href = data.paymentUrl;
+          return;
+        }
+        if (res.status === 400 && /already been paid/i.test(data.error || '')) {
+          router.push(`/checkout/success?orderId=${pending.orderId}`);
+          return;
+        }
+        // Otherwise fall through and create a fresh order.
+      }
 
       const res = await fetch('/api/checkout/create-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
-      const data = await res.json();
+      const data = await readJson(res);
 
       if (!res.ok) {
-        setError(data.error || 'Failed to create checkout session.');
-        setIsLoading(false);
+        setError(data.error || 'Something went wrong. Please try again.');
+        setSubmitting(false);
         return;
       }
 
-      clearCart();
+      try {
+        sessionStorage.setItem(PENDING_KEY, JSON.stringify({ signature, orderId: data.orderId, at: Date.now() }));
+      } catch {
+        // Private mode: duplicate protection is best-effort only.
+      }
 
-      // If free order or simulation mode redirect to confirmation
-      if (data.status === 'PAID' || !data.paymentUrl) {
-        router.push(`/checkout/success?order_id=${data.orderId}&order_number=${data.orderNumber}`);
-      } else {
-        // Authoritative redirect to payment gateway URL
+      if (!productSlug) cart.clearCart();
+
+      if (data.paymentUrl) {
         window.location.href = data.paymentUrl;
+      } else {
+        router.push(`/checkout/success?orderId=${data.orderId}&orderNumber=${data.orderNumber}`);
       }
     } catch {
-      setError('An unexpected network error occurred.');
-      setIsLoading(false);
+      setError('Network problem. Check your connection and try again.');
+      setSubmitting(false);
     }
   };
 
-  if (!isLoaded) {
+  if (loadError) {
     return (
-      <Container className="py-20 text-center">
-        <div className="h-64 rounded-3xl bg-zinc-900/40 animate-pulse border border-zinc-800" />
-      </Container>
+      <div className="space-y-4 text-center">
+        <AlertCircle className="mx-auto h-10 w-10 text-amber-300" />
+        <p className="text-stone-200">{loadError}</p>
+        {productSlug && (
+          <Link href={productPath(productSlug)} className="inline-block text-sm text-amber-300 underline">
+            Back to the product
+          </Link>
+        )}
+      </div>
+    );
+  }
+
+  if (!lines) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-amber-300" />
+      </div>
+    );
+  }
+
+  if (lines.length === 0) {
+    return (
+      <div className="space-y-3 text-center">
+        <p className="text-stone-300">There’s nothing to check out.</p>
+        <Link href="/" className="text-sm text-amber-300 underline">Go to the shop</Link>
+      </div>
     );
   }
 
   return (
-    <div className="py-12 md:py-16 text-zinc-100 selection:bg-emerald-500 selection:text-black">
-      <Container>
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white sm:text-3xl">Secure Checkout</h1>
-          <p className="text-xs text-zinc-400 mt-1">
-            Complete your customer information and select your payment method.
-          </p>
-        </div>
+    <form onSubmit={submit} className="space-y-7">
+      {/* Order summary */}
+      <section className="space-y-3 rounded-2xl border border-stone-800 bg-stone-900/50 p-4">
+        {lines.map((l) => (
+          <div key={`${l.productId}-${l.variantId ?? ''}`} className="flex gap-3">
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-stone-800">
+              {l.coverImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={l.coverImage} alt="" className="h-full w-full object-cover" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="font-medium text-white">{l.title}</div>
+              <div className="text-xs text-stone-400">
+                {[l.optionLabel, l.kind === 'PHYSICAL' ? `Qty ${l.quantity}` : 'Instant download'].filter(Boolean).join(' · ')}
+              </div>
+            </div>
+            <div className="text-right font-mono text-sm text-white">
+              {formatCurrency(l.unitPrice * l.quantity, l.currency)}
+              {l.compareAtPrice !== null && (
+                <div className="text-xs text-stone-500 line-through">{formatCurrency(l.compareAtPrice * l.quantity, l.currency)}</div>
+              )}
+            </div>
+          </div>
+        ))}
 
-        {error && (
-          <div className="mb-6 flex items-center gap-2 rounded-2xl border border-red-800/60 bg-red-950/40 p-4 text-xs text-red-300">
-            <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
-            <span>{error}</span>
+        <dl className="space-y-1.5 border-t border-stone-800 pt-3 text-sm">
+          <div className="flex justify-between text-stone-400">
+            <dt>Subtotal</dt>
+            <dd className="font-mono">{formatCurrency(subtotal, currency)}</dd>
+          </div>
+          {coupon && (
+            <div className="flex justify-between text-emerald-300">
+              <dt>Discount ({coupon.code})</dt>
+              <dd className="font-mono">−{formatCurrency(discount, currency)}</dd>
+            </div>
+          )}
+          {hasPhysical && (
+            <div className="flex justify-between text-stone-400">
+              <dt>Delivery</dt>
+              <dd className="font-mono">{shippingFee > 0 ? formatCurrency(shippingFee, currency) : 'Free'}</dd>
+            </div>
+          )}
+          <div className="flex justify-between pt-1 text-base font-bold text-white">
+            <dt>Total</dt>
+            <dd className="font-mono">{formatCurrency(total, currency)}</dd>
+          </div>
+        </dl>
+      </section>
+
+      {/* Contact */}
+      <section className="space-y-4">
+        <h2 className="text-base font-semibold text-white">Your details</h2>
+        <div>
+          <label className={labelClass} htmlFor="co-name">Full name</label>
+          <input id="co-name" className={fieldClass} autoComplete="name" required minLength={2} value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div>
+          <label className={labelClass} htmlFor="co-email">Email</label>
+          <input id="co-email" type="email" inputMode="email" autoComplete="email" required className={fieldClass} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+          {!hasPhysical && <p className="mt-1 text-xs text-stone-500">We’ll email your download link here.</p>}
+        </div>
+        <div>
+          <label className={labelClass} htmlFor="co-phone">Phone (Mobile Money number)</label>
+          <input id="co-phone" type="tel" inputMode="tel" autoComplete="tel" required className={fieldClass} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="024 123 4567" />
+        </div>
+      </section>
+
+      {/* Delivery address (physical only) */}
+      {hasPhysical && (
+        <section className="space-y-4">
+          <h2 className="text-base font-semibold text-white">Delivery address</h2>
+          <div>
+            <label className={labelClass} htmlFor="co-region">Region</label>
+            <select id="co-region" className={fieldClass} value={region} onChange={(e) => setRegion(e.target.value)}>
+              {GHANA_REGIONS.map((r) => (
+                <option key={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="co-city">City or town</label>
+            <input id="co-city" className={fieldClass} autoComplete="address-level2" required minLength={2} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Accra" />
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="co-street">Area, street and house number</label>
+            <input id="co-street" className={fieldClass} autoComplete="street-address" required minLength={3} value={street} onChange={(e) => setStreet(e.target.value)} placeholder="East Legon, 12 Lagos Ave" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass} htmlFor="co-landmark">Landmark <span className="text-stone-500">(optional)</span></label>
+              <input id="co-landmark" className={fieldClass} value={landmark} onChange={(e) => setLandmark(e.target.value)} placeholder="Near the mall" />
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="co-gps">GhanaPost GPS <span className="text-stone-500">(optional)</span></label>
+              <input id="co-gps" className={fieldClass} value={gps} onChange={(e) => setGps(e.target.value)} placeholder="GA-123-4567" />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Coupon */}
+      <section>
+        {coupon ? (
+          <div className="flex items-center justify-between rounded-xl border border-emerald-800 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-200">
+            <span className="flex items-center gap-2"><Tag className="h-4 w-4" /> {coupon.code} applied</span>
+            <button type="button" aria-label="Remove code" onClick={() => { setCoupon(null); setCouponInput(''); }} className="text-emerald-300">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input aria-label="Discount code" className={`${fieldClass} uppercase`} value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder="Discount code" />
+            <button type="button" onClick={() => applyCoupon(couponInput)} className="shrink-0 rounded-xl border border-stone-700 px-4 text-sm font-semibold text-stone-100">
+              Apply
+            </button>
           </div>
         )}
+        {couponMessage && <p className="mt-1.5 text-xs text-red-300">{couponMessage}</p>}
+      </section>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Form Fields (7 cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Customer Details */}
-            <Card className="border-zinc-800/80 bg-zinc-950 rounded-3xl overflow-hidden shadow-xl">
-              <CardContent className="p-6 space-y-4">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-emerald-400">
-                  1. Contact Information
-                </h2>
+      {error && (
+        <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-900 bg-red-950/50 p-3 text-sm text-red-200">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
+        </div>
+      )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Email Address (for order receipts & tracking) *"
-                    type="email"
-                    placeholder="sarah@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+      <div className="space-y-2">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-amber-300 py-3.5 text-base font-bold text-stone-950 shadow-lg shadow-amber-900/20 disabled:opacity-60"
+        >
+          {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-4 w-4" />}
+          {total === 0 ? 'Get it free' : `Pay ${formatCurrency(total, currency)}`}
+        </button>
+        <p className="text-center text-xs text-stone-500">Mobile Money or card on the next screen. No account needed.</p>
+      </div>
+    </form>
+  );
+}
 
-                  <Input
-                    label="Full Name *"
-                    placeholder="Sarah Jenkins"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                  />
-                </div>
-              </CardContent>
-            </Card>
+function CheckoutContent() {
+  const searchParams = useSearchParams();
+  const errorCode = searchParams.get('error');
+  const retryOrderId = searchParams.get('order_id');
+  const productSlug = searchParams.get('product');
 
-            {/* Shipping Address (if physical items present) */}
-            {hasPhysicalItems && (
-              <Card className="border-zinc-800/80 bg-zinc-950 rounded-3xl overflow-hidden shadow-xl">
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-center gap-2 text-emerald-400">
-                    <Truck className="w-4 h-4" />
-                    <h2 className="text-sm font-semibold uppercase tracking-wider">
-                      2. Shipping & Delivery Address
-                    </h2>
-                  </div>
-
-                  <div className="space-y-4">
-                    <Input
-                      label="Street Address *"
-                      placeholder="14 Independence Avenue"
-                      value={street}
-                      onChange={(e) => setStreet(e.target.value)}
-                      required
-                    />
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <Input
-                        label="City *"
-                        placeholder="Accra / Kumasi / London"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        required
-                      />
-
-                      <Input
-                        label="State / Region"
-                        placeholder="Greater Accra"
-                        value={state}
-                        onChange={(e) => setState(e.target.value)}
-                      />
-
-                      <Input
-                        label="Postal Code"
-                        placeholder="00233"
-                        value={postalCode}
-                        onChange={(e) => setPostalCode(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-mono uppercase text-zinc-400 mb-1">
-                          Country *
-                        </label>
-                        <select
-                          value={country}
-                          onChange={(e) => setCountry(e.target.value)}
-                          className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white"
-                        >
-                          <option value="GH">Ghana (GH)</option>
-                          <option value="NG">Nigeria (NG)</option>
-                          <option value="US">United States (US)</option>
-                          <option value="GB">United Kingdom (GB)</option>
-                          <option value="CA">Canada (CA)</option>
-                        </select>
-                      </div>
-
-                      <Input
-                        label="Phone Number (for courier delivery SMS) *"
-                        type="tel"
-                        placeholder="+233 24 123 4567"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Payment Provider Selection */}
-            <Card className="border-zinc-800/80 bg-zinc-950 rounded-3xl overflow-hidden shadow-xl">
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center gap-2 text-emerald-400">
-                  <CreditCard className="w-4 h-4" />
-                  <h2 className="text-sm font-semibold uppercase tracking-wider">
-                    {hasPhysicalItems ? '3. Payment Gateway' : '2. Payment Gateway'}
-                  </h2>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div
-                    onClick={() => setPaymentProvider('FLUTTERWAVE')}
-                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                      paymentProvider === 'FLUTTERWAVE'
-                        ? 'border-emerald-500 bg-emerald-950/20 shadow-md'
-                        : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-white">Flutterwave Gateway</span>
-                      <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                        Recommended
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-zinc-400">
-                      Cards (Visa, Mastercard, Amex), Ghana Mobile Money (MTN, Telecel, AT), and African local wallets.
-                    </p>
-                  </div>
-
-                  <div
-                    onClick={() => setPaymentProvider('PAYSTACK')}
-                    className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                      paymentProvider === 'PAYSTACK'
-                        ? 'border-emerald-500 bg-emerald-950/20 shadow-md'
-                        : 'border-zinc-800 bg-zinc-900/40 hover:border-zinc-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-white">Paystack Gateway</span>
-                    </div>
-                    <p className="text-[11px] text-zinc-400">
-                      Debit/Credit cards, Mobile Money, Bank Transfer, and Apple Pay.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Summary Column (5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            <Card className="border-zinc-800/80 bg-zinc-950 rounded-3xl sticky top-24 shadow-2xl">
-              <CardContent className="p-6 space-y-5">
-                <h2 className="text-base font-bold text-white">Order Summary</h2>
-
-                <div className="divide-y divide-zinc-800/60 max-h-56 overflow-y-auto">
-                  {items.map((item) => (
-                    <div key={item.id} className="py-2.5 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-semibold text-white">{item.title}</span>
-                        {item.variantTitle && (
-                          <span className="text-[11px] font-mono text-zinc-400 block">{item.variantTitle}</span>
-                        )}
-                        <span className="text-[10px] text-zinc-500">Qty: {item.quantity}</span>
-                      </div>
-                      <span className="font-mono font-medium text-white">
-                        {formatCurrency((item.discountPrice ?? item.price) * item.quantity)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-2.5 text-xs border-t border-zinc-800 pt-3">
-                  <div className="flex justify-between text-zinc-400">
-                    <span>Subtotal</span>
-                    <span className="font-mono text-white">{formatCurrency(subtotal)}</span>
-                  </div>
-
-                  {discountAmount > 0 && (
-                    <div className="flex justify-between text-emerald-400 font-mono">
-                      <span>Discount ({couponCode})</span>
-                      <span>-{formatCurrency(discountAmount)}</span>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between text-zinc-400">
-                    <span>Shipping Fee</span>
-                    <span className="font-mono text-white">
-                      {shippingFee === 0 ? 'Free' : formatCurrency(shippingFee)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-baseline pt-2 border-t border-zinc-800">
-                  <span className="text-sm font-semibold text-white">Total</span>
-                  <span className="text-2xl font-black font-mono text-white">{formatCurrency(finalTotal)}</span>
-                </div>
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  disabled={isLoading}
-                  className="w-full gap-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold uppercase tracking-wider text-xs py-4 rounded-2xl shadow-xl shadow-emerald-950/40"
-                >
-                  <Lock className="w-4 h-4" />
-                  {isLoading ? 'Connecting to Gateway...' : `Pay ${formatCurrency(finalTotal)}`}
-                </Button>
-
-                <div className="flex items-center justify-center gap-2 text-[11px] text-zinc-500 pt-1 font-mono">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>256-Bit SSL Encrypted Transaction</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </form>
-      </Container>
+  return (
+    <div className="mx-auto w-full max-w-lg px-4 py-6 pb-16">
+      <div className="mb-5 flex items-center gap-3">
+        <Link
+          href={productSlug ? productPath(productSlug) : '/'}
+          aria-label="Back"
+          className="rounded-xl border border-stone-800 p-2 text-stone-400 hover:text-white"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <h1 className="text-xl font-bold text-white">Checkout</h1>
+      </div>
+      {errorCode && retryOrderId ? (
+        <RetryPanel orderId={retryOrderId} errorCode={errorCode} />
+      ) : (
+        <>
+          {errorCode && (
+            <div role="alert" className="mb-5 rounded-xl border border-amber-800/60 bg-amber-950/30 p-3 text-sm text-amber-100">
+              {(PAYMENT_MESSAGES[errorCode] ?? UNCONFIRMED_MESSAGE).body}
+            </div>
+          )}
+          <CheckoutForm />
+        </>
+      )}
     </div>
   );
 }
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div className="p-20 text-center text-zinc-500">Loading checkout...</div>}>
-      <CheckoutForm />
-    </Suspense>
+    <React.Suspense
+      fallback={
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-amber-300" />
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </React.Suspense>
   );
 }

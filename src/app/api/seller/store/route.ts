@@ -15,7 +15,7 @@ const storeSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const auth = await RBACService.requireSellerOrAdmin();
+  const auth = await RBACService.requireAdmin();
   if ('error' in auth) return auth.error;
 
   try {
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await RBACService.requireSellerOrAdmin();
+  const auth = await RBACService.requireAdmin();
   if ('error' in auth) return auth.error;
 
   try {

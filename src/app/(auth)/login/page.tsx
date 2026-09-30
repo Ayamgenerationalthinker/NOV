@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { isSafeRedirect } from '@/lib/safe-redirect';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Container } from '@/components/ui/container';
@@ -12,7 +13,9 @@ import { Shield, ArrowRight, AlertCircle, CheckCircle2, Lock } from 'lucide-reac
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect') || '/admin';
+  // Only same-site paths: never follow ?redirect= to another website after sign-in.
+  const requestedRedirect = searchParams.get('redirect') || '';
+  const redirectUrl = isSafeRedirect(requestedRedirect) ? requestedRedirect : '/admin';
 
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');

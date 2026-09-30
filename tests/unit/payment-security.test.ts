@@ -463,3 +463,15 @@ describe('Bypass 4: admin login backdoor and forgeable sessions', () => {
     ).toThrow(/Invalid environment variables/);
   });
 });
+
+describe('Environment: blank values count as unset', () => {
+  it('ignores KEY="" so defaults apply in dev and production still refuses a blank AUTH_SECRET', () => {
+    const dev = loadEnv({ NODE_ENV: 'development', AUTH_SECRET: '', PAYSTACK_SECRET_KEY: '  ' } as any);
+    expect(dev.AUTH_SECRET.length).toBeGreaterThanOrEqual(32);
+    expect(dev.PAYSTACK_SECRET_KEY).toBeUndefined();
+
+    expect(() =>
+      loadEnv({ NODE_ENV: 'production', AUTH_SECRET: '', DATABASE_URL: 'postgresql://x', NEXT_PUBLIC_APP_URL: 'https://x.com' } as any)
+    ).toThrow(/AUTH_SECRET/);
+  });
+});

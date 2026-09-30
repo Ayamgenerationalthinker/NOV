@@ -112,3 +112,14 @@ describe('Admin-only access', () => {
     });
   });
 });
+
+describe('Login redirect', () => {
+  it('only follows same-site paths after sign-in', async () => {
+    const { isSafeRedirect } = await import('@/lib/safe-redirect');
+    expect(isSafeRedirect('/admin/products')).toBe(true);
+    expect(isSafeRedirect('//evil.example')).toBe(false);
+    expect(isSafeRedirect('/\\evil.example')).toBe(false);
+    expect(isSafeRedirect('https://evil.example')).toBe(false);
+    expect(isSafeRedirect('')).toBe(false);
+  });
+});

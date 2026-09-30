@@ -62,7 +62,11 @@ function assertProductionEnv(source: NodeJS.ProcessEnv): void {
   }
 }
 
-export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
+export function loadEnv(rawSource: NodeJS.ProcessEnv = process.env): Env {
+  // KEY="" in .env means "not set" (so defaults and "missing key" checks apply).
+  const source = Object.fromEntries(
+    Object.entries(rawSource).filter(([, value]) => value !== undefined && value.trim() !== '')
+  ) as NodeJS.ProcessEnv;
   const isProduction = source.NODE_ENV === 'production';
   if (isProduction) {
     assertProductionEnv(source);

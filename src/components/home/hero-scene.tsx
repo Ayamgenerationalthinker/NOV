@@ -3,6 +3,7 @@
 import { useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { COIN_SYMBOLS, coinFaceTexture, type CoinSymbol } from './coin-face';
 
 /**
  * The growth scene: a glowing seed in dark soil that puts out roots, grows a trunk and
@@ -172,6 +173,8 @@ function buildDrifters(count: number, seed: number, from: number, spread: number
 
 /** Smoothed copy of the scroll progress, shared so every part of the scene agrees. */
 const clock = { p: 0 };
+/** How far the whole tree turns (in radians) between the top and bottom of the hero. */
+const TREE_TURN = 0.9;
 
 function Rig({ progress, band }: { progress: RefObject<number>; band: RefObject<ArtBand | null> }) {
   const { camera, size } = useThree();
@@ -248,20 +251,24 @@ function Limbs() {
   );
 }
 
-function Drift({
-  items,
-  coin,
-}: {
-  items: Drifter[];
-  /** Coins are discs that end up facing the viewer; leaves keep a random tilt. */
-  coin?: boolean;
-}) {
+/** Where a leaf or coin is on its way from the sky to its place in the canopy. */
+function place(dummy: THREE.Object3D, item: Drifter, t: number, time: number) {
+  const loose = 1 - t;
+  dummy.position.set(
+    lerp(item.start.x, item.target.x, t) + Math.sin(time * 0.7 + item.phase) * 0.3 * loose,
+    lerp(item.start.y, item.target.y, t) + Math.sin(time * 1.1 + item.phase) * 0.03,
+    lerp(item.start.z, item.target.z, t) + Math.cos(time * 0.6 + item.phase) * 0.2 * loose,
+  );
+  dummy.scale.setScalar(item.size * smoothstep(t, 0, 0.12));
+}
+
+function Leaves({ items }: { items: Drifter[] }) {
   const mesh = useRef<THREE.InstancedMesh>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
 
   useLayoutEffect(() => {
     const instanced = mesh.current;
-    if (!instanced || coin) return;
+    if (!instanced) return;
     const rand = seeded(23);
     const colour = new THREE.Color();
     items.forEach((_, i) => {
@@ -271,33 +278,22 @@ function Drift({
       instanced.setColorAt(i, colour);
     });
     if (instanced.instanceColor) instanced.instanceColor.needsUpdate = true;
-  }, [items, coin]);
+  }, [items]);
 
   useFrame(({ clock: three }) => {
     const instanced = mesh.current;
     if (!instanced) return;
     const time = three.elapsedTime;
-    const p = clock.p;
 
     items.forEach((item, i) => {
-      const t = smoothstep(p, item.from, item.from + 0.2);
-      const loose = 1 - t;
-      dummy.position.set(
-        lerp(item.start.x, item.target.x, t) + Math.sin(time * 0.7 + item.phase) * 0.3 * loose,
-        lerp(item.start.y, item.target.y, t) + Math.sin(time * 1.1 + item.phase) * 0.03,
-        lerp(item.start.z, item.target.z, t) + Math.cos(time * 0.6 + item.phase) * 0.2 * loose,
+      const t = smoothstep(clock.p, item.from, item.from + 0.2);
+      place(dummy, item, t, time);
+      // Spin on the way down, then keep fluttering gently once settled.
+      dummy.rotation.set(
+        item.tilt.x + time * item.spin * (1 - t) + Math.sin(time * 1.3 + item.phase) * 0.12 * t,
+        item.tilt.y + Math.sin(time * 0.9 + item.phase) * 0.3,
+        item.tilt.z,
       );
-      if (coin) {
-        // Tumble while falling, then come to rest face-on.
-        dummy.rotation.set(Math.PI / 2 + time * item.spin * 2 * loose, 0, item.phase);
-      } else {
-        dummy.rotation.set(
-          item.tilt.x + time * item.spin * loose,
-          item.tilt.y + Math.sin(time * 0.9 + item.phase) * 0.25,
-          item.tilt.z,
-        );
-      }
-      dummy.scale.setScalar(item.size * smoothstep(t, 0, 0.12));
       dummy.updateMatrix();
       instanced.setMatrixAt(i, dummy.matrix);
     });
@@ -306,16 +302,116 @@ function Drift({
 
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, items.length]} frustumCulled={false}>
-      {coin ? <cylinderGeometry args={[1, 1, 0.16, 24]} /> : <icosahedronGeometry args={[1, 0]} />}
-      <meshStandardMaterial
-        color={coin ? '#f8fbff' : '#ffffff'}
-        roughness={coin ? 0.3 : 0.45}
-        metalness={coin ? 0.7 : 0.35}
-        emissive={coin ? '#3b82f6' : '#1e40af'}
-        emissiveIntensity={coin ? 0.5 : 0.35}
-        flatShading={!coin}
-      />
+      <icosahedronGeometry args={[1, 0]} />
+      <meshStandardMaterial color="#ffffff" roughness={0.45} metalness={0.35} emissive="#1e40af" emissiveIntensity={0.35} flatShading />
     </instancedMesh>
+  );
+}
+
+/** Coins stamped with a dollar or cedi sign. They tumble down, then hang facing the viewer and sway. */
+function Coins({ items, symbol }: { items: Drifter[]; symbol: CoinSymbol }) {
+  const mesh = useRef<THREE.InstancedMesh>(null);
+  const dummy = useMemo(() => {
+    const object = new THREE.Object3D();
+    // Turn about the upright axis last, so a coin can sway like a hanging medal.
+    object.rotation.order = 'YXZ';
+    return object;
+  }, []);
+  const materials = useMemo(() => {
+    const face = coinFaceTexture(symbol);
+    const stamped = new THREE.MeshStandardMaterial({
+      map: face,
+      emissive: '#ffffff',
+      emissiveMap: face,
+      emissiveIntensity: 0.45,
+      roughness: 0.35,
+      metalness: 0.25,
+    });
+    const rim = new THREE.MeshStandardMaterial({ color: '#93c5fd', roughness: 0.3, metalness: 0.7, emissive: '#2563eb', emissiveIntensity: 0.5 });
+    // A cylinder's materials go: side, top, bottom.
+    return [rim, stamped, stamped];
+  }, [symbol]);
+
+  useFrame(({ clock: three }) => {
+    const instanced = mesh.current;
+    if (!instanced) return;
+    const time = three.elapsedTime;
+    // The tree turns as it grows; turning the coins back keeps their faces towards the viewer.
+    const home = -clock.p * TREE_TURN;
+
+    items.forEach((item, i) => {
+      const t = smoothstep(clock.p, item.from, item.from + 0.2);
+      const loose = 1 - t;
+      place(dummy, item, t, time);
+      dummy.rotation.set(
+        Math.PI / 2 + time * item.spin * 2 * loose,
+        home + time * item.spin * loose + Math.sin(time * 0.9 + item.phase) * 0.6 * t,
+        0,
+      );
+      dummy.updateMatrix();
+      instanced.setMatrixAt(i, dummy.matrix);
+    });
+    instanced.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={mesh} args={[undefined, undefined, items.length]} material={materials} frustumCulled={false}>
+      <cylinderGeometry args={[1, 1, 0.14, 32]} />
+    </instancedMesh>
+  );
+}
+
+/** Motes of light that rise through the canopy once the tree is in leaf. */
+function Sparkles({ count }: { count: number }) {
+  const points = useRef<THREE.Points>(null);
+  const material = useRef<THREE.PointsMaterial>(null);
+  const motes = useMemo(() => {
+    const rand = seeded(57);
+    return Array.from({ length: count }, () => ({
+      angle: rand() * Math.PI * 2,
+      radius: 0.3 + rand() * 1.5,
+      speed: 0.05 + rand() * 0.09,
+      offset: rand(),
+      phase: rand() * Math.PI * 2,
+    }));
+  }, [count]);
+  const geometry = useMemo(() => {
+    const buffer = new THREE.BufferGeometry();
+    buffer.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+    return buffer;
+  }, [count]);
+
+  useFrame(({ clock: three }) => {
+    const time = three.elapsedTime;
+    if (material.current) material.current.opacity = smoothstep(clock.p, 0.72, 0.96) * 0.9;
+    if (!points.current) return;
+    const position = points.current.geometry.attributes.position as THREE.BufferAttribute;
+    motes.forEach((mote, i) => {
+      const rise = (time * mote.speed + mote.offset) % 1;
+      const sway = mote.angle + Math.sin(time * 0.5 + mote.phase) * 0.4;
+      position.setXYZ(
+        i,
+        Math.cos(sway) * mote.radius,
+        CANOPY.y - CANOPY.ry - 0.4 + rise * (CANOPY.ry * 2 + 1.4),
+        Math.sin(sway) * mote.radius * 0.75,
+      );
+    });
+    position.needsUpdate = true;
+  });
+
+  return (
+    <points ref={points} geometry={geometry} frustumCulled={false}>
+      <pointsMaterial
+        ref={material}
+        color="#ffffff"
+        size={0.05}
+        sizeAttenuation
+        transparent
+        opacity={0}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
   );
 }
 
@@ -385,10 +481,17 @@ function Soil() {
 function Scene({ progress, band, compact }: Pick<HeroSceneProps, 'progress' | 'band'> & { compact: boolean }) {
   const group = useRef<THREE.Group>(null);
   const leaves = useMemo(() => buildDrifters(compact ? 150 : 280, 11, 0.58, 0.2, [0.07, 0.14]), [compact]);
-  const coins = useMemo(() => buildDrifters(compact ? 14 : 26, 19, 0.68, 0.12, [0.09, 0.13]), [compact]);
+  // Half the coins carry a dollar sign and half a cedi sign.
+  const coins = useMemo(() => {
+    const all = buildDrifters(compact ? 10 : 18, 19, 0.68, 0.12, [0.17, 0.23]);
+    // Hang the coins just outside the leaves so their faces are not buried.
+    const centre = new THREE.Vector3(0, CANOPY.y, 0);
+    for (const coin of all) coin.target.sub(centre).multiplyScalar(1.22).add(centre);
+    return COIN_SYMBOLS.map((symbol, s) => ({ symbol, items: all.filter((_, i) => i % COIN_SYMBOLS.length === s) }));
+  }, [compact]);
 
   useFrame(({ clock: three }) => {
-    if (group.current) group.current.rotation.y = clock.p * 0.9 + Math.sin(three.elapsedTime * 0.25) * 0.06;
+    if (group.current) group.current.rotation.y = clock.p * TREE_TURN + Math.sin(three.elapsedTime * 0.25) * 0.06;
   });
 
   return (
@@ -401,8 +504,11 @@ function Scene({ progress, band, compact }: Pick<HeroSceneProps, 'progress' | 'b
         <Soil />
         <Seed />
         <Limbs />
-        <Drift items={leaves} />
-        <Drift items={coins} coin />
+        <Leaves items={leaves} />
+        {coins.map((set) => (
+          <Coins key={set.symbol} items={set.items} symbol={set.symbol} />
+        ))}
+        <Sparkles count={compact ? 40 : 80} />
       </group>
     </>
   );

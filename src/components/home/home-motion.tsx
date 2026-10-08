@@ -12,6 +12,7 @@ import Lenis from 'lenis';
  *   data-reveal        fades and rises into place when scrolled into view (staggered in groups)
  *   data-parallax="n"  drifts by n% of its own height as it crosses the screen
  *   data-grow-line     a line that draws itself as its parent scrolls past
+ *   data-scroll-progress  the reading-progress line this component renders itself
  *
  * Nothing here runs for visitors who ask for reduced motion: content is simply visible.
  */
@@ -53,6 +54,16 @@ export function HomeMotion() {
         );
       });
 
+      // The thin line across the top of the screen fills as the page is read.
+      const bar = document.querySelector<HTMLElement>('[data-scroll-progress]');
+      if (bar) {
+        gsap.fromTo(
+          bar,
+          { scaleX: 0 },
+          { scaleX: 1, ease: 'none', scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: 0.3 } },
+        );
+      }
+
       gsap.utils.toArray<HTMLElement>('[data-grow-line]').forEach((el) => {
         gsap.fromTo(
           el,
@@ -90,5 +101,11 @@ export function HomeMotion() {
     return () => media.revert();
   }, []);
 
-  return null;
+  return (
+    <div
+      aria-hidden
+      data-scroll-progress
+      className="pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5 origin-left scale-x-0 bg-gradient-to-r from-[#60a5fa] to-white"
+    />
+  );
 }

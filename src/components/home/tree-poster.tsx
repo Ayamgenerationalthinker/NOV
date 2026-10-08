@@ -43,7 +43,7 @@ export function TreePoster({ className }: { className?: string }) {
     <svg
       viewBox="0 0 600 700"
       role="img"
-      aria-label="A tree with blue and white leaves and coins in its canopy, growing from a glowing seed in dark soil"
+      aria-label="A tree with blue and white leaves and dollar and cedi coins in its canopy, growing from a glowing seed in dark soil"
       preserveAspectRatio="xMidYMid meet"
       className={className}
     >
@@ -98,8 +98,12 @@ export function TreePoster({ className }: { className?: string }) {
         ))}
         {COINS.map((coin, i) => (
           <g key={i}>
-            <circle cx={coin.x} cy={coin.y} r="13" fill="#f8fbff" />
-            <circle cx={coin.x} cy={coin.y} r="8.5" fill="none" stroke="#2563eb" strokeWidth="1.5" />
+            <circle cx={coin.x} cy={coin.y} r="16" fill="#f8fbff" />
+            <circle cx={coin.x} cy={coin.y} r="13" fill="none" stroke="#3b82f6" strokeWidth="1.5" />
+            {/* Dollar and cedi signs, turn about */}
+            <text x={coin.x} y={coin.y + 6} textAnchor="middle" fontSize="17" fontWeight="800" fill="#1d4ed8">
+              {i % 2 === 0 ? '$' : '₵'}
+            </text>
           </g>
         ))}
       </g>

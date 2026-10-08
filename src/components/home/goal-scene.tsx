@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { GOALS, type GoalMotif } from '@/content/home';
+import { COIN_SYMBOLS, coinFaceTexture, type CoinSymbol } from './coin-face';
 
 /**
  * Backdrop for the goal selector. Each goal has its own field of floating shapes; choosing a
@@ -20,7 +21,7 @@ function geometryFor(motif: GoalMotif | 'dust') {
     case 'rings':
       return <torusGeometry args={[0.7, 0.14, 10, 28]} />;
     case 'coins':
-      return <cylinderGeometry args={[0.7, 0.7, 0.12, 24]} />;
+      return <cylinderGeometry args={[1.1, 1.1, 0.14, 32]} />;
     case 'darts':
       return <coneGeometry args={[0.5, 1.4, 4]} />;
     case 'chips':
@@ -52,22 +53,35 @@ interface FieldProps {
   color: string;
   shown: boolean;
   seed: number;
+  /** Coins only: the currency sign stamped on both faces. */
+  symbol?: CoinSymbol;
+  /** How many shapes to draw (defaults to the full field). */
+  count?: number;
 }
 
-function Field({ motif, color, shown, seed }: FieldProps) {
+function Field({ motif, color, shown, seed, symbol, count = COUNT }: FieldProps) {
   const mesh = useRef<THREE.InstancedMesh>(null);
-  const material = useRef<THREE.MeshStandardMaterial>(null);
   const dummy = useMemo(() => new THREE.Object3D(), []);
-  const items = useMemo(() => scatter(seed), [seed]);
+  const items = useMemo(() => scatter(seed).slice(0, count), [seed, count]);
+  const materials = useMemo(() => {
+    const fade = { transparent: true, opacity: 0, depthWrite: false, roughness: 0.4, metalness: 0.5 };
+    const body = new THREE.MeshStandardMaterial({ ...fade, color, emissive: color, emissiveIntensity: 0.25 });
+    if (!symbol) return [body];
+    const face = coinFaceTexture(symbol);
+    const stamped = new THREE.MeshStandardMaterial({ ...fade, metalness: 0.2, map: face, emissive: '#ffffff', emissiveMap: face, emissiveIntensity: 0.35 });
+    // A cylinder's materials go: side, top, bottom.
+    return [body, stamped, stamped];
+  }, [color, symbol]);
 
   useFrame(({ clock }, delta) => {
     const instanced = mesh.current;
-    const mat = material.current;
-    if (!instanced || !mat) return;
+    if (!instanced) return;
 
     // Roughly an 800ms cross-fade between goals.
-    mat.opacity = THREE.MathUtils.damp(mat.opacity, shown ? 0.55 : 0, 4, Math.min(delta, 0.1));
-    instanced.visible = mat.opacity > 0.01;
+    const live = Array.isArray(instanced.material) ? instanced.material : [instanced.material];
+    const opacity = THREE.MathUtils.damp(live[0].opacity, shown ? (symbol ? 0.85 : 0.55) : 0, 4, Math.min(delta, 0.1));
+    for (const material of live) material.opacity = opacity;
+    instanced.visible = opacity > 0.01;
     if (!instanced.visible) return;
 
     const time = clock.elapsedTime;
@@ -86,19 +100,13 @@ function Field({ motif, color, shown, seed }: FieldProps) {
   });
 
   return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, COUNT]} frustumCulled={false}>
+    <instancedMesh
+      ref={mesh}
+      args={[undefined, undefined, items.length]}
+      material={symbol ? materials : materials[0]}
+      frustumCulled={false}
+    >
       {geometryFor(motif)}
-      <meshStandardMaterial
-        ref={material}
-        color={color}
-        emissive={color}
-        emissiveIntensity={0.25}
-        roughness={0.4}
-        metalness={0.5}
-        transparent
-        opacity={0}
-        depthWrite={false}
-      />
     </instancedMesh>
   );
 }
@@ -116,9 +124,24 @@ export default function GoalScene({ selected, active }: { selected: string | nul
       <ambientLight intensity={0.7} color="#ffffff" />
       <directionalLight intensity={1.6} position={[3, 5, 6]} color="#ffffff" />
       <Field motif="dust" color={NEUTRAL} shown={selected === null} seed={3} />
-      {GOALS.map((goal, i) => (
-        <Field key={goal.slug} motif={goal.motif} color={goal.color} shown={selected === goal.slug} seed={i + 11} />
-      ))}
+      {GOALS.map((goal, i) =>
+        goal.motif === 'coins' ? (
+          // The money goal: half the coins show a dollar sign, half a cedi sign.
+          COIN_SYMBOLS.map((symbol, s) => (
+            <Field
+              key={`${goal.slug}-${symbol}`}
+              motif="coins"
+              color={goal.color}
+              shown={selected === goal.slug}
+              seed={i + 11 + s * 37}
+              symbol={symbol}
+              count={COUNT / 2}
+            />
+          ))
+        ) : (
+          <Field key={goal.slug} motif={goal.motif} color={goal.color} shown={selected === goal.slug} seed={i + 11} />
+        ),
+      )}
     </Canvas>
   );
 }

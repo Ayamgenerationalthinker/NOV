@@ -42,7 +42,7 @@ export function SectionHeading({ eyebrow, title, text, id, className }: SectionH
 }
 
 export const primaryButton =
-  'inline-flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-semibold text-surface transition duration-300 ease-out hover:bg-accent-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg glow-accent';
+  'inline-flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-semibold text-surface transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-accent-200 motion-reduce:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg glow-accent';
 
 export const ghostButton =
   'inline-flex h-12 items-center justify-center gap-2 rounded-full border border-fg/25 bg-fg/5 px-6 text-sm font-semibold text-fg backdrop-blur transition duration-300 ease-out hover:border-fg/50 hover:bg-fg/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg';

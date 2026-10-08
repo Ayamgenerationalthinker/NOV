@@ -20,12 +20,15 @@ interface SiteChromeProps {
 }
 
 export function SiteChrome({ header, footer, children }: SiteChromeProps) {
-  const focused = isFocusedRoute(usePathname());
+  const pathname = usePathname();
+  const focused = isFocusedRoute(pathname);
+  // The header floats over the page. The homepage hero runs underneath it; other pages start below it.
+  const clearHeader = !focused && pathname !== '/';
 
   return (
     <>
       {!focused && header}
-      <main className="flex-1 flex flex-col">{children}</main>
+      <main className={clearHeader ? 'flex-1 flex flex-col pt-20' : 'flex-1 flex flex-col'}>{children}</main>
       {!focused && footer}
     </>
   );

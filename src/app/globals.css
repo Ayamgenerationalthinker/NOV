@@ -44,3 +44,89 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ---------------------------------------------------------------------------
+   Tomevari storefront: forest, cream and brass, with glass panels.
+   --------------------------------------------------------------------------- */
+@theme {
+  --color-forest: #0b1f17;
+  --color-forest-800: #0f2a1f;
+  --color-forest-700: #173a2c;
+  --color-charcoal: #14181a;
+  --color-cream: #f5efe0;
+  --color-brass: #d4a24c;
+  --color-brass-200: #e9c98a;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+  /* Lenis drives the scroll on desktop; native smooth scrolling would fight it. */
+  html.lenis {
+    scroll-behavior: auto;
+  }
+}
+
+.glass {
+  background: linear-gradient(135deg, rgba(245, 239, 224, 0.09), rgba(245, 239, 224, 0.03));
+  border: 1px solid rgba(245, 239, 224, 0.14);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 24px 60px -28px rgba(0, 0, 0, 0.7);
+}
+
+.glow-brass {
+  box-shadow:
+    0 0 0 1px rgba(212, 162, 76, 0.35),
+    0 12px 40px -10px rgba(212, 162, 76, 0.5);
+}
+
+.text-glow-brass {
+  text-shadow: 0 0 28px rgba(212, 162, 76, 0.45);
+}
+
+/* Hero headline: words rise in one after another. Pure CSS, so nothing flashes on load. */
+@keyframes word-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.6em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .word-rise {
+    display: inline-block;
+    animation: word-rise 800ms var(--ease-settle) both;
+  }
+}
+
+/* FAQ: hide the native disclosure triangle; the plus icon shows the state instead. */
+.faq-item > summary {
+  list-style: none;
+}
+.faq-item > summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item[open] .faq-icon {
+  transform: rotate(45deg);
+}
+
+/* Giant footer wordmark, fading into the page. */
+.wordmark-fade {
+  background: linear-gradient(to bottom, rgba(245, 239, 224, 0.13), rgba(245, 239, 224, 0));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

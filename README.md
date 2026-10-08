@@ -66,6 +66,32 @@ Open <http://localhost:3000/login> and sign in with your owner email and passwor
 
 ---
 
+## The homepage
+
+The homepage is a set of sections in `src/components/home/`, put together in `src/app/page.tsx`:
+
+| Section | File |
+| --- | --- |
+| Hero with the growing tree | `hero.tsx` (3D scene: `hero-scene.tsx`, static artwork: `tree-poster.tsx`) |
+| Why Tomevari | `why-section.tsx` |
+| Chosen for your goal | `goal-selector.tsx` (3D backdrop: `goal-scene.tsx`) |
+| Shop | `shop-section.tsx` |
+| Ready in minutes | `steps-section.tsx` |
+| Reader stories | `stories-section.tsx` |
+| FAQ | `faq-section.tsx` |
+
+The navbar and footer are in `src/components/layout/`.
+
+**Changing the words.** Everything that is not a product (goal categories, the "Why" cards, buying steps, FAQ, reader stories) is in one file: `src/content/home.ts`.
+
+**Products and goals.** Products come from the database: add them in **Admin → Products**. Tick one or more **Goals** on a product and it shows up when a shopper picks that goal on the homepage.
+
+**Reader stories.** Add real testimonials to `TESTIMONIALS` in `src/content/home.ts`. While that list is empty, the page shows an invitation to share a story instead. Only add words from buyers who agreed to be quoted.
+
+**3D and motion.** The 3D scenes (React Three Fiber) download only on devices that can run them. Visitors who ask for reduced motion, use data saver, or have a low-power device (4 or fewer CPU cores, 2 GB of memory or less, no WebGL) get the static tree artwork and no scroll effects. Those rules are in `use-scene-mode.ts`; scroll reveals, parallax and smooth scrolling (GSAP ScrollTrigger and Lenis) are in `home-motion.tsx`.
+
+---
+
 ## Try the whole flow
 
 1. **Create an ebook.** In the admin, go to **Products → New product → Digital**. Add a title, price in GH₵, cover image, description and "what you get" lines, choose the PDF buyers will receive, then tap **Publish**.

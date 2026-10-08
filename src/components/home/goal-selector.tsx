@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Briefcase, Check, Globe, Laptop, PiggyBank, PenTool, type LucideIcon } from 'lucide-react';
+import { ArrowDown, Briefcase, Check, Globe, Laptop, PiggyBank, PenTool, type LucideIcon } from 'lucide-react';
 import { Container } from '@/components/ui/container';
 import { GOALS } from '@/content/home';
 import { cn } from '@/lib/utils';
@@ -20,8 +20,18 @@ const ICONS: Record<string, LucideIcon> = {
   'digital-skills': Laptop,
 };
 
-export function GoalSelector() {
+const readoutLabel = 'text-[11px] font-semibold uppercase tracking-[0.2em] text-accent-200';
+
+interface GoalSelectorProps {
+  /** Published products per goal slug, counted on the server. */
+  counts: Record<string, number>;
+  /** All published products. */
+  total: number;
+}
+
+export function GoalSelector({ counts, total }: GoalSelectorProps) {
   const { selected, select } = useGoal();
+  const shown = selected ? (counts[selected] ?? 0) : total;
   const mode = useSceneMode();
   const { ref, inView } = useInView<HTMLElement>();
   const current = GOALS.find((goal) => goal.slug === selected);
@@ -71,42 +81,67 @@ export function GoalSelector() {
                   aria-pressed={on}
                   onClick={() => select(on ? null : goal.slug)}
                   className={cn(
-                    'glass group flex h-full w-full flex-col items-start gap-3 rounded-3xl p-4 text-left transition-all duration-700 ease-out hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass sm:p-5',
-                    on && 'glow-brass !border-brass/70',
+                    'glass group flex h-full w-full flex-col items-start gap-3 rounded-3xl p-4 text-left transition-all duration-700 ease-out hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent sm:p-5',
+                    on && 'glow-accent !border-accent/70',
                   )}
                 >
                   <span
                     className={cn(
                       'flex h-11 w-11 items-center justify-center rounded-2xl transition-colors duration-700',
-                      on ? 'bg-brass text-forest' : 'bg-cream/10 text-brass',
+                      on ? 'bg-accent text-surface' : 'bg-fg/10 text-accent',
                     )}
                   >
                     {on ? <Check className="h-5 w-5" aria-hidden /> : <Icon className="h-5 w-5" aria-hidden />}
                   </span>
-                  <span className="text-base font-semibold leading-tight text-cream">{goal.name}</span>
-                  <span className="text-sm leading-snug text-cream/70">{goal.blurb}</span>
+                  <span className="text-base font-semibold leading-tight text-fg">{goal.name}</span>
+                  <span className="text-sm leading-snug text-fg/70">{goal.blurb}</span>
                 </button>
               </div>
             );
           })}
         </div>
 
-        <p className="mt-6 text-sm text-cream/70" aria-live="polite">
-          {current ? (
-            <>
-              Showing guides for <strong className="font-semibold text-cream">{current.name}</strong>.{' '}
-              <button
-                type="button"
-                onClick={() => select(null)}
-                className="underline underline-offset-4 hover:text-cream"
+        {/* What is picked right now, and what the shop below is showing because of it */}
+        <div data-reveal className="glass mt-6 rounded-3xl p-5 sm:p-6">
+          <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+            <dl aria-live="polite" className="grid gap-4 sm:grid-cols-[1fr_1.6fr_auto] sm:gap-8">
+              <div>
+                <dt className={readoutLabel}>Active selection</dt>
+                <dd className="mt-1 text-lg font-semibold tracking-tight text-fg">{current ? current.name : 'All goals'}</dd>
+              </div>
+              <div>
+                <dt className={readoutLabel}>Focus</dt>
+                <dd className="mt-1 text-sm leading-snug text-fg/80">
+                  {current ? current.blurb : 'Every guide in the shop. Tap a goal to narrow it down.'}
+                </dd>
+              </div>
+              <div>
+                <dt className={readoutLabel}>Guides</dt>
+                <dd className="mt-1 text-lg font-semibold tabular-nums tracking-tight text-fg">
+                  {shown === 0 ? 'Coming soon' : shown}
+                </dd>
+              </div>
+            </dl>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+              <a
+                href="#shop"
+                className="group inline-flex items-center gap-2 rounded-full font-semibold text-accent-200 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
               >
-                Show everything
-              </button>
-            </>
-          ) : (
-            'Showing everything. Tap a goal to narrow it down.'
-          )}
-        </p>
+                {current ? 'See these guides' : 'Explore all guides'}
+                <ArrowDown className="h-4 w-4 transition-transform duration-500 ease-out group-hover:translate-y-0.5" aria-hidden />
+              </a>
+              {current && (
+                <button
+                  type="button"
+                  onClick={() => select(null)}
+                  className="rounded-full text-fg/70 underline underline-offset-4 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+                >
+                  Show everything
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </Container>
     </section>
   );

@@ -45,7 +45,7 @@ export function TiltCard({ max = 7, className, children, ...props }: TiltCardPro
       {children}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-[var(--glare,0)] transition-opacity duration-500 [background:radial-gradient(420px_circle_at_var(--glare-x,50%)_var(--glare-y,50%),rgba(245,239,224,0.14),transparent_60%)]"
+        className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-[var(--glare,0)] transition-opacity duration-500 [background:radial-gradient(420px_circle_at_var(--glare-x,50%)_var(--glare-y,50%),rgba(255,255,255,0.16),transparent_60%)]"
       />
     </div>
   );

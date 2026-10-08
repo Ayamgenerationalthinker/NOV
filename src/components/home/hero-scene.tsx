@@ -5,12 +5,12 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
 /**
- * The growth scene: a golden seed in dark soil that puts out roots, grows a trunk and
- * branches, then gathers golden leaves and coins into its canopy. Everything is procedural
+ * The growth scene: a glowing seed in dark soil that puts out roots, grows a trunk and
+ * branches, then gathers leaves and coins into its canopy. Everything is procedural
  * (no model files) and driven by one number, the hero's scroll progress from 0 to 1.
  */
 
-const GOLD = '#D4A24C';
+const BLUE = '#60A5FA';
 
 /** The strip of the canvas the tree should sit in, as fractions of its height from the top. */
 export interface ArtBand {
@@ -220,11 +220,11 @@ function Limbs() {
   const limbs = useMemo(() => [tree.trunk, ...tree.roots, ...tree.branches], [tree]);
 
   const bark = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: '#8c6a3c', roughness: 0.7, metalness: 0.15, emissive: '#3a2710', emissiveIntensity: 0.5 }),
+    () => new THREE.MeshStandardMaterial({ color: '#dbe7ff', roughness: 0.55, metalness: 0.2, emissive: '#1d4ed8', emissiveIntensity: 0.22 }),
     [],
   );
   const rootSkin = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: '#c79a52', roughness: 0.5, metalness: 0.3, emissive: '#7a5416', emissiveIntensity: 0.7 }),
+    () => new THREE.MeshStandardMaterial({ color: '#93c5fd', roughness: 0.45, metalness: 0.3, emissive: '#2563eb', emissiveIntensity: 0.55 }),
     [],
   );
 
@@ -265,9 +265,9 @@ function Drift({
     const rand = seeded(23);
     const colour = new THREE.Color();
     items.forEach((_, i) => {
-      // Mostly brass, with a few paler and a few greener leaves.
+      // A mix of white, sky blue and deeper blue leaves.
       const pick = rand();
-      colour.set(pick < 0.7 ? GOLD : pick < 0.88 ? '#E9C98A' : '#9DB86A');
+      colour.set(pick < 0.45 ? '#FFFFFF' : pick < 0.8 ? BLUE : '#2563EB');
       instanced.setColorAt(i, colour);
     });
     if (instanced.instanceColor) instanced.instanceColor.needsUpdate = true;
@@ -308,11 +308,11 @@ function Drift({
     <instancedMesh ref={mesh} args={[undefined, undefined, items.length]} frustumCulled={false}>
       {coin ? <cylinderGeometry args={[1, 1, 0.16, 24]} /> : <icosahedronGeometry args={[1, 0]} />}
       <meshStandardMaterial
-        color={coin ? '#E8C36A' : '#ffffff'}
+        color={coin ? '#f8fbff' : '#ffffff'}
         roughness={coin ? 0.3 : 0.45}
         metalness={coin ? 0.7 : 0.35}
-        emissive={coin ? '#8a5f14' : '#6b4a12'}
-        emissiveIntensity={coin ? 0.9 : 0.55}
+        emissive={coin ? '#3b82f6' : '#1e40af'}
+        emissiveIntensity={coin ? 0.5 : 0.35}
         flatShading={!coin}
       />
     </instancedMesh>
@@ -337,10 +337,10 @@ function Seed() {
     <>
       <mesh ref={seed} position={[0, SEED_Y, 0]}>
         <sphereGeometry args={[1, 32, 24]} />
-        <meshStandardMaterial color={GOLD} emissive="#b9781c" emissiveIntensity={0.55} roughness={0.3} metalness={0.6} />
+        <meshStandardMaterial color="#eaf2ff" emissive="#3b82f6" emissiveIntensity={0.7} roughness={0.3} metalness={0.4} />
       </mesh>
-      <pointLight ref={glow} position={[0, SEED_Y, 0.4]} color="#f2c063" distance={5} decay={2} />
-      <pointLight ref={crown} position={[0, CANOPY.y, 1.2]} color="#f2c063" distance={7} decay={2} intensity={0} />
+      <pointLight ref={glow} position={[0, SEED_Y, 0.4]} color="#9cc5ff" distance={5} decay={2} />
+      <pointLight ref={crown} position={[0, CANOPY.y, 1.2]} color="#9cc5ff" distance={7} decay={2} intensity={0} />
     </>
   );
 }
@@ -372,11 +372,11 @@ function Soil() {
           depthWrite={false}
           side={THREE.DoubleSide}
           vertexShader="varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }"
-          fragmentShader="varying vec2 vUv; void main() { float d = distance(vUv, vec2(0.5)) * 2.0; gl_FragColor = vec4(0.12, 0.27, 0.2, 0.6 * (1.0 - smoothstep(0.15, 1.0, d))); }"
+          fragmentShader="varying vec2 vUv; void main() { float d = distance(vUv, vec2(0.5)) * 2.0; gl_FragColor = vec4(0.14, 0.3, 0.62, 0.6 * (1.0 - smoothstep(0.15, 1.0, d))); }"
         />
       </mesh>
       <points geometry={points}>
-        <pointsMaterial color="#4f7260" size={0.02} sizeAttenuation transparent opacity={0.7} depthWrite={false} />
+        <pointsMaterial color="#6f93cf" size={0.02} sizeAttenuation transparent opacity={0.7} depthWrite={false} />
       </points>
     </>
   );
@@ -394,9 +394,9 @@ function Scene({ progress, band, compact }: Pick<HeroSceneProps, 'progress' | 'b
   return (
     <>
       <Rig progress={progress} band={band} />
-      <ambientLight color="#F5EFE0" intensity={0.55} />
-      <directionalLight color="#ffe2a8" intensity={1.8} position={[4, 6, 5]} />
-      <directionalLight color="#6fb89a" intensity={0.5} position={[-5, 2, -3]} />
+      <ambientLight color="#ffffff" intensity={0.6} />
+      <directionalLight color="#ffffff" intensity={1.8} position={[4, 6, 5]} />
+      <directionalLight color="#60a5fa" intensity={0.7} position={[-5, 2, -3]} />
       <group ref={group}>
         <Soil />
         <Seed />

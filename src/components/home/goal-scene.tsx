@@ -11,7 +11,7 @@ import { GOALS, type GoalMotif } from '@/content/home';
  */
 
 const COUNT = 46;
-const NEUTRAL = '#D4A24C';
+const NEUTRAL = '#60A5FA';
 
 function geometryFor(motif: GoalMotif | 'dust') {
   switch (motif) {
@@ -113,8 +113,8 @@ export default function GoalScene({ selected, active }: { selected: string | nul
       gl={{ antialias: true, alpha: true, powerPreference: 'low-power' }}
       frameloop={active ? 'always' : 'never'}
     >
-      <ambientLight intensity={0.7} color="#F5EFE0" />
-      <directionalLight intensity={1.6} position={[3, 5, 6]} color="#ffe2a8" />
+      <ambientLight intensity={0.7} color="#ffffff" />
+      <directionalLight intensity={1.6} position={[3, 5, 6]} color="#ffffff" />
       <Field motif="dust" color={NEUTRAL} shown={selected === null} seed={3} />
       {GOALS.map((goal, i) => (
         <Field key={goal.slug} motif={goal.motif} color={goal.color} shown={selected === goal.slug} seed={i + 11} />

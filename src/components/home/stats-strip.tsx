@@ -12,12 +12,12 @@ export function StatsStrip({ className }: { className?: string }) {
         const Icon = ICONS[i];
         return (
           <li key={fact.title} className="flex items-center gap-3 px-5 py-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brass/15 text-brass">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
               <Icon className="h-5 w-5" aria-hidden />
             </span>
             <span>
-              <span className="block text-sm font-semibold text-cream">{fact.title}</span>
-              <span className="block text-xs text-cream/70">{fact.text}</span>
+              <span className="block text-sm font-semibold text-fg">{fact.title}</span>
+              <span className="block text-xs text-fg/70">{fact.text}</span>
             </span>
           </li>
         );

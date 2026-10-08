@@ -5,7 +5,7 @@ export function Eyebrow({ children, className }: { children: React.ReactNode; cl
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border border-brass/40 bg-brass/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-brass-200',
+        'inline-flex items-center rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-accent-200',
         className,
       )}
     >
@@ -29,11 +29,11 @@ export function SectionHeading({ eyebrow, title, text, id, className }: SectionH
       <div data-reveal>
         <Eyebrow>{eyebrow}</Eyebrow>
       </div>
-      <h2 id={id} data-reveal className="mt-4 text-3xl font-semibold tracking-tight text-cream sm:text-4xl lg:text-5xl">
+      <h2 id={id} data-reveal className="mt-4 text-3xl font-semibold tracking-tight text-fg sm:text-4xl lg:text-5xl">
         {title}
       </h2>
       {text && (
-        <p data-reveal className="mt-4 text-base leading-relaxed text-cream/70 sm:text-lg">
+        <p data-reveal className="mt-4 text-base leading-relaxed text-fg/70 sm:text-lg">
           {text}
         </p>
       )}
@@ -42,7 +42,7 @@ export function SectionHeading({ eyebrow, title, text, id, className }: SectionH
 }
 
 export const primaryButton =
-  'inline-flex h-12 items-center justify-center gap-2 rounded-full bg-brass px-6 text-sm font-semibold text-forest transition duration-300 ease-out hover:bg-brass-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream glow-brass';
+  'inline-flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-semibold text-surface transition duration-300 ease-out hover:bg-accent-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg glow-accent';
 
 export const ghostButton =
-  'inline-flex h-12 items-center justify-center gap-2 rounded-full border border-cream/25 bg-cream/5 px-6 text-sm font-semibold text-cream backdrop-blur transition duration-300 ease-out hover:border-cream/50 hover:bg-cream/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream';
+  'inline-flex h-12 items-center justify-center gap-2 rounded-full border border-fg/25 bg-fg/5 px-6 text-sm font-semibold text-fg backdrop-blur transition duration-300 ease-out hover:border-fg/50 hover:bg-fg/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg';

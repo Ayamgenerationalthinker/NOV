@@ -39,7 +39,7 @@ export function ShopSection({ products, isOwner }: ShopSectionProps) {
   const visible = selected ? products.filter((product) => product.goals.includes(selected)) : products;
 
   return (
-    <section id="shop" aria-labelledby="shop-title" className="relative pb-20 pt-4 sm:pb-28">
+    <section id="shop" aria-labelledby="shop-title" className="light relative bg-surface py-20 text-fg sm:py-28">
       <Container>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
@@ -49,7 +49,7 @@ export function ShopSection({ products, isOwner }: ShopSectionProps) {
             text="Every price is in GH₵. Pay with Mobile Money or card and start reading right away."
           />
           {products.length > 0 && (
-            <p className="text-sm tabular-nums text-cream/70" aria-live="polite">
+            <p className="text-sm tabular-nums text-fg/70" aria-live="polite">
               {visible.length} of {products.length} product{products.length === 1 ? '' : 's'}
             </p>
           )}
@@ -60,8 +60,8 @@ export function ShopSection({ products, isOwner }: ShopSectionProps) {
             <ComingSoon isOwner={isOwner} />
           ) : visible.length === 0 ? (
             <div className="glass rounded-3xl px-6 py-14 text-center">
-              <p className="text-lg font-semibold text-cream">Nothing here for {goal?.name} yet.</p>
-              <p className="mt-2 text-sm text-cream/70">New guides are added as they are finished.</p>
+              <p className="text-lg font-semibold text-fg">Nothing here for {goal?.name} yet.</p>
+              <p className="mt-2 text-sm text-fg/70">New guides are added as they are finished.</p>
               <button type="button" onClick={() => select(null)} className={cn(primaryButton, 'mt-6')}>
                 Show everything
               </button>
@@ -83,14 +83,16 @@ export function ShopSection({ products, isOwner }: ShopSectionProps) {
 
 function ShopCard({ product }: { product: ShopProduct }) {
   const Placeholder = product.isPhysical ? Package : BookOpen;
+  // The goals this guide was written for, shown as chips under its title.
+  const chips = GOALS.filter((goal) => product.goals.includes(goal.slug)).map((goal) => goal.name);
 
   return (
     <TiltCard className="h-full rounded-3xl">
       <Link
         href={productPath(product.slug)}
-        className="glass group flex h-full flex-col overflow-hidden rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brass"
+        className="glass group flex h-full flex-col overflow-hidden rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
-        <div className="relative aspect-[4/5] overflow-hidden bg-forest-800">
+        <div className="relative aspect-[4/5] overflow-hidden bg-surface-800">
           {product.coverImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -104,19 +106,19 @@ function ShopCard({ product }: { product: ShopProduct }) {
               )}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-cream/30">
+            <div className="flex h-full w-full items-center justify-center text-fg/30">
               <Placeholder className="h-12 w-12" aria-hidden />
             </div>
           )}
           <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1.5 sm:left-3 sm:top-3">
-            <span className="rounded-full bg-forest/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-cream backdrop-blur">
+            <span className="rounded-full bg-surface/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-fg backdrop-blur">
               {product.label}
             </span>
             {product.soldOut ? (
-              <span className="rounded-full bg-charcoal/90 px-2.5 py-1 text-[11px] font-semibold text-cream">Sold out</span>
+              <span className="rounded-full bg-deep/90 px-2.5 py-1 text-[11px] font-semibold text-fg">Sold out</span>
             ) : (
               product.wasPrice !== null && (
-                <span className="rounded-full bg-brass px-2.5 py-1 text-[11px] font-bold text-forest">
+                <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-surface">
                   −{Math.round((1 - product.price / product.wasPrice) * 100)}%
                 </span>
               )
@@ -125,18 +127,27 @@ function ShopCard({ product }: { product: ShopProduct }) {
         </div>
 
         <div className="flex flex-1 flex-col gap-2 p-3.5 sm:p-5">
-          <h3 className="line-clamp-2 text-base font-semibold sm:text-lg leading-snug tracking-tight text-cream">{product.title}</h3>
-          {product.summary && <p className="line-clamp-2 text-xs leading-relaxed text-cream/70 sm:text-sm">{product.summary}</p>}
+          <h3 className="line-clamp-2 text-base font-semibold sm:text-lg leading-snug tracking-tight text-fg">{product.title}</h3>
+          {product.summary && <p className="line-clamp-2 text-xs leading-relaxed text-fg/70 sm:text-sm">{product.summary}</p>}
+          {chips.length > 0 && (
+            <ul aria-label="Written for" className="flex flex-wrap gap-1.5">
+              {chips.map((chip) => (
+                <li key={chip} className="rounded-full border border-fg/15 bg-fg/5 px-2.5 py-1 text-[11px] font-medium text-fg/75">
+                  {chip}
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="mt-auto flex flex-col gap-2.5 pt-3 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
-            <p className="text-lg font-semibold leading-tight tabular-nums text-brass-200">
+            <p className="text-lg font-semibold leading-tight tabular-nums text-accent-200">
               {formatCurrency(product.price, product.currency)}
               {product.wasPrice !== null && (
-                <s className="block text-sm font-normal text-cream/60">
+                <s className="block text-sm font-normal text-fg/60">
                   {formatCurrency(product.wasPrice, product.currency)}
                 </s>
               )}
             </p>
-            <span className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-brass px-4 text-sm font-semibold text-forest transition-colors duration-300 group-hover:bg-brass-200">
+            <span className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-accent px-4 text-sm font-semibold text-surface transition-colors duration-300 group-hover:bg-accent-200">
               {product.soldOut ? 'View' : 'Buy now'} <ArrowRight className="h-4 w-4" aria-hidden />
             </span>
           </div>
@@ -149,13 +160,13 @@ function ShopCard({ product }: { product: ShopProduct }) {
 function ComingSoon({ isOwner }: { isOwner: boolean }) {
   return (
     <div className="glass mx-auto max-w-2xl rounded-3xl px-6 py-12 text-center sm:px-10">
-      <p className="text-2xl font-semibold tracking-tight text-cream">New products are coming soon.</p>
-      <p className="mt-2 text-sm text-cream/70">Leave your email and we will tell you when the first guides are ready.</p>
+      <p className="text-2xl font-semibold tracking-tight text-fg">New products are coming soon.</p>
+      <p className="mt-2 text-sm text-fg/70">Leave your email and we will tell you when the first guides are ready.</p>
       <NotifyForm />
       {isOwner && (
-        <p className="mt-8 border-t border-cream/10 pt-6 text-sm text-cream/70">
+        <p className="mt-8 border-t border-fg/10 pt-6 text-sm text-fg/70">
           You haven’t published any products yet.{' '}
-          <Link href="/admin/products/new" className="font-semibold text-brass-200 underline underline-offset-4">
+          <Link href="/admin/products/new" className="font-semibold text-accent-200 underline underline-offset-4">
             Add your first product
           </Link>
         </p>
@@ -191,7 +202,7 @@ function NotifyForm() {
 
   if (state === 'done') {
     return (
-      <p role="status" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brass-200">
+      <p role="status" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-accent-200">
         <CheckCircle2 className="h-5 w-5" aria-hidden /> Thank you. We’ll email you when new guides are ready.
       </p>
     );
@@ -212,14 +223,14 @@ function NotifyForm() {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@example.com"
         aria-describedby={state === 'error' ? 'notify-error' : undefined}
-        className="h-12 flex-1 rounded-full border border-cream/20 bg-forest/60 px-5 text-base text-cream placeholder:text-cream/50 focus:border-brass focus:outline-none focus:ring-2 focus:ring-brass/50"
+        className="h-12 flex-1 rounded-full border border-fg/20 bg-surface/60 px-5 text-base text-fg placeholder:text-fg/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/50"
       />
       <button type="submit" disabled={state === 'sending'} className={cn(primaryButton, 'disabled:opacity-70')}>
         {state === 'sending' && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
         Email me when ready
       </button>
       {state === 'error' && (
-        <p id="notify-error" role="alert" className="w-full text-sm text-red-300">
+        <p id="notify-error" role="alert" className="w-full text-sm text-red-700">
           {error}
         </p>
       )}

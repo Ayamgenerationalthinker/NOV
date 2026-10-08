@@ -26,16 +26,19 @@ export const HERO_FACTS = [
 export const WHY_CARDS = [
   {
     number: '01',
+    tag: 'The guides',
     title: 'Practical, step-by-step guides',
     text: 'Each guide is written to be followed, one clear step at a time. What you get out of it depends on the work you put in.',
   },
   {
     number: '02',
+    tag: 'Delivery',
     title: 'Instant PDF delivery',
     text: 'Download buttons appear as soon as your payment goes through, and a link is sent to your email as well.',
   },
   {
     number: '03',
+    tag: 'Payment',
     title: 'Pay your way in GH₵',
     text: 'Use Mobile Money or a card. Prices are in Ghana cedis and you never have to create an account.',
   },
@@ -60,35 +63,35 @@ export const GOALS: Goal[] = [
     name: 'Start a Business',
     blurb: 'From first idea to first customer.',
     motif: 'blocks',
-    color: '#D4A24C',
+    color: '#60A5FA',
   },
   {
     slug: 'online-income',
     name: 'Online Income',
     blurb: 'Ways to earn using the internet.',
     motif: 'rings',
-    color: '#7FC8A9',
+    color: '#38BDF8',
   },
   {
     slug: 'saving-investing',
     name: 'Saving & Investing',
     blurb: 'Keep more of what you make and put it to work.',
     motif: 'coins',
-    color: '#E8C36A',
+    color: '#BFDBFE',
   },
   {
     slug: 'freelancing',
     name: 'Freelancing',
     blurb: 'Find clients and get paid for your skills.',
     motif: 'darts',
-    color: '#C9D7A0',
+    color: '#A5B4FC',
   },
   {
     slug: 'digital-skills',
     name: 'Digital Skills',
     blurb: 'Learn the tools that open doors.',
     motif: 'chips',
-    color: '#8FB8D8',
+    color: '#93C5FD',
   },
 ];
 
@@ -110,6 +113,16 @@ export interface Testimonial {
  * agreed to be quoted; the page shows an invitation to share a story instead.
  */
 export const TESTIMONIALS: Testimonial[] = [];
+
+export interface SocialLink {
+  /** e.g. "Instagram" */
+  label: string;
+  /** Full address of your page, e.g. "https://instagram.com/yourname" */
+  url: string;
+}
+
+/** Your real social pages. The footer shows a "Social" column once this has at least one link. */
+export const SOCIAL_LINKS: SocialLink[] = [];
 
 export interface Faq {
   question: string;

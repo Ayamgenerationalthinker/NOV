@@ -14,7 +14,7 @@ interface StoriesSectionProps {
  */
 export function StoriesSection({ supportEmail, isOwner }: StoriesSectionProps) {
   return (
-    <section id="stories" aria-labelledby="stories-title" className="relative py-20 sm:py-28">
+    <section id="stories" aria-labelledby="stories-title" className="light relative bg-surface py-20 text-fg sm:py-28">
       <Container>
         <SectionHeading id="stories-title" eyebrow="Reader stories" title="In readers’ own words." />
 
@@ -23,11 +23,11 @@ export function StoriesSection({ supportEmail, isOwner }: StoriesSectionProps) {
             {TESTIMONIALS.map((story) => (
               <li key={`${story.name}-${story.quote.slice(0, 24)}`} data-reveal>
                 <figure className="glass flex h-full flex-col rounded-3xl p-7">
-                  <Quote className="h-6 w-6 text-brass" aria-hidden />
-                  <blockquote className="mt-4 flex-1 text-base leading-relaxed text-cream/85">{story.quote}</blockquote>
+                  <Quote className="h-6 w-6 text-accent" aria-hidden />
+                  <blockquote className="mt-4 flex-1 text-base leading-relaxed text-fg/85">{story.quote}</blockquote>
                   <figcaption className="mt-6 text-sm">
-                    <span className="font-semibold text-cream">{story.name}</span>
-                    {story.context && <span className="block text-cream/70">{story.context}</span>}
+                    <span className="font-semibold text-fg">{story.name}</span>
+                    {story.context && <span className="block text-fg/70">{story.context}</span>}
                   </figcaption>
                 </figure>
               </li>
@@ -35,8 +35,8 @@ export function StoriesSection({ supportEmail, isOwner }: StoriesSectionProps) {
           </ul>
         ) : (
           <div data-reveal className="glass mt-12 rounded-3xl border-dashed px-6 py-12 text-center sm:px-10">
-            <p className="text-xl font-semibold tracking-tight text-cream">No stories here yet.</p>
-            <p className="mx-auto mt-2 max-w-md text-base text-cream/70">
+            <p className="text-xl font-semibold tracking-tight text-fg">No stories here yet.</p>
+            <p className="mx-auto mt-2 max-w-md text-base text-fg/70">
               We only publish real words from real readers. If one of our guides helped you, we would love to hear
               how.
             </p>
@@ -44,7 +44,7 @@ export function StoriesSection({ supportEmail, isOwner }: StoriesSectionProps) {
               <Mail className="h-4 w-4" aria-hidden /> Share your story
             </a>
             {isOwner && (
-              <p className="mx-auto mt-8 max-w-md border-t border-cream/10 pt-6 text-sm text-brass-200">
+              <p className="mx-auto mt-8 max-w-md border-t border-fg/10 pt-6 text-sm text-accent-200">
                 Only you can see this note: add real testimonials to <code>TESTIMONIALS</code> in{' '}
                 <code>src/content/home.ts</code> and they will replace this panel.
               </p>

@@ -17,17 +17,17 @@ export function StepsSection() {
 
           <ol className="relative space-y-6">
             {/* The line draws itself down the timeline as you scroll */}
-            <span aria-hidden className="absolute bottom-6 left-6 top-6 w-px bg-cream/10" />
-            <span aria-hidden data-grow-line className="absolute bottom-6 left-6 top-6 w-px origin-top bg-brass" />
+            <span aria-hidden className="absolute bottom-6 left-6 top-6 w-px bg-fg/10" />
+            <span aria-hidden data-grow-line className="absolute bottom-6 left-6 top-6 w-px origin-top bg-accent" />
 
             {BUYING_STEPS.map((step, i) => (
               <li key={step.title} data-reveal className="relative flex gap-5">
-                <span className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-brass/50 bg-forest text-base font-semibold tabular-nums text-brass glow-brass">
-                  {i + 1}
+                <span className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-accent/50 bg-surface text-base font-semibold tabular-nums text-accent glow-accent">
+                  {String(i + 1).padStart(2, '0')}
                 </span>
                 <div className="glass flex-1 rounded-3xl p-6">
-                  <h3 className="text-xl font-semibold tracking-tight text-cream">{step.title}</h3>
-                  <p className="mt-2 text-base leading-relaxed text-cream/70">{step.text}</p>
+                  <h3 className="text-xl font-semibold tracking-tight text-fg">{step.title}</h3>
+                  <p className="mt-2 text-base leading-relaxed text-fg/70">{step.text}</p>
                 </div>
               </li>
             ))}

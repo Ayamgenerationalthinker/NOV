@@ -91,10 +91,10 @@ export function Hero({ headline, subline }: HeroProps) {
           ref={stage3d}
           className={cn('flex flex-col overflow-hidden', is3d ? 'sticky top-0 h-svh' : 'relative min-h-[92svh] lg:min-h-svh')}
         >
-          {/* Backdrop: forest fading to charcoal, with a soft brass glow behind the tree */}
+          {/* Backdrop: surface fading to deep, with a soft accent glow behind the tree */}
           <div
             aria-hidden
-            className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_30%,rgba(212,162,76,0.16),transparent_70%),linear-gradient(to_bottom,#0b1f17,#0b1f17_55%,#14181a)] lg:bg-[radial-gradient(45%_55%_at_72%_45%,rgba(212,162,76,0.16),transparent_70%),linear-gradient(to_bottom,#0b1f17,#0b1f17_55%,#14181a)]"
+            className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_30%,rgba(96,165,250,0.2),transparent_70%),linear-gradient(to_bottom,#0a1f44,#0a1f44_55%,#071630)] lg:bg-[radial-gradient(45%_55%_at_72%_45%,rgba(96,165,250,0.2),transparent_70%),linear-gradient(to_bottom,#0a1f44,#0a1f44_55%,#071630)]"
           />
 
           <TreePoster
@@ -112,14 +112,14 @@ export function Hero({ headline, subline }: HeroProps) {
           )}
 
           {/* Keeps the text readable where it overlaps the artwork on phones */}
-          <div aria-hidden className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-forest via-forest/85 to-transparent lg:hidden" />
+          <div aria-hidden className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-surface via-surface/85 to-transparent lg:hidden" />
 
           <Container className="relative flex flex-1 flex-col justify-end pb-8 pt-52 lg:justify-center lg:pt-24 lg:pb-36">
             <div ref={copy} className="max-w-xl">
               <Eyebrow>Seed · Growth · Harvest</Eyebrow>
               <h1
                 id="hero-title"
-                className="mt-4 text-4xl font-semibold leading-[1.04] tracking-[-0.03em] text-cream sm:text-5xl lg:text-6xl"
+                className="mt-4 text-4xl font-semibold leading-[1.04] tracking-[-0.03em] text-fg sm:text-5xl lg:text-6xl"
               >
                 {words.map((word, i) => (
                   <Fragment key={i}>
@@ -129,7 +129,7 @@ export function Hero({ headline, subline }: HeroProps) {
                   </Fragment>
                 ))}
               </h1>
-              <p className="mt-4 max-w-md text-base leading-relaxed text-cream/80 sm:text-lg">{subline}</p>
+              <p className="mt-4 max-w-md text-base leading-relaxed text-fg/80 sm:text-lg">{subline}</p>
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <a href="#shop" className={primaryButton}>
@@ -151,11 +151,11 @@ export function Hero({ headline, subline }: HeroProps) {
                       className={cn(
                         'flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-700 ease-out sm:text-sm',
                         lit
-                          ? 'border-brass/60 bg-brass/15 text-cream text-glow-brass'
-                          : 'border-cream/15 bg-cream/5 text-cream/70',
+                          ? 'border-accent/60 bg-accent/15 text-fg text-glow-accent'
+                          : 'border-fg/15 bg-fg/5 text-fg/70',
                       )}
                     >
-                      <span className="tabular-nums text-brass-200">0{i + 1}</span>
+                      <span className="tabular-nums text-accent-200">0{i + 1}</span>
                       {item.caption}
                     </li>
                   );
@@ -174,7 +174,7 @@ export function Hero({ headline, subline }: HeroProps) {
             <p
               aria-hidden
               className={cn(
-                'absolute bottom-28 right-8 hidden items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-cream/70 transition-opacity duration-700 lg:flex',
+                'absolute bottom-28 right-8 hidden items-center gap-1.5 text-xs uppercase tracking-[0.2em] text-fg/70 transition-opacity duration-700 lg:flex',
                 stage > 0 && 'opacity-0',
               )}
             >
@@ -184,7 +184,7 @@ export function Hero({ headline, subline }: HeroProps) {
         </div>
       </section>
 
-      <div className="bg-charcoal pb-2 pt-4 lg:hidden">
+      <div className="bg-deep pb-2 pt-4 lg:hidden">
         <Container>
           <StatsStrip />
         </Container>

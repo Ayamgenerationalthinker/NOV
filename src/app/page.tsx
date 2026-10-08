@@ -72,6 +72,11 @@ export default async function HomePage() {
     };
   });
 
+  const goalCounts: Record<string, number> = {};
+  for (const product of shopProducts) {
+    for (const goal of product.goals) goalCounts[goal] = (goalCounts[goal] ?? 0) + 1;
+  }
+
   const headline =
     hasDigital && hasPhysical
       ? 'Ebooks, downloads and goods, made to help you do more.'
@@ -80,12 +85,12 @@ export default async function HomePage() {
         : 'Ebooks and downloads to help you do more.';
 
   return (
-    <div className="bg-forest font-display text-cream">
+    <div className="bg-surface font-display text-fg">
       <HomeMotion />
       <Hero headline={headline} subline="Pay in seconds with Mobile Money or card. No account needed." />
       <WhySection />
       <GoalProvider>
-        <GoalSelector />
+        <GoalSelector counts={goalCounts} total={shopProducts.length} />
         <ShopSection products={shopProducts} isOwner={isOwner} />
       </GoalProvider>
       <StepsSection />

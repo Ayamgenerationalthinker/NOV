@@ -32,7 +32,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`dark ${inter.variable}`}>
-      <body className="min-h-screen flex flex-col bg-stone-950 text-stone-100 antialiased selection:bg-amber-300 selection:text-stone-950">
+      <body className="min-h-screen flex flex-col bg-stone-950 text-stone-100 antialiased selection:bg-blue-300 selection:text-stone-950">
         <CartProvider>
           <SiteChrome header={<Header />} footer={<Footer />}>
             {children}

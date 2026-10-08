@@ -7,7 +7,7 @@ import { SessionService } from '@/services/auth/session.service';
 import { RBACService } from '@/services/auth/rbac.service';
 
 const linkClass =
-  'rounded-full px-3.5 py-2 text-sm text-cream/80 transition-colors duration-300 hover:bg-cream/10 hover:text-cream focus-visible:outline-2 focus-visible:outline-brass';
+  'rounded-full px-3.5 py-2 text-sm text-fg/80 transition-colors duration-300 hover:bg-fg/10 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent';
 
 export async function Header() {
   const session = await SessionService.getCurrentSession();
@@ -25,11 +25,11 @@ export async function Header() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3 font-display sm:px-4">
-      <Container className="glass rounded-full !px-3 sm:!px-4">
+      <Container className="glass-nav rounded-full !px-3 sm:!px-4">
         <div className="flex h-14 items-center justify-between gap-2">
           <Link
             href="/"
-            className="rounded-full px-2 text-sm font-semibold tracking-[0.22em] text-cream min-[400px]:text-base min-[400px]:tracking-[0.28em] transition-colors hover:text-brass-200 focus-visible:outline-2 focus-visible:outline-brass sm:text-lg"
+            className="rounded-full px-2 text-sm font-semibold tracking-[0.22em] text-fg min-[400px]:text-base min-[400px]:tracking-[0.28em] transition-colors hover:text-accent-200 focus-visible:outline-2 focus-visible:outline-accent sm:text-lg"
           >
             {name.toUpperCase()}
           </Link>
@@ -42,14 +42,14 @@ export async function Header() {
             {isOwner && (
               <Link
                 href="/admin"
-                className="flex h-10 items-center gap-1.5 rounded-full border border-cream/25 px-3.5 text-sm font-semibold text-cream hover:bg-cream/10"
+                className="flex h-10 items-center gap-1.5 rounded-full border border-fg/25 px-3.5 text-sm font-semibold text-fg hover:bg-fg/10"
               >
                 <LayoutDashboard className="h-4 w-4" aria-hidden /> Admin
               </Link>
             )}
             <Link
               href="/#shop"
-              className={`glow-brass h-10 items-center ${isOwner ? 'hidden sm:flex' : 'flex'} shrink-0 whitespace-nowrap rounded-full bg-brass px-3.5 text-sm font-semibold sm:px-4 text-forest transition-colors duration-300 hover:bg-brass-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cream`}
+              className={`glow-accent h-10 items-center ${isOwner ? 'hidden sm:flex' : 'flex'} shrink-0 whitespace-nowrap rounded-full bg-accent px-3.5 text-sm font-semibold sm:px-4 text-surface transition-colors duration-300 hover:bg-accent-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg`}
             >
               Browse ebooks
             </Link>

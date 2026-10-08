@@ -43,18 +43,18 @@ export function TreePoster({ className }: { className?: string }) {
     <svg
       viewBox="0 0 600 700"
       role="img"
-      aria-label="A tree with golden leaves and coins in its canopy, growing from a glowing seed in dark soil"
+      aria-label="A tree with blue and white leaves and coins in its canopy, growing from a glowing seed in dark soil"
       preserveAspectRatio="xMidYMid meet"
       className={className}
     >
       <defs>
         <radialGradient id="tp-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#D4A24C" stopOpacity="0.38" />
-          <stop offset="100%" stopColor="#D4A24C" stopOpacity="0" />
+          <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.34" />
+          <stop offset="100%" stopColor="#60A5FA" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="tp-bark" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#b98d4c" />
-          <stop offset="100%" stopColor="#6e5230" />
+          <stop offset="0%" stopColor="#eaf2ff" />
+          <stop offset="100%" stopColor="#93c5fd" />
         </linearGradient>
       </defs>
 
@@ -62,8 +62,8 @@ export function TreePoster({ className }: { className?: string }) {
       <ellipse cx="300" cy="545" rx="90" ry="60" fill="url(#tp-glow)" />
 
       {/* Soil line and roots */}
-      <ellipse cx="300" cy="520" rx="250" ry="14" fill="#1a3a2b" opacity="0.7" />
-      <g fill="none" stroke="#c79a52" strokeLinecap="round" opacity="0.85">
+      <ellipse cx="300" cy="520" rx="250" ry="14" fill="#173a7a" opacity="0.7" />
+      <g fill="none" stroke="#93c5fd" strokeLinecap="round" opacity="0.85">
         <path d="M300 545 C270 570 220 580 150 640" strokeWidth="5" />
         <path d="M300 545 C330 575 390 585 455 635" strokeWidth="5" />
         <path d="M300 545 C290 590 270 630 250 680" strokeWidth="4" />
@@ -74,7 +74,7 @@ export function TreePoster({ className }: { className?: string }) {
 
       {/* Trunk and branches */}
       <path d="M284 545 C290 450 286 380 292 300 L308 300 C314 380 310 450 318 545 Z" fill="url(#tp-bark)" />
-      <g fill="none" stroke="#8c6a3c" strokeLinecap="round">
+      <g fill="none" stroke="#c7dbff" strokeLinecap="round">
         <path d="M298 330 C260 290 220 270 180 235" strokeWidth="9" />
         <path d="M302 320 C340 280 385 260 425 220" strokeWidth="9" />
         <path d="M300 310 C295 250 305 190 300 130" strokeWidth="8" />
@@ -92,20 +92,20 @@ export function TreePoster({ className }: { className?: string }) {
             rx={leaf.size}
             ry={Math.round(leaf.size * 0.55)}
             transform={`rotate(${leaf.turn} ${leaf.x} ${leaf.y})`}
-            fill={leaf.tone < 0.7 ? '#D4A24C' : leaf.tone < 0.88 ? '#E9C98A' : '#9DB86A'}
+            fill={leaf.tone < 0.45 ? '#FFFFFF' : leaf.tone < 0.8 ? '#60A5FA' : '#2563EB'}
             opacity={leaf.alpha / 100}
           />
         ))}
         {COINS.map((coin, i) => (
           <g key={i}>
-            <circle cx={coin.x} cy={coin.y} r="13" fill="#E8C36A" />
-            <circle cx={coin.x} cy={coin.y} r="8.5" fill="none" stroke="#9a6f1c" strokeWidth="1.5" />
+            <circle cx={coin.x} cy={coin.y} r="13" fill="#f8fbff" />
+            <circle cx={coin.x} cy={coin.y} r="8.5" fill="none" stroke="#2563eb" strokeWidth="1.5" />
           </g>
         ))}
       </g>
 
       {/* Seed */}
-      <ellipse cx="300" cy="545" rx="13" ry="18" fill="#F0B64A" />
+      <ellipse cx="300" cy="545" rx="13" ry="18" fill="#eaf2ff" />
     </svg>
   );
 }

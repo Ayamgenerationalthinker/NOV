@@ -84,6 +84,10 @@ The navbar and footer are in `src/components/layout/`.
 
 **Changing the words.** Everything that is not a product (goal categories, the "Why" cards, buying steps, FAQ, reader stories) is in one file: `src/content/home.ts`.
 
+**Colours.** The site is blue and white, and the whole palette is set in `src/app/globals.css`. The homepage, navbar and footer use four tokens (`surface`, `deep`, `fg`, `accent`): a section is deep blue with white text by default, and turns white with navy text when it has the classes `light bg-surface text-fg`. The shop, checkout, sign-in and admin screens are tinted from the same file. The tree's colours are at the top of `hero-scene.tsx` and `tree-poster.tsx`.
+
+**Social links.** Add your real pages to `SOCIAL_LINKS` in `src/content/home.ts` and a "Social" column appears in the footer.
+
 **Products and goals.** Products come from the database: add them in **Admin → Products**. Tick one or more **Goals** on a product and it shows up when a shopper picks that goal on the homepage.
 
 **Reader stories.** Add real testimonials to `TESTIMONIALS` in `src/content/home.ts`. While that list is empty, the page shows an invitation to share a story instead. Only add words from buyers who agreed to be quoted.

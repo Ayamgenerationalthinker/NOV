@@ -5,14 +5,13 @@ import { ghostButton, SectionHeading } from './primitives';
 
 interface StoriesSectionProps {
   supportEmail: string;
-  isOwner: boolean;
 }
 
 /**
  * Reader stories. Shows only what is in TESTIMONIALS (src/content/home.ts). While that list
  * is empty, visitors get an honest invitation to share a story instead of invented reviews.
  */
-export function StoriesSection({ supportEmail, isOwner }: StoriesSectionProps) {
+export function StoriesSection({ supportEmail }: StoriesSectionProps) {
   return (
     <section id="stories" aria-labelledby="stories-title" className="light relative bg-surface py-20 text-fg sm:py-28">
       <Container>
@@ -43,12 +42,6 @@ export function StoriesSection({ supportEmail, isOwner }: StoriesSectionProps) {
             <a href={`mailto:${supportEmail}?subject=My%20story`} className={`${ghostButton} mt-6`}>
               <Mail className="h-4 w-4" aria-hidden /> Share your story
             </a>
-            {isOwner && (
-              <p className="mx-auto mt-8 max-w-md border-t border-fg/10 pt-6 text-sm text-accent-200">
-                Only you can see this note: add real testimonials to <code>TESTIMONIALS</code> in{' '}
-                <code>src/content/home.ts</code> and they will replace this panel.
-              </p>
-            )}
           </div>
         )}
       </Container>

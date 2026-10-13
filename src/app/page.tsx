@@ -94,7 +94,7 @@ export default async function HomePage() {
         <ShopSection products={shopProducts} isOwner={isOwner} />
       </GoalProvider>
       <StepsSection />
-      <StoriesSection supportEmail={env.NEXT_PUBLIC_SUPPORT_EMAIL} isOwner={isOwner} />
+      <StoriesSection supportEmail={env.NEXT_PUBLIC_SUPPORT_EMAIL} />
       <FaqSection supportEmail={env.NEXT_PUBLIC_SUPPORT_EMAIL} />
     </div>
   );

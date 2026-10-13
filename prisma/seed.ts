@@ -80,23 +80,33 @@ async function main() {
   // Default Seller Store
   const storeName = cleanEnvValue(process.env.NEXT_PUBLIC_APP_NAME) || 'Tomevari';
 
-  // Single-owner store: if the owner email changed, hand the existing store to the new owner.
-  const store = await prisma.store.upsert({
-    where: { slug: 'nov-flagship-atelier' },
-    update: { sellerId: superAdmin.id, name: storeName },
-    create: {
-      sellerId: superAdmin.id,
-      name: storeName,
-      slug: 'nov-flagship-atelier',
-      description: 'Ebooks, digital downloads and handpicked goods.',
-      brandColor: '#10b981',
-      isVerified: true,
-      policyShipping: 'Orders are dispatched within 24 business hours using insured express logistics with live tracking.',
-      policyReturns: '14-day hassle-free returns on physical merchandise in original packaging.',
-    },
-  });
+  // Single-owner store. Keep the owner's existing store exactly as they set it up (they may have
+  // renamed it or changed its link in Settings). Only if the owner email changed, hand the
+  // original store to the new owner; only on a brand-new database, create one.
+  const ownStore = await prisma.store.findUnique({ where: { sellerId: superAdmin.id } });
+  const orphanStore = ownStore
+    ? null
+    : (await prisma.store.findUnique({ where: { slug: 'nov-flagship-atelier' } })) ??
+      (await prisma.store.findFirst({ orderBy: { createdAt: 'asc' } }));
 
-  console.log(`✅ Default Store created: ${store.name} (/${store.slug})`);
+  const store =
+    ownStore ??
+    (orphanStore
+      ? await prisma.store.update({ where: { id: orphanStore.id }, data: { sellerId: superAdmin.id } })
+      : await prisma.store.create({
+          data: {
+            sellerId: superAdmin.id,
+            name: storeName,
+            slug: 'nov-flagship-atelier',
+            description: 'Ebooks, digital downloads and handpicked goods.',
+            brandColor: '#10b981',
+            isVerified: true,
+            policyShipping: 'Orders are dispatched within 24 business hours using insured express logistics with live tracking.',
+            policyReturns: '14-day hassle-free returns on physical merchandise in original packaging.',
+          },
+        }));
+
+  console.log(`✅ Store ready: ${store.name} (/${store.slug})`);
 
   // Shipping Profile & Zones
   const existingProfile = await prisma.shippingProfile.findFirst({

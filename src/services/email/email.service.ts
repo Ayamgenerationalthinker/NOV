@@ -125,7 +125,7 @@ export class EmailService {
             
             <!-- Header -->
             <div style="padding: 32px 32px 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 1px solid #334155;">
-              <div style="font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #fcd34d;">${env.NEXT_PUBLIC_APP_NAME}</div>
+              <div style="font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #93c5fd;">${env.NEXT_PUBLIC_APP_NAME}</div>
               <h1 style="margin: 16px 0 4px; font-size: 24px; font-weight: 800; color: #ffffff;">Thank you for your purchase!</h1>
               <p style="margin: 0; font-size: 13px; color: #94a3b8;">Order #${order.orderNumber} • ${new Date(order.createdAt).toLocaleDateString()}</p>
             </div>

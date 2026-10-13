@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 /**
  * Routes that render without the shop header and footer: product landing pages and checkout
@@ -20,12 +21,17 @@ interface SiteChromeProps {
 }
 
 export function SiteChrome({ header, footer, children }: SiteChromeProps) {
-  const focused = isFocusedRoute(usePathname());
+  const pathname = usePathname();
+  const focused = isFocusedRoute(pathname);
+  // The header floats over the page. The homepage hero runs underneath it; other pages start below it.
+  const clearHeader = !focused && pathname !== '/';
+  // Buyer-facing screens swap amber for blue (see .shop-palette in globals.css); the admin keeps amber.
+  const isAdmin = pathname === '/admin' || Boolean(pathname?.startsWith('/admin/'));
 
   return (
     <>
       {!focused && header}
-      <main className="flex-1 flex flex-col">{children}</main>
+      <main className={cn('flex-1 flex flex-col', clearHeader && 'pt-20', !isAdmin && 'shop-palette')}>{children}</main>
       {!focused && footer}
     </>
   );

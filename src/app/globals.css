@@ -1,24 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0c0a09;
-  --foreground: #f5f5f4;
-  --card: #1c1917;
-  --card-foreground: #f5f5f4;
-  --primary: #fcd34d;
-  --primary-foreground: #0c0a09;
-  --primary-hover: #fde68a;
-  --secondary: #292524;
-  --secondary-foreground: #f5f5f4;
-  --muted: #78716c;
-  --muted-foreground: #a8a29e;
-  --accent: #fcd34d;
-  --accent-foreground: #0c0a09;
+  --background: #071630;
+  --foreground: #f5f8fd;
+  --card: #0e2247;
+  --card-foreground: #f5f8fd;
+  --primary: #93c5fd;
+  --primary-foreground: #071630;
+  --primary-hover: #bfdbfe;
+  --secondary: #1a3260;
+  --secondary-foreground: #f5f8fd;
+  --muted: #6680b4;
+  --muted-foreground: #8fa6d0;
+  --accent: #93c5fd;
+  --accent-foreground: #071630;
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --border: #292524;
-  --ring: #fcd34d;
+  --border: #1a3260;
+  --ring: #93c5fd;
   --radius: 0.5rem;
 }
 
@@ -43,4 +43,172 @@ body {
   background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 50%, #818cf8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+   Tomevari palette: blue and white.
+
+   The homepage, navbar and footer use the tokens below (surface, deep, fg, accent).
+   By default they describe a deep-blue section with white text. Give a section the classes
+   `light bg-surface text-fg` and the same tokens flip to white with navy text and blue
+   accents, so every component inside it follows without any changes of its own.
+   --------------------------------------------------------------------------- */
+@theme {
+  --color-surface: #0a1f44;
+  --color-surface-800: #0f2a5c;
+  --color-surface-700: #173a7a;
+  --color-deep: #071630;
+  --color-fg: #ffffff;
+  --color-accent: #60a5fa;
+  --color-accent-200: #bfdbfe;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* The shop, checkout, sign-in and admin screens are written with Tailwind's stone and zinc
+     greys. Tinting those two scales navy turns every one of those screens blue in one place. */
+  --color-stone-50: #f5f8fd;
+  --color-stone-100: #eaf0fa;
+  --color-stone-200: #d5dff2;
+  --color-stone-300: #b6c6e4;
+  --color-stone-400: #8fa6d0;
+  --color-stone-500: #6680b4;
+  --color-stone-600: #44609a;
+  --color-stone-700: #2a4578;
+  --color-stone-800: #1a3260;
+  --color-stone-900: #0e2247;
+  --color-stone-950: #071630;
+  --color-zinc-50: #f5f8fd;
+  --color-zinc-100: #eaf0fa;
+  --color-zinc-200: #d5dff2;
+  --color-zinc-300: #b6c6e4;
+  --color-zinc-400: #8fa6d0;
+  --color-zinc-500: #6680b4;
+  --color-zinc-600: #44609a;
+  --color-zinc-700: #2a4578;
+  --color-zinc-800: #1a3260;
+  --color-zinc-900: #0e2247;
+  --color-zinc-950: #071630;
+}
+
+:root {
+  --glass-from: rgba(255, 255, 255, 0.1);
+  --glass-to: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-inset: rgba(255, 255, 255, 0.07);
+  --glass-shadow: rgba(2, 8, 23, 0.75);
+  --glow: 96 165 250;
+}
+
+.light {
+  --color-surface: #ffffff;
+  --color-surface-800: #eef4ff;
+  --color-surface-700: #dbe7ff;
+  --color-deep: #f2f6ff;
+  --color-fg: #0a1f44;
+  --color-accent: #1d4ed8;
+  --color-accent-200: #1e40af;
+  --glass-from: rgba(255, 255, 255, 0.95);
+  --glass-to: rgba(240, 245, 255, 0.8);
+  --glass-border: rgba(10, 31, 68, 0.12);
+  --glass-inset: rgba(255, 255, 255, 0.9);
+  --glass-shadow: rgba(29, 78, 216, 0.3);
+  --glow: 29 78 216;
+}
+
+/* Buyer-facing screens use amber for their main buttons and notices; here it becomes blue.
+   The admin keeps real amber, where it marks orders and stock that need attention. */
+.shop-palette {
+  --color-amber-50: #eff6ff;
+  --color-amber-100: #dbeafe;
+  --color-amber-200: #bfdbfe;
+  --color-amber-300: #93c5fd;
+  --color-amber-400: #60a5fa;
+  --color-amber-500: #3b82f6;
+  --color-amber-600: #2563eb;
+  --color-amber-700: #1d4ed8;
+  --color-amber-800: #1e40af;
+  --color-amber-900: #1e3a8a;
+  --color-amber-950: #172554;
+}
+
+html {
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+  /* Lenis drives the scroll on desktop; native smooth scrolling would fight it. */
+  html.lenis {
+    scroll-behavior: auto;
+  }
+}
+
+.glass {
+  background: linear-gradient(135deg, var(--glass-from), var(--glass-to));
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 var(--glass-inset),
+    0 24px 60px -28px var(--glass-shadow);
+}
+
+/* The navbar floats over blue and white sections alike, so its glass is always blue. */
+.glass-nav {
+  background: linear-gradient(135deg, rgba(15, 42, 92, 0.86), rgba(10, 31, 68, 0.78));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 40px -22px rgba(2, 8, 23, 0.7);
+}
+
+.glow-accent {
+  box-shadow:
+    0 0 0 1px rgb(var(--glow) / 0.35),
+    0 12px 40px -10px rgb(var(--glow) / 0.5);
+}
+
+.text-glow-accent {
+  text-shadow: 0 0 28px rgb(var(--glow) / 0.45);
+}
+
+/* Hero headline: words rise in one after another. Pure CSS, so nothing flashes on load. */
+@keyframes word-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.6em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .word-rise {
+    display: inline-block;
+    animation: word-rise 800ms var(--ease-settle) both;
+  }
+}
+
+/* FAQ: hide the native disclosure triangle; the plus icon shows the state instead. */
+.faq-item > summary {
+  list-style: none;
+}
+.faq-item > summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item[open] .faq-icon {
+  transform: rotate(45deg);
+}
+
+/* Giant footer wordmark, fading into the page. */
+.wordmark-fade {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }

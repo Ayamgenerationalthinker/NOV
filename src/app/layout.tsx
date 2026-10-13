@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { SiteChrome } from '@/components/layout/site-chrome';
 import { env } from '@/lib/env';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
 export const metadata: Metadata = {
   // Lets relative image/URL metadata resolve to absolute URLs (needed for social previews).
@@ -12,7 +15,8 @@ export const metadata: Metadata = {
     template: `%s | ${env.NEXT_PUBLIC_APP_NAME}`,
     default: env.NEXT_PUBLIC_APP_NAME,
   },
-  description: 'Ebooks, digital downloads and handpicked goods. Pay with Mobile Money or card, no account needed.',
+  description:
+    'Ebooks and downloadable PDF guides for building skills and income. Pay in GH₵ with Mobile Money or card, no account needed.',
   robots: {
     index: true,
     follow: true,
@@ -27,8 +31,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="min-h-screen flex flex-col bg-stone-950 text-stone-100 antialiased selection:bg-amber-300 selection:text-stone-950">
+    <html lang="en" className={`dark ${inter.variable}`}>
+      <body className="min-h-screen flex flex-col bg-stone-950 text-stone-100 antialiased selection:bg-blue-300 selection:text-stone-950">
         <CartProvider>
           <SiteChrome header={<Header />} footer={<Footer />}>
             {children}

@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import { formatFileSize } from '@/lib/utils';
 import { DEFAULT_VARIANT_TITLE } from '@/lib/product-purchase';
 import { uploadProductFile, uploadProductImage } from '@/lib/admin-upload';
+import { GOALS } from '@/content/home';
+import { isGoalSlug } from '@/lib/goals';
 
 type Kind = 'DIGITAL' | 'PHYSICAL';
 
@@ -58,6 +60,7 @@ export interface ProductFormProduct {
   coverImage: string | null;
   galleryImages: string[];
   whatsIncluded: string[];
+  tags?: string[];
   isPublished: boolean;
   variants: Array<{
     id: string;
@@ -104,6 +107,8 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
   const [productType, setProductType] = React.useState(
     initialProduct && initialProduct.productKind === 'DIGITAL' ? initialProduct.productType : 'EBOOK'
   );
+  // Homepage goals are stored as tags; any other tags on the product are kept as they are.
+  const [goals, setGoals] = React.useState<string[]>((initialProduct?.tags ?? []).filter(isGoalSlug));
   const [coverImage, setCoverImage] = React.useState<string | null>(initialProduct?.coverImage ?? null);
   const [gallery, setGallery] = React.useState<string[]>(initialProduct?.galleryImages ?? []);
 
@@ -213,6 +218,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
         .split('\n')
         .map((l) => l.replace(/^[-•*]\s*/, '').trim())
         .filter(Boolean),
+      tags: [...(initialProduct?.tags ?? []).filter((tag) => !isGoalSlug(tag)), ...goals],
     };
 
     if (kind === 'PHYSICAL') {
@@ -380,6 +386,27 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
             </select>
           </div>
         )}
+
+        <fieldset>
+          <legend className={labelClass}>Goal{optionalTag}</legend>
+          <div className="flex flex-wrap gap-2">
+            {GOALS.map((goal) => {
+              const on = goals.includes(goal.slug);
+              return (
+                <button
+                  key={goal.slug}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setGoals(on ? goals.filter((g) => g !== goal.slug) : [...goals, goal.slug])}
+                  className={`rounded-full border px-3.5 py-2 text-sm ${on ? 'border-emerald-500 bg-emerald-500/15 text-emerald-200' : 'border-stone-800 bg-stone-900 text-stone-300'}`}
+                >
+                  {goal.name}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 text-xs text-stone-500">Shoppers can filter the homepage by these.</p>
+        </fieldset>
 
         <div>
           <label className={labelClass} htmlFor="pf-desc">Description</label>

@@ -131,6 +131,8 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
   const [uploading, setUploading] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState<'draft' | 'publish' | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  // Set once a new product has been created, so retrying after a failed upload updates it instead of creating a duplicate.
+  const [savedId, setSavedId] = React.useState<string | null>(initialProduct?.id ?? null);
 
   const handleCover = async (file?: File) => {
     if (!file) return;
@@ -252,8 +254,8 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
 
     try {
       // 1. Save details (new products are always created as drafts first)
-      const res = await fetch(isEdit ? `/api/admin/products/${initialProduct!.id}` : '/api/admin/products', {
-        method: isEdit ? 'PUT' : 'POST',
+      const res = await fetch(savedId ? `/api/admin/products/${savedId}` : '/api/admin/products', {
+        method: savedId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildPayload()),
       });
@@ -263,6 +265,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
         throw new Error([data.error, details].filter(Boolean).join(': '));
       }
       let product: ProductFormProduct = data.product;
+      setSavedId(product.id);
 
       // 2. Attach the delivery file for digital products
       if (kind === 'DIGITAL' && pendingFile) {

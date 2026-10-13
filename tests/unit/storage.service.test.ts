@@ -68,7 +68,7 @@ describe('LocalStorageAdapter', () => {
 });
 
 describe('Storage selection', () => {
-  it('prefers Vercel Blob, then R2/S3, then local disk only outside production', () => {
+  it('prefers Vercel Blob, then Supabase, then R2/S3, then local disk only outside production', () => {
     expect(resolveStorageBackend({ BLOB_READ_WRITE_TOKEN: 'vercel_blob_rw_x', NODE_ENV: 'production' } as any)).toBe('vercel-blob');
     expect(resolveStorageBackend({ R2_ACCESS_KEY_ID: 'a', R2_SECRET_ACCESS_KEY: 'b', NODE_ENV: 'production' } as any)).toBe('s3');
     expect(resolveStorageBackend({ NODE_ENV: 'development' } as any)).toBe('local');

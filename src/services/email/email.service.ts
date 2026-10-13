@@ -184,7 +184,7 @@ export class EmailService {
 
             <!-- Footer -->
             <div style="padding: 24px 32px; background-color: #0f172a; border-top: 1px solid #334155; text-align: center; font-size: 12px; color: #64748b;">
-              <p style="margin: 0 0 8px;">Need help with your download? Contact our creator team at <a href="mailto:support@nov.com" style="color: #3b82f6; text-decoration: none;">support@nov.com</a>.</p>
+              <p style="margin: 0 0 8px;">Need help with your download? Contact our creator team at <a href="mailto:${env.NEXT_PUBLIC_SUPPORT_EMAIL}" style="color: #3b82f6; text-decoration: none;">${env.NEXT_PUBLIC_SUPPORT_EMAIL}</a>.</p>
               <p style="margin: 0;">© ${new Date().getFullYear()} ${env.NEXT_PUBLIC_APP_NAME}. All rights reserved.</p>
             </div>
           </div>
@@ -229,7 +229,7 @@ export class EmailService {
           Please note that associated digital entitlements have been deactivated. The refunded funds will return to your original payment method within 3–7 business days depending on your bank or card issuer.
         </p>
         <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 24px 0;">
-        <p style="color: #94a3b8; font-size: 11px;">If you have any questions, please contact support@nov.com.</p>
+        <p style="color: #94a3b8; font-size: 11px;">If you have any questions, please contact ${env.NEXT_PUBLIC_SUPPORT_EMAIL}.</p>
       </div>
     `;
 
@@ -374,7 +374,7 @@ export class EmailService {
    * Send Welcome & Discount Email to Newsletter Subscriber
    */
   static async sendNewsletterWelcomeEmail(toEmail: string, discountCode: string = 'WELCOME10'): Promise<boolean> {
-    const storefrontUrl = env.NEXT_PUBLIC_APP_URL || 'https://nov.com';
+    const storefrontUrl = env.NEXT_PUBLIC_APP_URL || 'https://tomevari.com';
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">

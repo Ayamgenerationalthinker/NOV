@@ -4,18 +4,20 @@ import { upload } from '@vercel/blob/client';
 
 /**
  * Browser-side uploads for the owner's product form.
- * On Vercel (Blob store connected) files go straight from the browser to storage, so ebooks and
- * photos are not limited by the ~4.5 MB request size of serverless functions. Locally they are
- * posted to the app's own API.
+ * In production files go straight from the browser to storage (Supabase Storage or Vercel Blob),
+ * so ebooks and photos are not limited by the ~4.5 MB request size of serverless functions.
+ * Locally they are posted to the app's own API.
  */
 
-let modePromise: Promise<'direct' | 'server'> | null = null;
+type UploadMode = 'direct' | 'signed' | 'server';
 
-function uploadMode(): Promise<'direct' | 'server'> {
+let modePromise: Promise<UploadMode> | null = null;
+
+function uploadMode(): Promise<UploadMode> {
   if (!modePromise) {
     modePromise = fetch('/api/admin/uploads')
       .then((res) => (res.ok ? res.json() : { mode: 'server' }))
-      .then((data) => (data.mode === 'direct' ? 'direct' : 'server'))
+      .then((data): UploadMode => (data.mode === 'direct' || data.mode === 'signed' ? data.mode : 'server'))
       .catch(() => 'server' as const);
   }
   return modePromise;
@@ -34,15 +36,70 @@ async function readError(res: Response, fallback: string): Promise<string> {
   }
 }
 
+/** Sends the file to a one-time storage link, reporting progress. */
+function putToSignedUrl(url: string, file: File, onProgress?: (percentage: number) => void): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+    xhr.setRequestHeader('x-upsert', 'true');
+    if (onProgress) {
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress((e.loaded / e.total) * 100);
+      };
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) return resolve();
+      if (xhr.status === 413) {
+        return reject(new Error('This file is larger than your storage plan allows (50 MB per file on the free Supabase plan).'));
+      }
+      let message = `Upload failed (${xhr.status}).`;
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (data.message || data.error) message = data.message || data.error;
+      } catch {
+        // keep the generic message
+      }
+      reject(new Error(message));
+    };
+    xhr.onerror = () => reject(new Error('Upload interrupted. Check your connection and try again.'));
+    xhr.send(file);
+  });
+}
+
+/** Asks our server for a one-time upload link, uploads the file to it, and returns its storage key. */
+async function uploadViaSignedUrl(
+  kind: 'image' | 'file',
+  file: File,
+  productId?: string,
+  onProgress?: (percentage: number) => void
+): Promise<string> {
+  const res = await fetch('/api/admin/uploads/sign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ kind, fileName: file.name, contentType: file.type, size: file.size, productId }),
+  });
+  if (!res.ok) throw new Error(await readError(res, 'Upload could not start'));
+  const { uploadUrl, key } = (await res.json()) as { uploadUrl: string; key: string };
+  await putToSignedUrl(uploadUrl, file, onProgress);
+  return key;
+}
+
 /** Uploads a product image and returns the URL to store on the product. */
 export async function uploadProductImage(file: File): Promise<string> {
-  if ((await uploadMode()) === 'direct') {
+  const mode = await uploadMode();
+
+  if (mode === 'direct') {
     const blob = await upload(`media/products/${safeName(file.name)}`, file, {
       access: 'private',
       handleUploadUrl: '/api/admin/uploads',
       contentType: file.type,
     });
     return `/api/media/${blob.pathname}`;
+  }
+
+  if (mode === 'signed') {
+    return `/api/media/${await uploadViaSignedUrl('image', file)}`;
   }
 
   const form = new FormData();
@@ -59,18 +116,26 @@ export async function uploadProductFile(
   file: File,
   onProgress?: (percentage: number) => void
 ): Promise<{ id: string; fileName: string; fileSize: number }> {
-  if ((await uploadMode()) === 'direct') {
-    const blob = await upload(`products/${productId}/${safeName(file.name)}`, file, {
-      access: 'private',
-      handleUploadUrl: '/api/admin/uploads',
-      contentType: file.type || 'application/octet-stream',
-      multipart: file.size > 50 * 1024 * 1024,
-      onUploadProgress: onProgress ? ({ percentage }) => onProgress(percentage) : undefined,
-    });
+  const mode = await uploadMode();
+
+  if (mode === 'direct' || mode === 'signed') {
+    let fileKey: string;
+    if (mode === 'direct') {
+      const blob = await upload(`products/${productId}/${safeName(file.name)}`, file, {
+        access: 'private',
+        handleUploadUrl: '/api/admin/uploads',
+        contentType: file.type || 'application/octet-stream',
+        multipart: file.size > 50 * 1024 * 1024,
+        onUploadProgress: onProgress ? ({ percentage }) => onProgress(percentage) : undefined,
+      });
+      fileKey = blob.pathname;
+    } else {
+      fileKey = await uploadViaSignedUrl('file', file, productId, onProgress);
+    }
     const res = await fetch(`/api/admin/products/${productId}/files`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fileKey: blob.pathname, fileName: file.name }),
+      body: JSON.stringify({ fileKey, fileName: file.name }),
     });
     if (!res.ok) throw new Error(await readError(res, 'Could not attach the file'));
     return (await res.json()).file;

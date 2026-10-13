@@ -4,12 +4,9 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 
-const MIN_PASSWORD_LENGTH = 8;
+import { cleanEnvValue, pgConnectionString } from '../src/lib/pg-config';
 
-/** Env values pasted into dashboards often carry stray spaces or quotes: ignore them. */
-function cleanEnvValue(value: string | undefined): string {
-  return (value ?? '').trim().replace(/^(['"])(.*)\1$/, '$2');
-}
+const MIN_PASSWORD_LENGTH = 8;
 
 function requireOwnerCredentials(): { email: string; password: string } {
   const email = cleanEnvValue(process.env.INITIAL_ADMIN_EMAIL).toLowerCase();
@@ -41,18 +38,20 @@ function requireOwnerCredentials(): { email: string; password: string } {
 
 const { email: adminEmail, password: adminPassword } = requireOwnerCredentials();
 
-const databaseUrl =
-  process.env.DATABASE_URL_UNPOOLED ||
-  process.env.POSTGRES_URL_NON_POOLING ||
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_PRISMA_URL ||
-  process.env.POSTGRES_URL;
+const databaseUrl = cleanEnvValue(
+  process.env.DIRECT_URL ||
+    process.env.DATABASE_URL_UNPOOLED ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_PRISMA_URL ||
+    process.env.POSTGRES_URL
+);
 if (!databaseUrl) {
   console.error('❌ DATABASE_URL is not set.');
   process.exit(1);
 }
 
-const pool = new Pool({ connectionString: databaseUrl });
+const pool = new Pool({ connectionString: pgConnectionString(databaseUrl) });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 async function main() {

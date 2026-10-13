@@ -3,9 +3,11 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Prisma CLI (migrations) needs a direct connection. Neon / Vercel Postgres expose it separately
-// from the pooled URL the app uses at runtime; accept the names those integrations create.
+// Prisma CLI (migrations) needs a direct (or session-pooled) connection. Supabase / Neon / Vercel
+// Postgres expose it separately from the pooled URL the app uses at runtime; accept the names
+// those integrations create. For Supabase set DIRECT_URL to the "Session pooler" string (port 5432).
 const cliDatabaseUrl =
+  process.env.DIRECT_URL ||
   process.env.DATABASE_URL_UNPOOLED ||
   process.env.POSTGRES_URL_NON_POOLING ||
   process.env.DATABASE_URL ||
@@ -17,8 +19,8 @@ const needsDatabase = process.argv.some((arg) => arg === 'migrate' || arg === 'd
 
 if (!cliDatabaseUrl && needsDatabase && (process.env.VERCEL || process.env.CI)) {
   throw new Error(
-    'No database is connected. In Vercel: Storage → Create Database → Neon (Postgres) → connect it to this project ' +
-      '(or add a DATABASE_URL environment variable), then redeploy.'
+    'No database is connected. Add a DATABASE_URL environment variable (your Supabase connection string) ' +
+      'in Vercel → Settings → Environment Variables, then redeploy.'
   );
 }
 

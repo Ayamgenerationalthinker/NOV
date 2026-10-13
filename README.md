@@ -7,7 +7,7 @@ A single-owner store in the style of Selar or Gumroad, built for selling from Gh
 - **Buyers** open the link on their phone, see a focused page for that one product, and pay as a guest in GH₵ (Mobile Money or card via Paystack). They don't need an account.
 - **Digital** buyers get download buttons straight away, plus a link by email. **Physical** buyers enter a delivery address. The owner sees the order in the admin and marks it shipped.
 
-Stack: Next.js 16, Prisma 7, PostgreSQL, Paystack (Flutterwave optional), Resend for email, and Cloudflare R2 for files in production.
+Stack: Next.js 16, Prisma 7, PostgreSQL (Supabase), Paystack (Flutterwave optional), Resend for email, and Supabase Storage for files in production.
 
 ---
 
@@ -115,22 +115,30 @@ The repo is ready for Vercel. Every deploy runs `npm run vercel-build`, which:
 
 One-time setup in the Vercel dashboard (**your project → Storage** and **→ Settings → Environment Variables**):
 
-1. **Database:** Storage → **Create Database → Neon (Postgres)** → connect it to this project (all environments). This sets `DATABASE_URL` automatically.
-2. **File storage:** Storage → **Create → Blob**, choose **Private**, and connect it to this project. This sets `BLOB_READ_WRITE_TOKEN`. Images and ebooks upload straight from your browser to it, so large files work.
+1. **Database (Supabase):** in your Supabase project, click **Connect** at the top and copy two connection strings, replacing `[YOUR-PASSWORD]` with your database password:
+   - **Transaction pooler** (port `6543`) → this is `DATABASE_URL`. The site uses it.
+   - **Session pooler** (port `5432`) → this is `DIRECT_URL`. Deploys use it to create the tables.
+
+   Don't use the "Direct connection" string: Vercel can't reach it.
+2. **File storage (Supabase):** in Supabase → **Project Settings → API** (or **API Keys**), copy the **Project URL** → `SUPABASE_URL`, and the **secret / `service_role`** key → `SUPABASE_SERVICE_ROLE_KEY`. Cover images and ebooks upload straight from your browser to a private bucket called `tomevari`, which is created for you on the first upload. Files can be up to 50 MB each on Supabase's free plan.
 3. **Environment variables:** add these (Production and Preview):
 
    | Name | Value |
    | --- | --- |
+   | `DATABASE_URL` | The Supabase **Transaction pooler** string (step 1). |
+   | `DIRECT_URL` | The Supabase **Session pooler** string (step 1). |
+   | `SUPABASE_URL` | Your Supabase Project URL, like `https://abcd1234.supabase.co` (step 2). |
+   | `SUPABASE_SERVICE_ROLE_KEY` | The Supabase secret / `service_role` key (step 2). Keep it private. |
    | `AUTH_SECRET` | A long random string, 64 characters. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
    | `INITIAL_ADMIN_EMAIL` | Your login email. |
    | `INITIAL_ADMIN_PASSWORD` | Your password (8+ characters). Changing it and redeploying resets your password. |
    | `PAYSTACK_SECRET_KEY` | `sk_test_…` to take test payments, `sk_live_…` for real money. |
    | `NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY` | The matching `pk_test_…` / `pk_live_…`. |
    | `RESEND_API_KEY` *(optional)* | From resend.com, so buyers get receipt emails. Without it, the download link is still shown on the success page. |
-   | `EMAIL_FROM` *(optional)* | For example `NOV <orders@your-domain.com>` (a domain verified in Resend). |
+   | `EMAIL_FROM` *(optional)* | For example `Tomevari <orders@tomevari.com>` (a domain verified in Resend). |
 
    You don't need `NEXT_PUBLIC_APP_URL`: share links use your Vercel domain automatically. Set it only if you add a custom domain, for example `https://shop.example.com`.
-4. **Deploy:** Deployments → the latest one → **Redeploy**. Then open `https://<your-site>/login`.
+4. **Deploy:** Deployments → the latest one → **Redeploy**. Then open `https://<your-site>/api/health`: it should say `"status": "healthy"`, with the database connected, the owner account created and `"storage": "supabase"`. Then sign in at `https://<your-site>/login`.
 5. **Paystack webhook** *(recommended)*: in Paystack → Settings → API Keys & Webhooks, set the webhook URL to `https://<your-site>/api/webhooks/paystack`.
 
 `PAYMENT_SIMULATION` does nothing on Vercel: real (test or live) Paystack keys are required to take payments.
@@ -141,7 +149,7 @@ One-time setup in the Vercel dashboard (**your project → Storage** and **→ S
 
 - **Payments:** Paystack is the default. An order is marked paid only after the payment is re-checked with the gateway, and only if the reference, amount (in GH₵) and order all match. Simulated payments are impossible in production, even if `PAYMENT_SIMULATION` is set.
 - **Stock:** placing an order holds the stock for 30 minutes while the buyer pays. The stock only goes down for good once payment is confirmed. Abandoned checkouts release their hold automatically.
-- **Files and images:** locally, uploads are stored on your computer (`public/uploads` for images, `.private_storage` for paid files). On Vercel they go to a private Vercel Blob store (see below). Paid files are only ever reachable through short-lived download links.
+- **Files and images:** locally, uploads are stored on your computer (`public/uploads` for images, `.private_storage` for paid files). On Vercel they go to a private Supabase Storage bucket (see above; a private Vercel Blob store or Cloudflare R2 also work). Paid files are only ever reachable through short-lived download links.
 - **Database changes:** tables are created by migrations in `prisma/migrations` (`npm run db:migrate`). Vercel runs them automatically on every deploy.
 
 ## Project layout

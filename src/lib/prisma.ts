@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { env } from './env';
+import { pgConnectionString } from './pg-config';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -12,8 +13,9 @@ function createPrismaClient(): PrismaClient {
   const pool =
     globalForPrisma.pool ??
     new Pool({
-      connectionString: env.DATABASE_URL,
-      connectionTimeoutMillis: 2000,
+      connectionString: pgConnectionString(env.DATABASE_URL),
+      // Hosted databases (Supabase, Neon) can take a few seconds to answer a cold serverless function.
+      connectionTimeoutMillis: 10_000,
     });
 
   if (process.env.NODE_ENV !== 'production') {

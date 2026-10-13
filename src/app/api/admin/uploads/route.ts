@@ -9,12 +9,15 @@ export const dynamic = 'force-dynamic';
 /**
  * GET: tells the admin form how to upload.
  *  - "direct": the browser uploads straight to Vercel Blob (no size limit from Vercel functions)
+ *  - "signed": the browser uploads straight to Supabase Storage with a one-time link
+ *    from /api/admin/uploads/sign
  *  - "server": the file is posted to our API (local development / R2)
  */
 export async function GET() {
   const auth = await RBACService.requireAdmin();
   if ('error' in auth) return auth.error;
-  return NextResponse.json({ mode: storageBackend === 'vercel-blob' ? 'direct' : 'server' });
+  const mode = storageBackend === 'vercel-blob' ? 'direct' : storageBackend === 'supabase' ? 'signed' : 'server';
+  return NextResponse.json({ mode, storage: storageBackend });
 }
 
 /** POST: issues a short-lived Vercel Blob upload token, for the owner only. */

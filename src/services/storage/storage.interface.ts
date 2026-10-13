@@ -31,4 +31,6 @@ export interface IStorageService {
   getFileStream(key: string): Promise<FileStreamResult>;
   /** Size and type of a stored file, or null if it does not exist (used to verify direct uploads). */
   statFile?(key: string): Promise<{ size: number; contentType: string } | null>;
+  /** A one-time URL the browser can PUT a file to directly (storage that supports it). */
+  createSignedUploadUrl?(key: string): Promise<string>;
 }

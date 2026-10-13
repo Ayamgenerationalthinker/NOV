@@ -7,7 +7,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
   NEXT_PUBLIC_APP_NAME: z.string().default('Tomevari'),
-  NEXT_PUBLIC_SUPPORT_EMAIL: z.string().email().default('support@nov.com'),
+  NEXT_PUBLIC_SUPPORT_EMAIL: z.string().email().default('support@tomevari.com'),
 
   DATABASE_URL: z.string().default(DEV_DATABASE_URL),
 
@@ -36,6 +36,11 @@ const envSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET_NAME: z.string().default('nov-private-products'),
   R2_ENDPOINT: z.string().optional(),
+
+  // Supabase Storage (Project Settings -> API). The secret key must stay server-side.
+  SUPABASE_URL: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  SUPABASE_STORAGE_BUCKET: z.string().optional(),
 
   // Vercel Blob (set automatically when a Blob store is connected to the Vercel project)
   BLOB_READ_WRITE_TOKEN: z.string().optional(),

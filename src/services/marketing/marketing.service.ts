@@ -179,7 +179,7 @@ export class MarketingService {
       throw new Error(`No email address associated with order ${order.orderNumber}.`);
     }
 
-    const appUrl = env.NEXT_PUBLIC_APP_URL || 'https://nov.com';
+    const appUrl = env.NEXT_PUBLIC_APP_URL || 'https://tomevari.com';
     const recoveryUrl = `${appUrl}/checkout?orderId=${order.id}`;
 
     const dispatched = await EmailService.sendAbandonedCartEmail({

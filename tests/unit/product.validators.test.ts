@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { productCreateSchema, productFilterSchema } from '@/lib/validators/product';
+import { productCreateSchema, productFilterSchema, productUpdateSchema } from '@/lib/validators/product';
 import { ProductType } from '@prisma/client';
 
 describe('Product Validators', () => {
@@ -9,11 +9,30 @@ describe('Product Validators', () => {
       description: 'The ultimate production template for SaaS with payments and auth.',
       price: 79.99,
       discountPrice: 49.99,
-      productType: ProductType.TEMPLATE,
+      productType: ProductType.COURSE,
       features: ['Full auth', 'Payment integration'],
     });
 
     expect(valid.success).toBe(true);
+  });
+
+  it('accepts only Ebook, Course and Video as digital categories', () => {
+    const base = { title: 'Sample Product', description: 'A valid description for the test product.', price: 10 };
+    for (const ok of [ProductType.EBOOK, ProductType.COURSE, ProductType.VIDEO]) {
+      expect(productCreateSchema.safeParse({ ...base, productType: ok }).success).toBe(true);
+    }
+    for (const retired of [ProductType.GRAPHICS, ProductType.SOFTWARE, ProductType.AUDIO, ProductType.TEMPLATE]) {
+      const result = productCreateSchema.safeParse({ ...base, productType: retired });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0].message).toMatch(/Ebook, Course or Video/);
+    }
+  });
+
+  it('rejects retired categories on updates too', () => {
+    expect(productUpdateSchema.safeParse({ productType: ProductType.AUDIO }).success).toBe(false);
+    expect(productUpdateSchema.safeParse({ productType: ProductType.VIDEO }).success).toBe(true);
+    // Omitting the category on a partial update leaves it unchanged.
+    expect(productUpdateSchema.safeParse({ price: 20 }).data).not.toHaveProperty('productType');
   });
 
   it('should reject invalid slugs', () => {

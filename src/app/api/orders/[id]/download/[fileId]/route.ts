@@ -58,11 +58,24 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Access the owner has revoked (refund, chargeback, fraud) also ends downloads.
+    if (order.customerId) {
+      const access = await prisma.entitlement.findUnique({
+        where: { customerId_productId: { customerId: order.customerId, productId: targetFile.productId } },
+        select: { status: true },
+      });
+      if (access && access.status !== 'ACTIVE') {
+        return NextResponse.json({ error: 'Access to this file has been removed.' }, { status: 403 });
+      }
+    }
+
     // 3. Generate signed download URL (valid for 15 minutes)
+    // ?view=1 opens PDFs and videos in the browser's own viewer instead of saving them.
     const downloadUrl = await storageService.getSignedDownloadUrl({
       key: targetFile.fileKey,
       originalFileName: targetFile.fileName,
       expiresInSeconds: 900,
+      inline: new URL(request.url).searchParams.get('view') === '1',
     });
 
     // 4. Log download access record
@@ -114,9 +127,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.redirect(downloadUrl);
   } catch (error: any) {
     console.error('Order download route error:', error);
-    return NextResponse.json(
-      { error: error?.message || 'Failed to prepare file download.' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to prepare file download.' }, { status: 500 });
   }
 }

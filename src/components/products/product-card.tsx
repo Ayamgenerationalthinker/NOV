@@ -3,6 +3,7 @@ import { BookOpen, Package } from 'lucide-react';
 import { productPath } from '@/lib/product-url';
 import { formatCurrency } from '@/lib/utils';
 import { availableStock } from '@/lib/product-purchase';
+import { productTypeLabel } from '@/lib/product-types';
 
 export interface ProductCardProps {
   product: {
@@ -19,22 +20,12 @@ export interface ProductCardProps {
   };
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  EBOOK: 'Ebook',
-  COURSE: 'Course',
-  TEMPLATE: 'Template',
-  AUDIO: 'Audio',
-  VIDEO: 'Video',
-  SOFTWARE: 'Software',
-  GRAPHICS: 'Graphics',
-};
-
 export function ProductCard({ product }: ProductCardProps) {
   const onSale = product.discountPrice != null && product.discountPrice < product.price;
   const price = onSale ? product.discountPrice! : product.price;
   const isPhysical = product.productKind === 'PHYSICAL';
   const soldOut = isPhysical && (product.variants ?? []).reduce((sum, v) => sum + availableStock(v), 0) === 0;
-  const label = isPhysical ? 'Delivered' : TYPE_LABELS[product.productType ?? ''] ?? 'Download';
+  const label = isPhysical ? 'Delivered' : productTypeLabel(product.productType);
 
   return (
     <Link href={productPath(product.slug)} className="group block">

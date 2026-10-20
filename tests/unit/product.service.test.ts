@@ -133,8 +133,30 @@ describe('ProductService', () => {
   });
 
   describe('publishing', () => {
+    it('blocks publishing a digital product saved under a retired category', async () => {
+      vi.mocked(prisma.product.findUnique).mockResolvedValue(
+        dbProduct({ productKind: ProductKind.DIGITAL, productType: 'TEMPLATE' }) as any
+      );
+      vi.mocked(prisma.productFile.count).mockResolvedValue(1);
+
+      await expect(ProductService.togglePublish('prod-1', true)).rejects.toThrow(/Ebook, Course or Video/);
+      expect(prisma.product.update).not.toHaveBeenCalled();
+    });
+
+    it('still lets the owner unpublish a product with a retired category', async () => {
+      vi.mocked(prisma.product.findUnique).mockResolvedValue(
+        dbProduct({ productKind: ProductKind.DIGITAL, productType: 'AUDIO', isPublished: true }) as any
+      );
+      vi.mocked(prisma.product.update).mockResolvedValue(dbProduct({ isPublished: false }) as any);
+
+      await ProductService.togglePublish('prod-1', false);
+      expect(prisma.product.update).toHaveBeenCalledWith({ where: { id: 'prod-1' }, data: { isPublished: false } });
+    });
+
     it('blocks publishing a digital product without a file, allows it once a file exists', async () => {
-      vi.mocked(prisma.product.findUnique).mockResolvedValue(dbProduct({ productKind: ProductKind.DIGITAL }) as any);
+      vi.mocked(prisma.product.findUnique).mockResolvedValue(
+        dbProduct({ productKind: ProductKind.DIGITAL, productType: 'EBOOK' }) as any
+      );
 
       vi.mocked(prisma.productFile.count).mockResolvedValue(0);
       await expect(ProductService.togglePublish('prod-1', true)).rejects.toThrow(/Upload the file/);

@@ -126,7 +126,7 @@ export class SupabaseStorageAdapter implements IStorageService {
     return `${this.base}${data.url}`;
   }
 
-  async getSignedDownloadUrl({ key, expiresInSeconds = 900, originalFileName }: SignedUrlParams): Promise<string> {
+  async getSignedDownloadUrl({ key, expiresInSeconds = 900, originalFileName, inline }: SignedUrlParams): Promise<string> {
     const res = await this.request(`/object/sign/${this.objectPath(key)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -138,7 +138,7 @@ export class SupabaseStorageAdapter implements IStorageService {
     if (typeof signedPath !== 'string') throw new Error('Supabase did not return a download link.');
     const url = new URL(`${this.base}${signedPath}`);
     // "download" makes the browser save the file under its original name instead of opening it.
-    url.searchParams.set('download', originalFileName || '');
+    if (!inline) url.searchParams.set('download', originalFileName || '');
     return url.toString();
   }
 

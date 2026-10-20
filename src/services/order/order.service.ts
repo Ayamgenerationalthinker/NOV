@@ -500,44 +500,7 @@ export class OrderService {
       }
 
       // 2. Grant entitlements for digital items
-      let recipientCustomerId = order.customerId;
-      if (!recipientCustomerId && order.guestEmail) {
-        const cleanEmail = order.guestEmail.toLowerCase().trim();
-        let customerUser = await prisma.user.findUnique({
-          where: { email: cleanEmail },
-        });
-
-        if (!customerUser) {
-          const generatedSecret = crypto.randomBytes(24).toString('hex');
-          const passwordHash = await PasswordService.hashPassword(generatedSecret);
-          customerUser = await prisma.user.create({
-            data: {
-              email: cleanEmail,
-              name: order.guestName || cleanEmail.split('@')[0],
-              passwordHash,
-              role: Role.CUSTOMER,
-            },
-          });
-        }
-
-        recipientCustomerId = customerUser.id;
-        await prisma.order.update({
-          where: { id: order.id },
-          data: { customerId: customerUser.id },
-        });
-      }
-
-      if (recipientCustomerId) {
-        for (const item of order.items) {
-          if (item.product.productKind === ProductKind.DIGITAL) {
-            await EntitlementService.grantEntitlement({
-              customerId: recipientCustomerId,
-              productId: item.productId,
-              orderId: order.id,
-            });
-          }
-        }
-      }
+      await this.grantDigitalEntitlements(order.id);
 
       // 3. Dispatch receipt email
       EmailService.sendOrderReceiptEmail(order.id).catch((err) => {
@@ -593,6 +556,63 @@ export class OrderService {
     }
 
     return updatedOrder;
+  }
+
+  /**
+   * Give the buyer of a PAID order access to its digital items. Safe to call any number of times
+   * (entitlements are upserted), so a confirmation that crashed half-way can be repaired by the
+   * next redirect, webhook or "check again". Does nothing for orders that are not PAID.
+   */
+  static async grantDigitalEntitlements(orderId: string) {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: { include: { product: { select: { productKind: true } } } } },
+    });
+    if (!order || order.status !== OrderStatus.PAID) return;
+
+    const digitalItems = order.items.filter((item) => item.product.productKind === ProductKind.DIGITAL);
+    if (digitalItems.length === 0) return;
+
+    let recipientCustomerId = order.customerId;
+    if (!recipientCustomerId && order.guestEmail) {
+      const cleanEmail = order.guestEmail.toLowerCase().trim();
+      let customerUser = await prisma.user.findUnique({
+        where: { email: cleanEmail },
+      });
+
+      if (!customerUser) {
+        const generatedSecret = crypto.randomBytes(24).toString('hex');
+        const passwordHash = await PasswordService.hashPassword(generatedSecret);
+        customerUser = await prisma.user.upsert({
+          where: { email: cleanEmail },
+          update: {},
+          create: {
+            email: cleanEmail,
+            name: order.guestName || cleanEmail.split('@')[0],
+            passwordHash,
+            role: Role.CUSTOMER,
+          },
+        });
+      }
+
+      recipientCustomerId = customerUser.id;
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { customerId: customerUser.id },
+      });
+    }
+
+    if (!recipientCustomerId) return;
+
+    for (const item of digitalItems) {
+      // Leave access the buyer already has untouched (repeat calls are then true no-ops).
+      if (await EntitlementService.verifyCustomerAccess(recipientCustomerId, item.productId)) continue;
+      await EntitlementService.grantEntitlement({
+        customerId: recipientCustomerId,
+        productId: item.productId,
+        orderId: order.id,
+      });
+    }
   }
 
   /**

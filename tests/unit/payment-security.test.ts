@@ -33,6 +33,7 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('@/services/order/order.service', () => ({
   OrderService: {
     transitionOrderStatus: vi.fn(),
+    grantDigitalEntitlements: vi.fn(),
   },
 }));
 

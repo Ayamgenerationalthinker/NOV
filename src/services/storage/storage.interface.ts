@@ -16,6 +16,8 @@ export interface SignedUrlParams {
   key: string;
   expiresInSeconds?: number;
   originalFileName?: string;
+  /** Let the browser display the file (PDF reader, video player) instead of saving it. */
+  inline?: boolean;
 }
 
 export interface FileStreamResult {

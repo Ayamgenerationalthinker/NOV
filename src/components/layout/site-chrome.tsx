@@ -25,13 +25,11 @@ export function SiteChrome({ header, footer, children }: SiteChromeProps) {
   const focused = isFocusedRoute(pathname);
   // The header floats over the page. The homepage hero runs underneath it; other pages start below it.
   const clearHeader = !focused && pathname !== '/';
-  // Buyer-facing screens swap amber for blue (see .shop-palette in globals.css); the admin keeps amber.
-  const isAdmin = pathname === '/admin' || Boolean(pathname?.startsWith('/admin/'));
-
+  // Every screen swaps amber for the brand's electric blue (see .shop-palette in globals.css).
   return (
     <>
       {!focused && header}
-      <main className={cn('flex-1 flex flex-col', clearHeader && 'pt-20', !isAdmin && 'shop-palette')}>{children}</main>
+      <main className={cn('flex-1 flex flex-col shop-palette', clearHeader && 'pt-20')}>{children}</main>
       {!focused && footer}
     </>
   );

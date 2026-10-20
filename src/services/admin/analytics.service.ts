@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { OrderStatus, EntitlementStatus, Role } from '@prisma/client';
+import { OrderStatus, EntitlementStatus, Role, TransactionStatus } from '@prisma/client';
+import { DIGITAL_PRODUCT_TYPES } from '@/lib/product-types';
 import { OrderService } from '@/services/order/order.service';
 
 export interface OverviewMetrics {
@@ -53,7 +54,50 @@ export interface PaginationMeta {
   totalPages: number;
 }
 
+export interface CatalogPaymentCounts {
+  totalProducts: number;
+  publishedProducts: number;
+  draftProducts: number;
+  /** Digital drafts that cannot be published yet (no file, or a retired category). */
+  productsNeedingAttention: number;
+  successfulPayments: number;
+  pendingPayments: number;
+  failedPayments: number;
+}
+
 export class AnalyticsService {
+  /**
+   * Product publication counts and payment-attempt outcomes, straight from the database.
+   * Pending means an attempt was started and Paystack has not confirmed or failed it yet.
+   */
+  static async getCatalogAndPaymentCounts(): Promise<CatalogPaymentCounts> {
+    const [totalProducts, publishedProducts, needingAttention, byStatus] = await Promise.all([
+      prisma.product.count(),
+      prisma.product.count({ where: { isPublished: true } }),
+      prisma.product.count({
+        where: {
+          isPublished: false,
+          productKind: 'DIGITAL',
+          OR: [{ files: { none: {} } }, { productType: { notIn: [...DIGITAL_PRODUCT_TYPES] } }],
+        },
+      }),
+      prisma.transaction.groupBy({ by: ['status'], _count: { _all: true } }),
+    ]);
+
+    const count = (...statuses: TransactionStatus[]) =>
+      byStatus.filter((row) => statuses.includes(row.status)).reduce((sum, row) => sum + row._count._all, 0);
+
+    return {
+      totalProducts,
+      publishedProducts,
+      draftProducts: totalProducts - publishedProducts,
+      productsNeedingAttention: needingAttention,
+      successfulPayments: count(TransactionStatus.SUCCESSFUL),
+      pendingPayments: count(TransactionStatus.INITIALIZED, TransactionStatus.PENDING),
+      failedPayments: count(TransactionStatus.FAILED, TransactionStatus.ABANDONED, TransactionStatus.REVERSED),
+    };
+  }
+
   /**
    * Calculate high-level financial & store KPIs
    */

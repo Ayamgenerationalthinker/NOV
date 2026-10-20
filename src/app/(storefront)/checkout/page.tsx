@@ -19,7 +19,8 @@ const PENDING_MAX_AGE_MS = 25 * 60 * 1000;
 const PAYMENT_MESSAGES: Record<string, { title: string; body: string; canRetry: boolean }> = {
   payment_cancelled: { title: 'Payment cancelled', body: 'You cancelled the payment, so no money was taken. You can try again whenever you’re ready.', canRetry: true },
   payment_failed: { title: 'Payment didn’t go through', body: 'The payment was declined or timed out and no money was taken. Please try again, or use a different number or card.', canRetry: true },
-  payment_pending: { title: 'Payment still processing', body: 'If you approved the Mobile Money prompt on your phone, give it a minute and tap “Check again”.', canRetry: false },
+  payment_pending: { title: 'Payment not finished yet', body: 'If you approved the Mobile Money prompt on your phone, give it a minute and tap “Check again”. If you closed the payment page before paying, tap “Try again”.', canRetry: true },
+  verification_unavailable: { title: 'Checking your payment', body: 'We couldn’t reach the payment provider to confirm your payment just now. Please don’t pay again. Tap “Check again” in a minute; if money left your account, your order will be confirmed automatically.', canRetry: false },
 };
 const UNCONFIRMED_MESSAGE = {
   title: 'We couldn’t confirm your payment',
@@ -94,14 +95,30 @@ function RetryPanel({ orderId, errorCode }: { orderId: string; errorCode: string
       return;
     }
     setBusy(null);
+    if (res.status === 409) {
+      // Already paid (an earlier attempt went through): show the order as it is now.
+      await load();
+    }
     setError(data.error || 'Could not restart the payment. Please try again.');
   };
 
   const checkAgain = async () => {
     setBusy('check');
+    setError(null);
+    // Re-verifies with the payment provider on the server; only its answer can confirm the order.
+    const res = await fetch(`/api/orders/${orderId}/verify-payment`, { method: 'POST' });
+    const data = await readJson(res);
     const current = await load();
     setBusy(null);
-    if (current && current.status !== 'PAID') setError('Not confirmed yet. Please wait a little longer, then check again.');
+    if (current && current.status !== 'PAID') {
+      setError(
+        data.payment === 'UNAVAILABLE'
+          ? 'We still can’t reach the payment provider. Please don’t pay again; check back in a few minutes.'
+          : data.payment === 'FAILED'
+            ? 'This payment didn’t go through and no money was taken. You can try again.'
+            : 'Not confirmed yet. Please wait a little longer, then check again.'
+      );
+    }
   };
 
   return (

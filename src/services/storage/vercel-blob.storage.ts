@@ -26,8 +26,8 @@ export class VercelBlobStorageAdapter implements IStorageService {
     return { key: result.pathname, size: fileBuffer.length, contentType };
   }
 
-  async getSignedDownloadUrl({ key, expiresInSeconds = 900, originalFileName }: SignedUrlParams): Promise<string> {
-    return buildSignedDownloadUrl({ key, originalFileName, expiresInSeconds });
+  async getSignedDownloadUrl({ key, expiresInSeconds = 900, originalFileName, inline }: SignedUrlParams): Promise<string> {
+    return buildSignedDownloadUrl({ key, originalFileName, expiresInSeconds, inline });
   }
 
   async deleteFile(key: string): Promise<void> {

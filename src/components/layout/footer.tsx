@@ -4,6 +4,7 @@ import { Container } from '@/components/ui/container';
 import { SOCIAL_LINKS } from '@/content/home';
 import { env } from '@/lib/env';
 import { cn } from '@/lib/utils';
+import { BrandLogo } from './brand-logo';
 
 const linkClass = 'text-fg/75 transition-colors duration-300 hover:text-fg';
 const columnTitle = 'text-xs font-semibold uppercase tracking-[0.2em] text-accent-200';
@@ -25,8 +26,8 @@ export function Footer() {
             )}
           >
             <div className="sm:col-span-2 lg:col-span-1">
-              <Link href="/" className="text-lg font-semibold tracking-[0.28em] text-fg">
-                {name.toUpperCase()}
+              <Link href="/" aria-label={`${name} home`} className="inline-block rounded-lg">
+                <BrandLogo className="h-11" />
               </Link>
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-fg/75">
                 Ebooks and downloads with practical, step-by-step guidance for building skills and income. Plant the
@@ -40,7 +41,7 @@ export function Footer() {
 
             <nav aria-label="Quick links" className="flex flex-col gap-3 text-sm">
               <p className={columnTitle}>Quick links</p>
-              <Link href="/#shop" className={linkClass}>Shop</Link>
+              <Link href="/products" className={linkClass}>All products</Link>
               <Link href="/#how-it-works" className={linkClass}>How it works</Link>
               <Link href="/#faq" className={linkClass}>FAQ</Link>
             </nav>

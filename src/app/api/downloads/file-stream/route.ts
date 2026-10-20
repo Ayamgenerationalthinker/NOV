@@ -26,7 +26,9 @@ export async function GET(request: NextRequest) {
 
     const headers = new Headers();
     headers.set('Content-Type', contentType);
-    headers.set('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+    // inline=1 lets the buyer's browser show the file (PDF reader, video player); the link is signed either way.
+    const disposition = searchParams.get('inline') === '1' ? 'inline' : 'attachment';
+    headers.set('Content-Disposition', `${disposition}; filename*=UTF-8''${encodeURIComponent(fileName)}`);
     headers.set('Cache-Control', 'private, no-store');
     headers.set('X-Content-Type-Options', 'nosniff');
     if (contentLength) headers.set('Content-Length', contentLength.toString());

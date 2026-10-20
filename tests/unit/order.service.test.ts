@@ -52,6 +52,7 @@ vi.mock('@/lib/prisma', () => ({
 
 vi.mock('@/services/entitlement/entitlement.service', () => ({
   EntitlementService: {
+    verifyCustomerAccess: vi.fn().mockResolvedValue(null),
     grantEntitlement: vi.fn().mockResolvedValue({ id: 'ent-new' }),
     revokeEntitlement: vi.fn().mockResolvedValue({ id: 'ent-revoked' }),
   },
@@ -154,9 +155,10 @@ describe('OrderService & Order State Machine', () => {
         ],
       };
 
+      // Read before the change, then every later read sees the order as PAID.
       vi.mocked(prisma.order.findUnique)
         .mockResolvedValueOnce(mockPendingOrder as any)
-        .mockResolvedValueOnce({ ...mockPendingOrder, status: OrderStatus.PAID, paidAt: new Date() } as any);
+        .mockResolvedValue({ ...mockPendingOrder, status: OrderStatus.PAID, paidAt: new Date() } as any);
       vi.mocked(prisma.order.updateMany).mockResolvedValue({ count: 1 });
 
       const updated = await OrderService.transitionOrderStatus({

@@ -13,6 +13,57 @@ import crypto from 'crypto';
 
 export const PAYSTACK_SIMULATED_PREFIX = 'PSTK-sim-';
 
+/**
+ * Currencies this store will charge through Paystack, with how many subunits make one unit
+ * (pesewas, kobo, cents). Paystack takes and returns amounts in subunits. Only currencies whose
+ * subunit is confirmed are listed: anything else is refused instead of being guessed.
+ */
+export const PAYSTACK_SUBUNITS: Record<string, number> = {
+  GHS: 100,
+  NGN: 100,
+  USD: 100,
+  ZAR: 100,
+  KES: 100,
+};
+
+export function paystackSubunitFactor(currency: string): number {
+  const factor = PAYSTACK_SUBUNITS[currency.toUpperCase()];
+  if (!factor) {
+    throw new PaymentConfigurationError(`Paystack payments in ${currency} are not supported by this store.`);
+  }
+  return factor;
+}
+
+/** Major units (e.g. 150.50 GHS) to Paystack subunits (15050), rounded to a whole subunit. */
+export function toPaystackSubunits(amount: number, currency: string): number {
+  return Math.round(amount * paystackSubunitFactor(currency));
+}
+
+export function fromPaystackSubunits(subunits: number, currency: string): number {
+  const factor = PAYSTACK_SUBUNITS[currency.toUpperCase()];
+  // An unknown currency can never match an order, so NaN makes the amount check fail safely.
+  return factor ? Number(subunits) / factor : NaN;
+}
+
+/** Thrown when Paystack could not be reached or answered with a server error; safe to retry later. */
+export class PaymentGatewayUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PaymentGatewayUnavailableError';
+  }
+}
+
+/**
+ * Paystack transaction statuses. Only "success" is paid and only "failed"/"reversed" are final
+ * failures. "abandoned" means the buyer has not finished (or closed the window); they may still
+ * pay with the same reference, so it is treated as pending rather than failed.
+ */
+function mapPaystackStatus(status: unknown): VerifyPaymentResult['status'] {
+  if (status === 'success') return 'SUCCESSFUL';
+  if (status === 'failed' || status === 'reversed') return 'FAILED';
+  return 'PENDING';
+}
+
 export class PaystackAdapter implements IPaymentAdapter {
   readonly provider: PaymentProviderType = 'PAYSTACK';
   private secretKey: string | undefined;
@@ -52,8 +103,7 @@ export class PaystackAdapter implements IPaymentAdapter {
     const secretKey = this.requireSecretKey();
     const txRef = `PSTK-${params.orderNumber}-${suffix}`;
 
-    // Paystack amounts are in subunits (pesewas / kobo / cents: amount * 100)
-    const amountInSubunits = Math.round(params.amount * 100);
+    const amountInSubunits = toPaystackSubunits(params.amount, params.currency);
 
     const payload = {
       reference: txRef,
@@ -109,17 +159,31 @@ export class PaystackAdapter implements IPaymentAdapter {
 
     const secretKey = this.requireSecretKey();
 
-    const res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${secretKey}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    let res: Response;
+    let data: any;
+    try {
+      res = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${secretKey}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+      });
+      data = await res.json();
+    } catch (err) {
+      throw new PaymentGatewayUnavailableError(`Could not reach Paystack: ${(err as Error).message}`);
+    }
 
-    const data = await res.json();
+    // A server error or rate limit says nothing about the payment: never record it as a failure.
+    if (res.status === 429 || res.status >= 500) {
+      throw new PaymentGatewayUnavailableError(`Paystack answered ${res.status} while verifying ${reference}.`);
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new PaymentConfigurationError('Paystack rejected the configured secret key.');
+    }
 
-    if (!res.ok || !data.status || !data.data) {
+    if (!res.ok || !data?.status || !data?.data) {
       return {
         success: false,
         amount: 0,
@@ -131,17 +195,18 @@ export class PaystackAdapter implements IPaymentAdapter {
     }
 
     const tx = data.data;
-    const isSuccessful = tx.status === 'success';
+    const status = mapPaystackStatus(tx.status);
+    const currency = String(tx.currency || '').toUpperCase();
 
     return {
-      success: isSuccessful,
-      amount: Number(tx.amount) / 100, // Convert from subunits
-      currency: String(tx.currency || '').toUpperCase(),
+      success: status === 'SUCCESSFUL',
+      amount: fromPaystackSubunits(Number(tx.amount), currency),
+      currency,
       transactionRef: tx.reference,
       providerRef: tx.id?.toString(),
       customerEmail: tx.customer?.email,
       paymentMethod: tx.channel,
-      status: isSuccessful ? 'SUCCESSFUL' : tx.status === 'ongoing' || tx.status === 'pending' ? 'PENDING' : 'FAILED',
+      status,
       rawPayload: data,
     };
   }
@@ -176,7 +241,7 @@ export class PaystackAdapter implements IPaymentAdapter {
         // Paystack events have no own id; key idempotency on event type + transaction id.
         eventId: objectId ? `${eventType}:${objectId}` : undefined,
         transactionRef: data.reference || '',
-        amount: Number((data.amount || 0) / 100),
+        amount: fromPaystackSubunits(Number(data.amount || 0), String(data.currency || '')),
         currency: String(data.currency || '').toUpperCase(),
         customerEmail: data.customer?.email,
         isSuccessful: payload.event === 'charge.success' && data.status === 'success',

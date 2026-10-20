@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { WebhookService } from '@/services/payment/webhook.service';
+import { WebhookService, WebhookRetryableError } from '@/services/payment/webhook.service';
 import { PaymentService } from '@/services/payment/payment.service';
 import { PaystackAdapter } from '@/services/payment/paystack.adapter';
 import { FlutterwaveAdapter } from '@/services/payment/flutterwave.adapter';
@@ -33,6 +33,7 @@ vi.mock('@/lib/prisma', () => ({
 vi.mock('@/services/order/order.service', () => ({
   OrderService: {
     transitionOrderStatus: vi.fn(),
+    grantDigitalEntitlements: vi.fn(),
   },
 }));
 
@@ -68,8 +69,13 @@ function paystackEvent(event: string, status: string, overrides: Record<string, 
 }
 
 /** Real adapter for signature/parsing, with the gateway verify call stubbed. */
-function useAdapterWithGateway(gateway: Record<string, any>) {
+function useAdapterWithGateway(gateway: Record<string, any> | Error) {
   const adapter = new PaystackAdapter({ secretKey: PAYSTACK_KEY });
+  if (gateway instanceof Error) {
+    const verify = vi.spyOn(adapter, 'verifyPayment').mockRejectedValue(gateway);
+    PaymentService.setAdapter('PAYSTACK', adapter);
+    return verify;
+  }
   const verify = vi.spyOn(adapter, 'verifyPayment').mockResolvedValue({
     success: true,
     amount: 75,
@@ -214,15 +220,42 @@ describe('WebhookService', () => {
       vi.mocked(prisma.transaction.findUnique).mockResolvedValue(storedTransaction('PAID', 'SUCCESSFUL') as any);
       const body = paystackEvent('charge.failed', 'failed');
 
+      const result = await WebhookService.processWebhook('PAYSTACK', signPaystack(body), body);
+
+      // Paystack only reports success by webhook; anything else is recorded but changes nothing.
+      expect(result.message).toMatch(/Ignored unsupported PAYSTACK event charge.failed/);
+      expect(prisma.transaction.update).not.toHaveBeenCalled();
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
+      expect(prisma.order.update).not.toHaveBeenCalled();
+      expect(prisma.paymentWebhookEvent.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ isProcessed: true }) })
+      );
+    });
+
+    it('an unsupported event (e.g. a refund) cannot touch a pending order', async () => {
+      const verify = useAdapterWithGateway({});
+      vi.mocked(prisma.transaction.findUnique).mockResolvedValue(storedTransaction('PENDING', 'INITIALIZED') as any);
+      const body = paystackEvent('refund.processed', 'processed');
+
       await WebhookService.processWebhook('PAYSTACK', signPaystack(body), body);
 
+      expect(verify).not.toHaveBeenCalled();
+      expect(prisma.order.updateMany).not.toHaveBeenCalled();
       expect(prisma.transaction.update).not.toHaveBeenCalled();
-      // Only PENDING orders may move to FAILED
-      expect(prisma.order.updateMany).toHaveBeenCalledWith({
-        where: { id: 'order-paystack-1', status: 'PENDING' },
-        data: { status: 'FAILED' },
-      });
-      expect(prisma.order.update).not.toHaveBeenCalled();
+    });
+
+    it('leaves the event unprocessed and asks for a retry when Paystack cannot be reached', async () => {
+      useAdapterWithGateway(new Error('network down'));
+      vi.mocked(prisma.transaction.findUnique).mockResolvedValue(storedTransaction('PENDING', 'INITIALIZED') as any);
+      const body = paystackEvent('charge.success', 'success');
+
+      await expect(WebhookService.processWebhook('PAYSTACK', signPaystack(body), body)).rejects.toBeInstanceOf(
+        WebhookRetryableError
+      );
+      expect(OrderService.transitionOrderStatus).not.toHaveBeenCalled();
+      expect(prisma.paymentWebhookEvent.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ isProcessed: true }) })
+      );
     });
   });
 });

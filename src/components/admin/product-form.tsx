@@ -20,18 +20,9 @@ import { DEFAULT_VARIANT_TITLE } from '@/lib/product-purchase';
 import { uploadProductFile, uploadProductImage } from '@/lib/admin-upload';
 import { GOALS } from '@/content/home';
 import { isGoalSlug } from '@/lib/goals';
+import { DIGITAL_PRODUCT_TYPE_OPTIONS, isDigitalProductType } from '@/lib/product-types';
 
 type Kind = 'DIGITAL' | 'PHYSICAL';
-
-const DIGITAL_TYPES = [
-  { value: 'EBOOK', label: 'Ebook' },
-  { value: 'COURSE', label: 'Course' },
-  { value: 'TEMPLATE', label: 'Template' },
-  { value: 'AUDIO', label: 'Audio' },
-  { value: 'VIDEO', label: 'Video' },
-  { value: 'SOFTWARE', label: 'Software' },
-  { value: 'GRAPHICS', label: 'Graphics' },
-] as const;
 
 
 interface VariantRow {
@@ -104,9 +95,11 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
   );
   const [description, setDescription] = React.useState(initialProduct?.description ?? '');
   const [whatYouGet, setWhatYouGet] = React.useState((initialProduct?.whatsIncluded ?? []).join('\n'));
-  const [productType, setProductType] = React.useState(
-    initialProduct && initialProduct.productKind === 'DIGITAL' ? initialProduct.productType : 'EBOOK'
+  // Products saved under a retired category (Template, Audio...) start with no choice, so the owner must pick one.
+  const [productType, setProductType] = React.useState<string>(
+    !initialProduct ? 'EBOOK' : isDigitalProductType(initialProduct.productType) ? initialProduct.productType : ''
   );
+  const hasLegacyType = Boolean(initialProduct && initialProduct.productKind === 'DIGITAL' && !productType);
   // Homepage goals are stored as tags; any other tags on the product are kept as they are.
   const [goals, setGoals] = React.useState<string[]>((initialProduct?.tags ?? []).filter(isGoalSlug));
   const [coverImage, setCoverImage] = React.useState<string | null>(initialProduct?.coverImage ?? null);
@@ -177,6 +170,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
   const validate = (publish: boolean): string | null => {
     if (!kind) return 'Choose Digital or Physical first.';
     if (title.trim().length < 3) return 'Give your product a title (at least 3 characters).';
+    if (kind === 'DIGITAL' && !isDigitalProductType(productType)) return 'Choose a category: Ebook, Course or Video.';
     const priceNum = Number(price);
     if (price === '' || Number.isNaN(priceNum) || priceNum < 0) return 'Enter a valid price in GH₵.';
     if (salePrice !== '' && (Number.isNaN(Number(salePrice)) || Number(salePrice) >= priceNum)) {
@@ -316,7 +310,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
         <p className="text-sm text-stone-300">What are you selling?</p>
         <div className="grid gap-3 sm:grid-cols-2">
           {[
-            { k: 'DIGITAL' as Kind, icon: BookOpen, title: 'Digital', text: 'Ebook, course, template or any file buyers download right after paying.' },
+            { k: 'DIGITAL' as Kind, icon: BookOpen, title: 'Digital', text: 'An ebook, course or video buyers get right after paying.' },
             { k: 'PHYSICAL' as Kind, icon: Package, title: 'Physical', text: 'An item you deliver. Track stock, sizes and colours.' },
           ].map(({ k, icon: Icon, title: t, text }) => (
             <button
@@ -378,12 +372,18 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
 
         {!isPhysical && (
           <div>
-            <label className={labelClass} htmlFor="pf-type">Type</label>
+            <label className={labelClass} htmlFor="pf-type">Category</label>
             <select id="pf-type" className={fieldClass} value={productType} onChange={(e) => setProductType(e.target.value)}>
-              {DIGITAL_TYPES.map((t) => (
+              {!productType && <option value="" disabled>Choose a category</option>}
+              {DIGITAL_PRODUCT_TYPE_OPTIONS.map((t) => (
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
+            {hasLegacyType && (
+              <p className="mt-1.5 text-xs text-amber-400">
+                This product used a category that is no longer offered. Pick Ebook, Course or Video to save it.
+              </p>
+            )}
           </div>
         )}
 

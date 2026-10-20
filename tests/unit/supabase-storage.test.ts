@@ -122,7 +122,7 @@ describe('Supabase database connection', () => {
     expect(pgConnectionString(already)).toBe(already);
   });
 
-  it('shows support@tomevari.com unless another address is configured', () => {
-    expect(loadEnv({ NODE_ENV: 'test' } as any).NEXT_PUBLIC_SUPPORT_EMAIL).toBe('support@tomevari.com');
+  it('shows tomevari8@gmail.com unless another address is configured', () => {
+    expect(loadEnv({ NODE_ENV: 'test' } as any).NEXT_PUBLIC_SUPPORT_EMAIL).toBe('tomevari8@gmail.com');
   });
 });

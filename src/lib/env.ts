@@ -7,7 +7,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
   NEXT_PUBLIC_APP_NAME: z.string().default('Tomevari'),
-  NEXT_PUBLIC_SUPPORT_EMAIL: z.string().email().default('support@tomevari.com'),
+  NEXT_PUBLIC_SUPPORT_EMAIL: z.string().email().default('tomevari8@gmail.com'),
 
   DATABASE_URL: z.string().default(DEV_DATABASE_URL),
 

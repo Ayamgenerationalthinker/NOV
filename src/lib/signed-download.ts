@@ -14,14 +14,17 @@ export function buildSignedDownloadUrl({
   key,
   originalFileName,
   expiresInSeconds = 900,
+  inline = false,
 }: {
   key: string;
   originalFileName?: string;
   expiresInSeconds?: number;
+  inline?: boolean;
 }): string {
   const expires = Math.floor(Date.now() / 1000) + expiresInSeconds;
   const query = new URLSearchParams({ key, expires: String(expires), sig: sign(key, expires) });
   if (originalFileName) query.set('fn', originalFileName);
+  if (inline) query.set('inline', '1');
   return `${env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, '')}/api/downloads/file-stream?${query.toString()}`;
 }
 

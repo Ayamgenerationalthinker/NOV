@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle2, Download, FileText, Loader2, Mail, Truck, Clock } from 'lucide-react';
+import { BookOpen, CheckCircle2, Download, FileText, Loader2, Mail, PlayCircle, Truck, Clock } from 'lucide-react';
 import { formatCurrency, formatFileSize } from '@/lib/utils';
 import { productPath } from '@/lib/product-url';
 
@@ -37,6 +37,51 @@ interface OrderReceipt {
 
 const POLL_INTERVAL_MS = 3000;
 const POLL_LIMIT = 20;
+/** Every few polls, ask the server to re-verify with the payment provider (in case no webhook arrives). */
+const RECHECK_EVERY = 4;
+
+type ViewKind = 'pdf' | 'video' | null;
+
+function viewKind(fileName: string): ViewKind {
+  const ext = fileName.toLowerCase().split('.').pop() ?? '';
+  if (ext === 'pdf') return 'pdf';
+  if (['mp4', 'webm', 'm4v', 'mov'].includes(ext)) return 'video';
+  return null;
+}
+
+/**
+ * Opens a purchased PDF or video in a fixed-height viewer. The source is the order's download
+ * route, which checks payment and returns a short-lived signed link, so nothing is public.
+ */
+function FileViewer({ src, kind, title, onClose }: { src: string; kind: Exclude<ViewKind, null>; title: string; onClose: () => void }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <p className="truncate text-sm text-stone-300">{title}</p>
+        <div className="flex shrink-0 items-center gap-3 text-sm">
+          <a href={src} target="_blank" rel="noopener noreferrer" className="text-amber-300 underline">
+            Full screen
+          </a>
+          <button type="button" onClick={onClose} className="text-stone-400 hover:text-white">
+            Close
+          </button>
+        </div>
+      </div>
+      {kind === 'pdf' ? (
+        <iframe
+          src={src}
+          title={title}
+          className="h-[70vh] min-h-80 w-full rounded-xl border border-stone-800 bg-white"
+        />
+      ) : (
+        <video src={src} controls playsInline preload="metadata" className="aspect-video w-full rounded-xl border border-stone-800 bg-black" />
+      )}
+      {kind === 'pdf' && (
+        <p className="text-xs text-stone-500">If the reader stays blank, use “Full screen” or download the file.</p>
+      )}
+    </div>
+  );
+}
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -44,6 +89,21 @@ function SuccessContent() {
 
   const [order, setOrder] = React.useState<OrderReceipt | null>(null);
   const [state, setState] = React.useState<'loading' | 'ready' | 'missing'>('loading');
+  const [viewing, setViewing] = React.useState<string | null>(null);
+  const [gaveUp, setGaveUp] = React.useState(false);
+  const [checking, setChecking] = React.useState(false);
+
+  const checkNow = async () => {
+    if (!orderId) return;
+    setChecking(true);
+    try {
+      await fetch(`/api/orders/${orderId}/verify-payment`, { method: 'POST' });
+      const res = await fetch(`/api/orders/${orderId}`);
+      if (res.ok) setOrder((await res.json()).order);
+    } finally {
+      setChecking(false);
+    }
+  };
 
   React.useEffect(() => {
     if (!orderId) {
@@ -59,6 +119,9 @@ function SuccessContent() {
     const load = async () => {
       attempts += 1;
       try {
+        if (attempts > 1 && attempts % RECHECK_EVERY === 0) {
+          await fetch(`/api/orders/${orderId}/verify-payment`, { method: 'POST' }).catch(() => undefined);
+        }
         const res = await fetch(`/api/orders/${orderId}`);
         if (!res.ok) throw new Error('not found');
         const data = await res.json();
@@ -66,8 +129,9 @@ function SuccessContent() {
         setOrder(data.order);
         setState('ready');
         // A webhook may confirm a moment after the redirect: keep checking briefly.
-        if (data.order.status === 'PENDING' && attempts < POLL_LIMIT) {
-          timer = setTimeout(load, POLL_INTERVAL_MS);
+        if (data.order.status === 'PENDING') {
+          if (attempts < POLL_LIMIT) timer = setTimeout(load, POLL_INTERVAL_MS);
+          else setGaveUp(true);
         }
       } catch {
         if (!cancelled) setState('missing');
@@ -117,10 +181,27 @@ function SuccessContent() {
         <p className="text-sm text-stone-400">
           Order <span className="tabular-nums text-stone-200">{order.orderNumber}</span>
         </p>
-        {!isPaid && (
+        {!isPaid && !gaveUp && (
           <p className="text-sm text-stone-400">This usually takes a few seconds. Keep this page open.</p>
         )}
       </div>
+
+      {!isPaid && gaveUp && (
+        <div className="space-y-3 rounded-2xl border border-amber-800/60 bg-amber-950/30 p-4 text-sm">
+          <p className="text-stone-200">
+            Your payment hasn’t been confirmed yet. If you approved it, it can take a few minutes. Please don’t pay
+            again. Your downloads unlock here as soon as the payment is confirmed.
+          </p>
+          <button
+            type="button"
+            onClick={checkNow}
+            disabled={checking}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-stone-700 font-semibold text-stone-100 disabled:opacity-60"
+          >
+            {checking && <Loader2 className="h-4 w-4 animate-spin" />} Check again
+          </button>
+        </div>
+      )}
 
       {isPaid && digitalItems.length > 0 && (
         <section className="space-y-3">
@@ -131,20 +212,49 @@ function SuccessContent() {
               {item.product.files.length === 0 ? (
                 <p className="text-sm text-stone-400">The file is being prepared. We’ll email it to you.</p>
               ) : (
-                item.product.files.map((file) => (
-                  <a
-                    key={file.id}
-                    href={`/api/orders/${order.id}/download/${file.id}`}
-                    className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-amber-300 px-4 py-3 font-semibold text-stone-950 hover:bg-amber-200"
-                  >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <FileText className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{file.fileName}</span>
-                      <span className="shrink-0 text-xs font-normal opacity-70">{formatFileSize(file.fileSize)}</span>
-                    </span>
-                    <Download className="h-5 w-5 shrink-0" />
-                  </a>
-                ))
+                item.product.files.map((file) => {
+                  const downloadHref = `/api/orders/${order.id}/download/${file.id}`;
+                  const kind = viewKind(file.fileName);
+                  return (
+                    <div key={file.id} className="space-y-2">
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <a
+                          href={downloadHref}
+                          className="flex min-h-12 min-w-0 flex-1 items-center justify-between gap-3 rounded-xl bg-amber-300 px-4 py-3 font-semibold text-stone-950 hover:bg-amber-200"
+                        >
+                          <span className="flex min-w-0 items-center gap-2">
+                            <FileText className="h-4 w-4 shrink-0" aria-hidden />
+                            <span className="truncate">{file.fileName}</span>
+                            <span className="shrink-0 text-xs font-normal opacity-70">{formatFileSize(file.fileSize)}</span>
+                          </span>
+                          <Download className="h-5 w-5 shrink-0" aria-label="Download" />
+                        </a>
+                        {kind && (
+                          <button
+                            type="button"
+                            aria-expanded={viewing === file.id}
+                            onClick={() => {
+                              // Phones without a built-in PDF viewer (e.g. Android Chrome) would show an
+                              // empty frame: open the file in its own tab instead.
+                              if (kind === 'pdf' && navigator.pdfViewerEnabled === false) {
+                                window.open(`${downloadHref}?view=1`, '_blank', 'noopener');
+                                return;
+                              }
+                              setViewing(viewing === file.id ? null : file.id);
+                            }}
+                            className="flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl border border-stone-700 px-4 font-semibold text-stone-100 hover:bg-stone-900"
+                          >
+                            {kind === 'pdf' ? <BookOpen className="h-4 w-4" aria-hidden /> : <PlayCircle className="h-4 w-4" aria-hidden />}
+                            {kind === 'pdf' ? 'Read online' : 'Watch'}
+                          </button>
+                        )}
+                      </div>
+                      {kind && viewing === file.id && (
+                        <FileViewer src={`${downloadHref}?view=1`} kind={kind} title={file.fileName} onClose={() => setViewing(null)} />
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           ))}

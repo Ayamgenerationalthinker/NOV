@@ -66,10 +66,10 @@ export class S3StorageAdapter implements IStorageService {
     key,
     expiresInSeconds = 900, // default 15 minutes
     originalFileName,
+    inline = false,
   }: SignedUrlParams): Promise<string> {
-    const contentDisposition = originalFileName
-      ? `attachment; filename="${encodeURIComponent(originalFileName)}"`
-      : 'attachment';
+    const mode = inline ? 'inline' : 'attachment';
+    const contentDisposition = originalFileName ? `${mode}; filename="${encodeURIComponent(originalFileName)}"` : mode;
 
     const command = new GetObjectCommand({
       Bucket: this.bucket,

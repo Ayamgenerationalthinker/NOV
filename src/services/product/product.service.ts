@@ -5,7 +5,8 @@ import {
   ProductFilterInput,
   ProductVariantInput,
 } from '@/lib/validators/product';
-import { OrderStatus, Prisma, ProductKind, StockMovementType } from '@prisma/client';
+import { OrderStatus, Prisma, ProductKind, ProductType, StockMovementType } from '@prisma/client';
+import { isDigitalProductType, PHYSICAL_PRODUCT_TYPE } from '@/lib/product-types';
 import crypto from 'crypto';
 import { DEFAULT_VARIANT_TITLE } from '@/lib/product-purchase';
 
@@ -235,13 +236,33 @@ export class ProductService {
   /**
    * Digital products can only go live once there is a file to deliver.
    */
-  private static async assertPublishable(tx: Tx, productId: string, productKind: ProductKind) {
+  private static async assertPublishable(
+    tx: Tx,
+    productId: string,
+    productKind: ProductKind,
+    productType: ProductType
+  ) {
     if (productKind === ProductKind.DIGITAL) {
+      if (!isDigitalProductType(productType)) {
+        throw new ProductValidationError('Choose a category (Ebook, Course or Video) before publishing this product.');
+      }
       const fileCount = await tx.productFile.count({ where: { productId } });
       if (fileCount === 0) {
         throw new ProductValidationError('Upload the file buyers will receive before publishing this digital product.');
       }
     }
+  }
+
+  /**
+   * The category to store: digital products must use a current one (Ebook, Course, Video);
+   * physical items always get the internal physical type.
+   */
+  private static categoryForKind(productKind: ProductKind, productType: ProductType | undefined): ProductType {
+    if (productKind === ProductKind.PHYSICAL) return PHYSICAL_PRODUCT_TYPE;
+    if (!isDigitalProductType(productType)) {
+      throw new ProductValidationError('Category must be Ebook, Course or Video.');
+    }
+    return productType as ProductType;
   }
 
   private static generateSku(slug: string, title: string): string {
@@ -397,6 +418,7 @@ export class ProductService {
 
     const { categoryIds, variants, images, stockQuantity, ...productData } = data;
     const productKind = productData.productKind || ProductKind.DIGITAL;
+    const productType = this.categoryForKind(productKind, productData.productType);
 
     const created = await prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
@@ -414,7 +436,7 @@ export class ProductService {
           currency: productData.currency || 'GHS',
           isPublished: false,
           isFeatured: productData.isFeatured || false,
-          productType: productData.productType,
+          productType,
           features: productData.features || [],
           whatsIncluded: productData.whatsIncluded || [],
           tags: productData.tags || [],
@@ -437,7 +459,7 @@ export class ProductService {
       }
 
       if (productData.isPublished) {
-        await this.assertPublishable(tx, product.id, productKind);
+        await this.assertPublishable(tx, product.id, productKind, product.productType);
         await tx.product.update({ where: { id: product.id }, data: { isPublished: true } });
       }
 
@@ -475,6 +497,13 @@ export class ProductService {
     const { categoryIds, variants, images, stockQuantity, ...productData } = data;
     const updateData: Prisma.ProductUpdateInput = {};
 
+    if (productData.productKind !== undefined || productData.productType !== undefined) {
+      updateData.productType = this.categoryForKind(
+        productData.productKind ?? existing.productKind,
+        productData.productType ?? existing.productType
+      );
+    }
+
     if (productData.title !== undefined) updateData.title = productData.title;
     if (productData.slug !== undefined) {
       const taken = await prisma.product.findFirst({ where: { slug: productData.slug, id: { not: id } } });
@@ -493,7 +522,6 @@ export class ProductService {
     }
     if (productData.currency !== undefined) updateData.currency = productData.currency;
     if (productData.isFeatured !== undefined) updateData.isFeatured = productData.isFeatured;
-    if (productData.productType !== undefined) updateData.productType = productData.productType;
     if (productData.features !== undefined) updateData.features = productData.features;
     if (productData.whatsIncluded !== undefined) updateData.whatsIncluded = productData.whatsIncluded;
     if (productData.tags !== undefined) updateData.tags = productData.tags;
@@ -526,7 +554,7 @@ export class ProductService {
 
       if (productData.isPublished !== undefined) {
         if (productData.isPublished) {
-          await this.assertPublishable(tx, id, updated.productKind);
+          await this.assertPublishable(tx, id, updated.productKind, updated.productType);
         }
         await tx.product.update({ where: { id }, data: { isPublished: productData.isPublished } });
       }
@@ -556,7 +584,7 @@ export class ProductService {
       if (!product) throw new ProductValidationError(`Product with ID ${id} not found`);
 
       if (isPublished) {
-        await this.assertPublishable(tx, id, product.productKind);
+        await this.assertPublishable(tx, id, product.productKind, product.productType);
       }
 
       const updated = await tx.product.update({ where: { id }, data: { isPublished } });

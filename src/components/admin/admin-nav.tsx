@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BrandLogo } from '@/components/layout/brand-logo';
 
 const PRIMARY = [
   { label: 'Home', href: '/admin', icon: LayoutDashboard },
@@ -57,10 +58,13 @@ export function AdminTopBar({ email }: { email: string }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-stone-800/80 bg-stone-950/95 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
-        <Link href="/admin" className="flex items-center gap-2">
-          <span className="font-serif text-base font-semibold tracking-[0.3em] text-stone-100">TOMEVARI</span>
-          <span className="rounded-md bg-stone-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-stone-300">Admin</span>
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
+        <Link
+          href="/admin"
+          aria-label="Tomevari dashboard"
+          className="shrink-0 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+        >
+          <BrandLogo className="h-9 sm:h-10" />
         </Link>
         <div className="flex items-center gap-1">
           <span className="mr-2 hidden text-xs text-stone-500 lg:inline">{email}</span>

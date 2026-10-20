@@ -5,6 +5,7 @@ import { SessionService } from '@/services/auth/session.service';
 import { RBACService } from '@/services/auth/rbac.service';
 import { availableStock } from '@/lib/product-purchase';
 import { productGoals } from '@/lib/goals';
+import { productTypeLabel } from '@/lib/product-types';
 import { Hero } from '@/components/home/hero';
 import { HomeMotion } from '@/components/home/home-motion';
 import { WhySection } from '@/components/home/why-section';
@@ -33,16 +34,6 @@ export const metadata: Metadata = {
   },
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  EBOOK: 'Ebook',
-  COURSE: 'Course',
-  TEMPLATE: 'Template',
-  AUDIO: 'Audio',
-  VIDEO: 'Video',
-  SOFTWARE: 'Software',
-  GRAPHICS: 'Graphics',
-};
-
 export default async function HomePage() {
   const [{ products }, session] = await Promise.all([
     ProductService.getPublishedProducts({ page: 1, limit: 48, sort: 'newest' }),
@@ -65,7 +56,8 @@ export default async function HomePage() {
       price: onSale ? product.discountPrice! : product.price,
       wasPrice: onSale ? product.price : null,
       currency: product.currency,
-      label: isPhysical ? 'Delivered' : (TYPE_LABELS[product.productType] ?? 'Download'),
+      label: isPhysical ? 'Delivered' : productTypeLabel(product.productType),
+      productType: product.productType,
       isPhysical,
       soldOut: isPhysical && product.variants.reduce((sum, v) => sum + availableStock(v), 0) === 0,
       goals: productGoals(product),

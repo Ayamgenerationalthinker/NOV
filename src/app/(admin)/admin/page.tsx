@@ -3,7 +3,7 @@ import { RBACService } from '@/services/auth/rbac.service';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AnalyticsService } from '@/services/admin/analytics.service';
+import { AnalyticsService, type CatalogPaymentCounts } from '@/services/admin/analytics.service';
 import { AnalyticsChart } from '@/components/admin/analytics-chart';
 import {
   DollarSign,
@@ -46,19 +46,24 @@ export default async function AdminOverviewPage() {
   let timeSeries: any[] = [];
   let topProducts: any[] = [];
   let recentOrders: any[] = [];
+  let counts: CatalogPaymentCounts | null = null;
+  let loadFailed = false;
 
   try {
-    const [ov, ts, tp, ro] = await Promise.all([
+    const [ov, ts, tp, ro, cc] = await Promise.all([
       AnalyticsService.getOverviewMetrics(),
       AnalyticsService.getRevenueTimeSeries(30),
       AnalyticsService.getTopProducts(5),
       AnalyticsService.getRecentOrders(6),
+      AnalyticsService.getCatalogAndPaymentCounts(),
     ]);
     overview = ov;
     timeSeries = ts;
     topProducts = tp;
     recentOrders = ro;
+    counts = cc;
   } catch (err) {
+    loadFailed = true;
     console.error('Error fetching admin overview data:', err);
   }
 
@@ -131,6 +136,44 @@ export default async function AdminOverviewPage() {
         </div>
       </div>
 
+      {loadFailed && (
+        <div role="alert" className="rounded-xl border border-red-900 bg-red-950/60 p-3 text-sm text-red-200">
+          Some figures could not be loaded from the database. Refresh the page to try again.
+        </div>
+      )}
+
+      {counts && (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { label: 'Products', value: counts.totalProducts, href: '/admin/products', note: `${counts.publishedProducts} published` },
+            {
+              label: 'Drafts',
+              value: counts.draftProducts,
+              href: '/admin/products',
+              note: counts.productsNeedingAttention > 0 ? `${counts.productsNeedingAttention} need a file or category` : 'Not visible to buyers',
+              warn: counts.productsNeedingAttention > 0,
+            },
+            { label: 'Successful payments', value: counts.successfulPayments, href: '/admin/orders', note: 'Verified with Paystack' },
+            {
+              label: 'Pending / failed',
+              value: `${counts.pendingPayments} / ${counts.failedPayments}`,
+              href: '/admin/orders',
+              note: 'Payment attempts',
+            },
+          ].map((tile) => (
+            <Link
+              key={tile.label}
+              href={tile.href}
+              className="rounded-xl border border-stone-800 bg-stone-900/60 p-4 transition-colors hover:border-stone-700"
+            >
+              <p className="text-[11px] font-medium uppercase tracking-wider text-stone-400">{tile.label}</p>
+              <p className="mt-1 text-2xl font-black tabular-nums text-white">{tile.value}</p>
+              <p className={`mt-1 text-[11px] ${tile.warn ? 'text-amber-400' : 'text-stone-500'}`}>{tile.note}</p>
+            </Link>
+          ))}
+        </div>
+      )}
+
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Gross Revenue */}
@@ -144,7 +187,7 @@ export default async function AdminOverviewPage() {
               <p className="text-[11px] text-emerald-400 font-medium mt-2 flex items-center gap-1">
                 <span>Net: {formatCurrency(overview.netRevenue, overview.currency)}</span>
                 {overview.totalRefunds > 0 && (
-                  <span className="text-purple-400 text-[10px]">(-${overview.totalRefunds})</span>
+                  <span className="text-purple-400 text-[10px]">(−{formatCurrency(overview.totalRefunds, overview.currency)} refunded)</span>
                 )}
               </p>
             </div>

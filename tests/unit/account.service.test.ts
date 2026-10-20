@@ -35,6 +35,7 @@ vi.mock('@/services/auth/password.service', () => ({
 
 vi.mock('@/services/entitlement/entitlement.service', () => ({
   EntitlementService: {
+    verifyCustomerAccess: vi.fn().mockResolvedValue(null),
     grantEntitlement: vi.fn(),
   },
 }));

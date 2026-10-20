@@ -19,6 +19,7 @@ export type PaymentRejectionReason =
   | 'AMOUNT_MISMATCH'
   | 'CURRENCY_MISMATCH'
   | 'SIMULATION_NOT_ALLOWED'
+  | 'CUSTOMER_MISMATCH'
   | 'GATEWAY_ERROR';
 
 export interface PaymentConfirmationResult {
@@ -37,7 +38,15 @@ export interface ConfirmOrderPaymentParams {
   provider?: PaymentProviderType;
   /** When set (e.g. order_id from a redirect URL), the reference must belong to this order. */
   expectedOrderId?: string;
-  source: 'redirect' | 'webhook';
+  source: 'redirect' | 'webhook' | 'recheck';
+}
+
+/** The order is paid, cancelled or refunded, so no new payment may start. Shown to the buyer as-is. */
+export class OrderNotPayableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'OrderNotPayableError';
+  }
 }
 
 /** Compare money in minor units to avoid floating-point drift. */
@@ -86,7 +95,13 @@ export class PaymentService {
     }
 
     if (order.status !== OrderStatus.PENDING && order.status !== OrderStatus.FAILED) {
-      throw new Error(`Order ${order.orderNumber} cannot be paid (status: ${order.status}).`);
+      throw new OrderNotPayableError(order.status === OrderStatus.PAID ? 'This order is already paid.' : `This order can no longer be paid (${order.status.toLowerCase()}).`);
+    }
+
+    // Before charging again, make sure an earlier attempt didn't already go through.
+    const earlier = await this.recheckOrderPayment(order.id);
+    if (earlier && (earlier.outcome === 'PAID' || earlier.outcome === 'ALREADY_PAID')) {
+      throw new OrderNotPayableError('This order is already paid.');
     }
 
     const adapter = this.getAdapter(provider);
@@ -187,7 +202,7 @@ export class PaymentService {
     // 1. The reference must be one we issued, for the expected order and provider
     const transaction = await prisma.transaction.findUnique({
       where: { transactionRef: reference },
-      include: { order: true },
+      include: { order: { include: { customer: { select: { email: true } } } } },
     });
 
     if (!transaction || !transaction.order) {
@@ -206,6 +221,8 @@ export class PaymentService {
     }
 
     if (order.status === OrderStatus.PAID) {
+      // Repair access if an earlier confirmation crashed after marking the order paid.
+      await OrderService.grantDigitalEntitlements(order.id);
       return {
         outcome: 'ALREADY_PAID',
         ...context,
@@ -225,6 +242,7 @@ export class PaymentService {
       verification = await adapter.verifyPayment(reference);
     } catch (err) {
       if (err instanceof PaymentConfigurationError) throw err;
+      // Temporary: the transaction keeps its status so a later check (or webhook retry) can settle it.
       console.error(`Gateway verification error for ${reference}:`, err);
       return reject('GATEWAY_ERROR', 'Could not reach the payment gateway to verify this payment.', context);
     }
@@ -310,6 +328,16 @@ export class PaymentService {
       );
     }
 
+    // 5. The payer must be the buyer the order was created for (when the gateway reports an email)
+    const expectedEmail = (order.customer?.email || order.guestEmail || '').trim().toLowerCase();
+    const paidEmail = (verification.customerEmail || '').trim().toLowerCase();
+    if (!verification.simulated && expectedEmail && paidEmail && paidEmail !== expectedEmail) {
+      return reject('CUSTOMER_MISMATCH', `Payment was made by ${paidEmail}, not the order's buyer.`, {
+        ...context,
+        transactionId: transaction.id,
+      });
+    }
+
     // All checks passed
     await prisma.transaction.update({
       where: { id: transaction.id },
@@ -336,5 +364,36 @@ export class PaymentService {
       transactionRef: reference,
       message: 'Payment verified.',
     };
+  }
+
+  /**
+   * Ask the gateway again about an order's most recent payment attempts (the buyer's
+   * "Check again" button, or before starting a new attempt). Goes through confirmOrderPayment,
+   * so it can only ever mark the order paid on the gateway's word.
+   * Returns null when the order has no attempt that could still succeed.
+   */
+  static async recheckOrderPayment(orderId: string): Promise<PaymentConfirmationResult | null> {
+    const attempts = await prisma.transaction.findMany({
+      where: {
+        orderId,
+        status: { in: [TransactionStatus.INITIALIZED, TransactionStatus.PENDING, TransactionStatus.SUCCESSFUL] },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+    });
+
+    let last: PaymentConfirmationResult | null = null;
+    for (const attempt of attempts) {
+      const result = await this.confirmOrderPayment({
+        reference: attempt.transactionRef,
+        provider: attempt.provider as PaymentProviderType,
+        expectedOrderId: orderId,
+        source: 'recheck',
+      });
+      if (result.outcome === 'PAID' || result.outcome === 'ALREADY_PAID') return result;
+      // Prefer reporting "can't reach the gateway" or "pending" over an older attempt's failure.
+      if (!last || result.outcome === 'PENDING' || result.reason === 'GATEWAY_ERROR') last = result;
+    }
+    return last;
   }
 }

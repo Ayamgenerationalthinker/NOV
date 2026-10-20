@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/layout/header';
@@ -16,11 +16,24 @@ export const metadata: Metadata = {
     default: env.NEXT_PUBLIC_APP_NAME,
   },
   description:
-    'Ebooks and downloadable PDF guides for building skills and income. Pay in GH₵ with Mobile Money or card, no account needed.',
+    'Ebooks, courses and videos for building skills and income. Pay in GH₵ with Mobile Money or card, no account needed.',
+  applicationName: env.NEXT_PUBLIC_APP_NAME,
+  // Favicons come from app/favicon.ico, app/icon.png and app/apple-icon.png (built from the logo).
+  openGraph: {
+    siteName: env.NEXT_PUBLIC_APP_NAME,
+    images: [{ url: '/brand/tomevari-og.jpg', width: 1200, height: 630, alt: env.NEXT_PUBLIC_APP_NAME }],
+  },
+  twitter: { card: 'summary_large_image', images: ['/brand/tomevari-og.jpg'] },
   robots: {
     index: true,
     follow: true,
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#021648',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 import { CartProvider } from '@/context/cart-context';

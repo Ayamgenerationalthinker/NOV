@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, CheckCircle2, Loader2, Package } from 'lucide-react';
+import { ArrowRight, BookOpen, CheckCircle2, Loader2, Package, Search } from 'lucide-react';
 import { Container } from '@/components/ui/container';
 import { GOALS } from '@/content/home';
 import { productPath } from '@/lib/product-url';
+import { DIGITAL_PRODUCT_TYPE_OPTIONS, type DigitalProductType } from '@/lib/product-types';
 import { cn, formatCurrency } from '@/lib/utils';
 import { useGoal } from './goal-context';
 import { primaryButton, SectionHeading } from './primitives';
@@ -23,6 +24,7 @@ export interface ShopProduct {
   wasPrice: number | null;
   currency: string;
   label: string;
+  productType: string;
   isPhysical: boolean;
   soldOut: boolean;
   goals: string[];
@@ -35,8 +37,31 @@ interface ShopSectionProps {
 
 export function ShopSection({ products, isOwner }: ShopSectionProps) {
   const { selected, select } = useGoal();
+  const [category, setCategory] = useState<DigitalProductType | null>(null);
+  const [query, setQuery] = useState('');
   const goal = GOALS.find((g) => g.slug === selected);
-  const visible = selected ? products.filter((product) => product.goals.includes(selected)) : products;
+  const needle = query.trim().toLowerCase();
+  const visible = products.filter(
+    (product) =>
+      (!selected || product.goals.includes(selected)) &&
+      (!category || product.productType === category) &&
+      (!needle || product.title.toLowerCase().includes(needle) || product.summary?.toLowerCase().includes(needle))
+  );
+  // Only offer categories that have at least one product, so no filter leads to an empty grid.
+  const categories = DIGITAL_PRODUCT_TYPE_OPTIONS.filter((option) =>
+    products.some((product) => product.productType === option.value)
+  );
+  const filtered = Boolean(selected || category || needle);
+  const clearFilters = () => {
+    select(null);
+    setCategory(null);
+    setQuery('');
+  };
+  const chipClass = (on: boolean) =>
+    cn(
+      'h-10 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+      on ? 'border-accent bg-accent text-surface' : 'border-fg/20 bg-fg/5 text-fg/80 hover:bg-fg/10'
+    );
 
   return (
     <section id="shop" aria-labelledby="shop-title" className="light relative bg-surface py-20 text-fg sm:py-28">
@@ -55,16 +80,59 @@ export function ShopSection({ products, isOwner }: ShopSectionProps) {
           )}
         </div>
 
-        <div className="mt-10">
+        {products.length > 0 && (
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {categories.length > 1 ? (
+              <div role="group" aria-label="Filter by category" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                <button type="button" aria-pressed={!category} onClick={() => setCategory(null)} className={chipClass(!category)}>
+                  All
+                </button>
+                {categories.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    aria-pressed={category === option.value}
+                    onClick={() => setCategory(category === option.value ? null : option.value)}
+                    className={chipClass(category === option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span />
+            )}
+            {products.length > 3 && (
+              <div className="relative sm:w-72">
+                <label htmlFor="shop-search" className="sr-only">
+                  Search products
+                </label>
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-fg/50" aria-hidden />
+                <input
+                  id="shop-search"
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search products"
+                  className="h-11 w-full rounded-full border border-fg/20 bg-surface/60 pl-11 pr-4 text-base text-fg placeholder:text-fg/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/50 sm:text-sm"
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="mt-8">
           {products.length === 0 ? (
             <ComingSoon isOwner={isOwner} />
           ) : visible.length === 0 ? (
             <div className="glass rounded-3xl px-6 py-14 text-center">
-              <p className="text-lg font-semibold text-fg">Nothing here for {goal?.name} yet.</p>
-              <p className="mt-2 text-sm text-fg/70">New guides are added as they are finished.</p>
-              <button type="button" onClick={() => select(null)} className={cn(primaryButton, 'mt-6')}>
-                Show everything
-              </button>
+              <p className="text-lg font-semibold text-fg">No products match {needle ? `“${query.trim()}”` : 'these filters'} yet.</p>
+              <p className="mt-2 text-sm text-fg/70">New products are added as they are finished.</p>
+              {filtered && (
+                <button type="button" onClick={clearFilters} className={cn(primaryButton, 'mt-6')}>
+                  Show everything
+                </button>
+              )}
             </div>
           ) : (
             <ul className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">

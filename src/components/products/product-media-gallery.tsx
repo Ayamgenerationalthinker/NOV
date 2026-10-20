@@ -16,6 +16,8 @@ interface ProductMediaGalleryProps {
   model3dUrl?: string | null;
   model3dPoster?: string | null;
   productTitle: string;
+  /** Digital products: show the cover as a book-sized card instead of a full-width photo. */
+  compact?: boolean;
 }
 
 export function ProductMediaGallery({
@@ -24,6 +26,7 @@ export function ProductMediaGallery({
   model3dUrl,
   model3dPoster,
   productTitle,
+  compact = false,
 }: ProductMediaGalleryProps) {
   const allImages = [coverImage, ...galleryImages].filter(Boolean) as string[];
   const [selectedImage, setSelectedImage] = useState<string>(allImages[0] || '');
@@ -68,7 +71,13 @@ export function ProductMediaGallery({
           productTitle={productTitle}
         />
       ) : (
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-stone-900 md:rounded-3xl md:border md:border-zinc-800/80 flex items-center justify-center">
+        <div
+          className={
+            compact
+              ? 'relative mx-auto flex aspect-[3/4] w-full max-w-[13rem] items-center justify-center overflow-hidden rounded-2xl border border-zinc-800/80 bg-stone-900 shadow-xl shadow-black/30 sm:max-w-[16rem] md:max-w-sm'
+              : 'relative aspect-[4/5] w-full overflow-hidden bg-stone-900 md:rounded-3xl md:border md:border-zinc-800/80 flex items-center justify-center'
+          }
+        >
           {selectedImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

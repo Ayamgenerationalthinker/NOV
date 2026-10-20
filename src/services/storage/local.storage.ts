@@ -56,8 +56,9 @@ export class LocalStorageAdapter implements IStorageService {
     key,
     expiresInSeconds = 900, // 15 minutes
     originalFileName,
+    inline,
   }: SignedUrlParams): Promise<string> {
-    return buildSignedDownloadUrl({ key, originalFileName, expiresInSeconds });
+    return buildSignedDownloadUrl({ key, originalFileName, expiresInSeconds, inline });
   }
 
   async deleteFile(key: string): Promise<void> {

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ProductType, ProductKind } from '@prisma/client';
+import { isDigitalProductType, PHYSICAL_PRODUCT_TYPE } from '@/lib/product-types';
 
 /** Absolute URL (R2/CDN) or a root-relative path (local dev uploads such as /uploads/...). */
 export const mediaUrlSchema = z
@@ -64,7 +65,13 @@ export const productCreateSchema = z.object({
   currency: z.string().length(3).default('GHS'),
   isPublished: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
-  productType: z.nativeEnum(ProductType).default(ProductType.EBOOK),
+  productType: z
+    .nativeEnum(ProductType)
+    .refine(
+      (type) => isDigitalProductType(type) || type === PHYSICAL_PRODUCT_TYPE,
+      'Category must be Ebook, Course or Video'
+    )
+    .default(ProductType.EBOOK),
   features: z.array(z.string()).default([]),
   whatsIncluded: z.array(z.string()).default([]),
   tags: z.array(z.string()).default([]),

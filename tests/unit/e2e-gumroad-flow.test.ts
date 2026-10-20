@@ -67,6 +67,7 @@ vi.mock('@/lib/prisma', () => ({
     user: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      upsert: vi.fn(),
     },
     entitlement: {
       findUnique: vi.fn(),
@@ -87,6 +88,7 @@ vi.mock('@/lib/prisma', () => ({
 
 vi.mock('@/services/entitlement/entitlement.service', () => ({
   EntitlementService: {
+    verifyCustomerAccess: vi.fn().mockResolvedValue(null),
     grantEntitlement: vi.fn().mockResolvedValue({ id: 'ent-123' }),
     revokeEntitlement: vi.fn().mockResolvedValue({ id: 'ent-revoked' }),
   },
@@ -318,7 +320,7 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
 
   describe('TEST 10: Guest Digital Purchase & Secure Order Download Workflow', () => {
     it('should auto-provision customer record and grant digital entitlement upon payment transition for guest shoppers', async () => {
-      vi.mocked(prisma.order.findUnique).mockResolvedValue({
+      const guestOrder = {
         id: 'order-guest-100',
         orderNumber: 'NOV-GUEST-100',
         status: OrderStatus.PENDING,
@@ -331,7 +333,10 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
             product: { productKind: ProductKind.DIGITAL },
           },
         ],
-      } as any);
+      };
+      vi.mocked(prisma.order.findUnique)
+        .mockResolvedValueOnce(guestOrder as any)
+        .mockResolvedValue({ ...guestOrder, status: OrderStatus.PAID } as any);
 
       vi.mocked(prisma.order.update).mockResolvedValue({
         id: 'order-guest-100',
@@ -339,7 +344,7 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
       } as any);
 
       vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
-      vi.mocked(prisma.user.create).mockResolvedValue({
+      vi.mocked(prisma.user.upsert).mockResolvedValue({
         id: 'user-auto-buyer',
         email: 'artisan.buyer@gmail.com',
         name: 'Artisan Buyer',
@@ -353,10 +358,11 @@ describe('Gumroad-Style End-to-End Commerce Integration Tests', () => {
         toStatus: OrderStatus.PAID,
       });
 
-      // Verify that guest user account was auto-provisioned
-      expect(prisma.user.create).toHaveBeenCalledWith(
+      // Verify that guest user account was auto-provisioned (upsert: safe if two confirmations race)
+      expect(prisma.user.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
+          where: { email: 'artisan.buyer@gmail.com' },
+          create: expect.objectContaining({
             email: 'artisan.buyer@gmail.com',
             role: Role.CUSTOMER,
           }),

@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { productPath, productUrl } from '@/lib/product-url';
 import { ShareProductButtons } from '@/components/admin/share-product-buttons';
+import { isDigitalProductType, productTypeLabel } from '@/lib/product-types';
 
 interface AdminProductRow {
   id: string;
   title: string;
   slug: string;
   productKind: 'DIGITAL' | 'PHYSICAL';
+  productType: string;
   coverImage: string | null;
   price: number;
   discountPrice: number | null;
@@ -64,7 +66,10 @@ export default function AdminProductsPage() {
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Products</h1>
-          <p className="text-sm text-stone-400">{products.length} product{products.length === 1 ? '' : 's'}</p>
+          <p className="text-sm text-stone-400">
+            {products.length} product{products.length === 1 ? '' : 's'} · {products.filter((p) => p.isPublished).length} published ·{' '}
+            {products.filter((p) => !p.isPublished).length} draft
+          </p>
         </div>
         <Link href="/admin/products/new">
           <Button variant="success">
@@ -91,6 +96,7 @@ export default function AdminProductsPage() {
           {products.map((p) => {
             const hasSale = p.discountPrice !== null && p.discountPrice < p.price;
             const needsFile = p.productKind === 'DIGITAL' && p.files.length === 0;
+            const needsCategory = p.productKind === 'DIGITAL' && !isDigitalProductType(p.productType);
             return (
               <li key={p.id} className="rounded-2xl border border-stone-800 bg-stone-900/60 p-4">
                 <div className="flex gap-4">
@@ -121,6 +127,7 @@ export default function AdminProductsPage() {
                         {formatCurrency(hasSale ? p.discountPrice! : p.price, p.currency)}
                         {hasSale && <s className="ml-1 text-stone-500">{formatCurrency(p.price, p.currency)}</s>}
                       </span>
+                      <span>{p.productKind === 'PHYSICAL' ? 'Physical' : productTypeLabel(p.productType)}</span>
                       <span>{p.salesCount} sold</span>
                       {p.stockAvailable !== null && (
                         <span className={p.stockAvailable === 0 ? 'text-amber-400' : ''}>
@@ -128,6 +135,7 @@ export default function AdminProductsPage() {
                         </span>
                       )}
                       {needsFile && <span className="text-amber-400">No file uploaded</span>}
+                      {needsCategory && <span className="text-amber-400">Choose Ebook, Course or Video</span>}
                     </div>
                     {p.isPublished ? (
                       <a href={productPath(p.slug)} target="_blank" rel="noreferrer" className="block truncate text-xs text-emerald-400 underline">

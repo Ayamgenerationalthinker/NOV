@@ -3,6 +3,31 @@ import { PaymentProviderType } from './payment.interface';
 import { PaymentService } from './payment.service';
 import { OrderStatus, TransactionStatus } from '@prisma/client';
 
+/**
+ * Event types that may change an order, per provider. Paystack reports a completed payment with
+ * charge.success; failures and abandonment are learnt from verification, not webhooks.
+ * Providers not listed keep handling every event (Flutterwave signals failures by webhook).
+ */
+const SUPPORTED_EVENTS: Partial<Record<PaymentProviderType, string[]>> = {
+  PAYSTACK: ['charge.success'],
+};
+
+/** A temporary problem; the webhook route answers 5xx so the gateway delivers the event again. */
+export class WebhookRetryableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'WebhookRetryableError';
+  }
+}
+
+/** The request is not a genuine gateway event (bad signature or unreadable body). */
+export class WebhookRejectedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'WebhookRejectedError';
+  }
+}
+
 export interface WebhookProcessResult {
   success: boolean;
   message: string;
@@ -29,13 +54,13 @@ export class WebhookService {
     // 1. Cryptographic signature check
     const isValidSignature = adapter.verifyWebhookSignature(headers, rawBody);
     if (!isValidSignature) {
-      throw new Error(`Invalid ${provider} webhook signature`);
+      throw new WebhookRejectedError(`Invalid ${provider} webhook signature`);
     }
 
     // 2. Parse payload
     const eventPayload = adapter.parseWebhookEvent(rawBody);
     if (!eventPayload) {
-      throw new Error(`Failed to parse ${provider} webhook payload`);
+      throw new WebhookRejectedError(`Failed to parse ${provider} webhook payload`);
     }
 
     const { eventType, eventId, transactionRef, isSuccessful, rawPayload } = eventPayload;
@@ -84,6 +109,12 @@ export class WebhookService {
     };
 
     try {
+      // Other Paystack events (refunds, disputes, transfers...) are recorded but never change an order.
+      const supported = SUPPORTED_EVENTS[provider];
+      if (supported && !supported.includes(eventType)) {
+        return finish({ success: true, message: `Ignored unsupported ${provider} event ${eventType}.`, transactionRef });
+      }
+
       // 4. Only references we issued are considered (no payload metadata fallback)
       const transaction = transactionRef
         ? await prisma.transaction.findUnique({
@@ -109,6 +140,11 @@ export class WebhookService {
           provider,
           source: 'webhook',
         });
+
+        // Gateway unreachable: leave the event unprocessed and fail the request so Paystack retries it.
+        if (confirmation.reason === 'GATEWAY_ERROR') {
+          throw new WebhookRetryableError(`Could not verify ${transactionRef} with ${provider}; will retry.`);
+        }
 
         const paid = confirmation.outcome === 'PAID' || confirmation.outcome === 'ALREADY_PAID';
         return finish(

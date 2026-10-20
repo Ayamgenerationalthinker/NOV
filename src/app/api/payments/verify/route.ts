@@ -56,10 +56,15 @@ export async function GET(request: NextRequest) {
       return failureRedirect(gatewayStatus === 'cancelled' ? 'payment_cancelled' : 'payment_failed', result.orderId);
     }
 
+    // The gateway couldn't be reached: the payment may well have gone through, so don't call it failed.
+    if (result.reason === 'GATEWAY_ERROR') {
+      return failureRedirect('verification_unavailable', result.orderId);
+    }
+
     // REJECTED: don't reveal which check failed; it's logged and audited server-side.
     return failureRedirect('payment_verification_failed', orderId);
   } catch (error) {
     console.error('Payment verification redirect error:', error);
-    return failureRedirect('verification_exception', orderId);
+    return failureRedirect('verification_unavailable', orderId);
   }
 }

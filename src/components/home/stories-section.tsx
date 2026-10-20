@@ -12,7 +12,7 @@ export interface PublishedStory {
 
 /**
  * Reader stories. Shows only stories the owner has published from /admin/stories. Until there
- * are any, visitors get an honest invitation to share a story instead of invented reviews.
+ * are any, visitors see only the testimony box, never invented reviews.
  */
 export function StoriesSection({ stories }: { stories: PublishedStory[] }) {
   return (
@@ -38,19 +38,15 @@ export function StoriesSection({ stories }: { stories: PublishedStory[] }) {
                 </li>
               ))}
             </ul>
-            <div className="mt-10 text-center">
-              <ShareStoryForm />
-            </div>
+            <ShareStoryForm className="mt-10" />
           </>
         ) : (
-          <div data-reveal className="glass mt-12 rounded-3xl border-dashed px-6 py-12 text-center sm:px-10">
-            <p className="text-xl font-semibold tracking-tight text-fg">No stories here yet.</p>
-            <p className="mx-auto mt-2 max-w-md text-base text-fg/70">
-              We only publish real words from real readers. If one of our guides helped you, we would love to hear
-              how.
+          <>
+            <p className="mt-6 max-w-xl text-base text-fg/70">
+              No testimonies here yet. If one of our guides helped you, we would love to hear how.
             </p>
-            <ShareStoryForm className="mt-6" />
-          </div>
+            <ShareStoryForm className="mt-8" />
+          </>
         )}
       </Container>
     </section>

@@ -1,17 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import { CheckCircle2, Loader2, PenLine } from 'lucide-react';
+import { CheckCircle2, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ghostButton, primaryButton } from './primitives';
+import { primaryButton } from './primitives';
 
 const field =
-  'mt-1.5 w-full rounded-2xl border border-fg/15 bg-fg/[0.04] px-4 py-3 text-base text-fg placeholder:text-fg/40 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30';
-const label = 'block text-left text-sm font-medium text-fg/80';
+  'w-full rounded-2xl border border-fg/15 bg-fg/[0.04] px-4 py-3 text-base text-fg placeholder:text-fg/45 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30';
 
-/** "Share your story" button that opens a short form. Stories wait for the owner to publish them. */
+/** Testimony box shown straight on the page: write it, add name and email, send. The owner publishes it later. */
 export function ShareStoryForm({ className }: { className?: string }) {
-  const [open, setOpen] = React.useState(false);
   const [status, setStatus] = React.useState<'idle' | 'sending' | 'sent'>('idle');
   const [error, setError] = React.useState<string | null>(null);
 
@@ -26,7 +24,7 @@ export function ShareStoryForm({ className }: { className?: string }) {
         body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || 'We could not send your story. Please try again.');
+      if (!res.ok) throw new Error(data?.error || 'We could not send your testimony. Please try again.');
       setStatus('sent');
     } catch (err) {
       setError((err as Error).message);
@@ -39,71 +37,59 @@ export function ShareStoryForm({ className }: { className?: string }) {
       <div role="status" className={cn('glass mx-auto max-w-xl rounded-3xl px-6 py-8 text-center', className)}>
         <CheckCircle2 className="mx-auto h-8 w-8 text-accent" aria-hidden />
         <p className="mt-3 text-lg font-semibold text-fg">Thank you for sharing.</p>
-        <p className="mt-1 text-sm text-fg/70">We read every story. Yours will appear here once we have reviewed it.</p>
+        <p className="mt-1 text-sm text-fg/70">Your testimony will appear here once we have reviewed it.</p>
       </div>
-    );
-  }
-
-  if (!open) {
-    return (
-      <button type="button" onClick={() => setOpen(true)} className={cn(ghostButton, className)}>
-        <PenLine className="h-4 w-4" aria-hidden /> Share your story
-      </button>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className={cn('glass mx-auto max-w-xl space-y-4 rounded-3xl p-6 sm:p-8', className)}>
-      <p className="text-left text-lg font-semibold text-fg">Share your story</p>
-      <div>
-        <label htmlFor="story-name" className={label}>
+    <form onSubmit={onSubmit} className={cn('glass mx-auto max-w-xl space-y-3 rounded-3xl p-5 text-left sm:p-6', className)}>
+      <label htmlFor="story-quote" className="sr-only">
+        Your testimony
+      </label>
+      <textarea
+        id="story-quote"
+        name="quote"
+        required
+        minLength={20}
+        maxLength={1500}
+        rows={4}
+        placeholder="Share your testimony…"
+        className={cn(field, 'resize-y')}
+      />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label htmlFor="story-name" className="sr-only">
           Your name
         </label>
-        <input id="story-name" name="name" required minLength={2} maxLength={80} autoComplete="name" className={field} />
-      </div>
-      <div>
-        <label htmlFor="story-context" className={label}>
-          What did you buy? <span className="font-normal text-fg/50">(optional)</span>
+        <input id="story-name" name="name" required minLength={2} maxLength={80} autoComplete="name" placeholder="Your name" className={field} />
+        <label htmlFor="story-email" className="sr-only">
+          Your email
         </label>
-        <input id="story-context" name="context" maxLength={120} placeholder="e.g. Freelancing Starter Guide" className={field} />
-      </div>
-      <div>
-        <label htmlFor="story-quote" className={label}>
-          Your story
-        </label>
-        <textarea
-          id="story-quote"
-          name="quote"
+        <input
+          id="story-email"
+          name="email"
+          type="email"
           required
-          minLength={20}
-          maxLength={1500}
-          rows={5}
-          placeholder="How did it help you?"
-          className={cn(field, 'resize-y')}
+          maxLength={160}
+          autoComplete="email"
+          placeholder="Your email"
+          className={field}
         />
-      </div>
-      <div>
-        <label htmlFor="story-email" className={label}>
-          Email <span className="font-normal text-fg/50">(optional, never shown)</span>
-        </label>
-        <input id="story-email" name="email" type="email" maxLength={160} autoComplete="email" className={field} />
       </div>
       {/* Left empty by people; bots that fill every field are ignored. */}
       <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
 
       {error && (
-        <p role="alert" className="text-left text-sm text-red-600">
+        <p role="alert" className="text-sm text-red-600">
           {error}
         </p>
       )}
 
-      <p className="text-left text-xs text-fg/60">By sending this you agree we may show your name and story on this website.</p>
-      <div className="flex flex-wrap justify-end gap-2">
-        <button type="button" onClick={() => setOpen(false)} className={ghostButton}>
-          Cancel
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-fg/60">Your email is never shown.</p>
         <button type="submit" disabled={status === 'sending'} className={cn(primaryButton, 'disabled:opacity-60')}>
-          {status === 'sending' && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />} Send story
+          {status === 'sending' ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
+          Share
         </button>
       </div>
     </form>

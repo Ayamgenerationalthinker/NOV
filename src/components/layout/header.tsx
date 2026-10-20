@@ -1,18 +1,13 @@
 import Link from 'next/link';
-import { LayoutDashboard } from 'lucide-react';
 import { MobileMenu } from './mobile-menu';
 import { BrandLogo } from './brand-logo';
 import { Container } from '@/components/ui/container';
 import { env } from '@/lib/env';
-import { SessionService } from '@/services/auth/session.service';
-import { RBACService } from '@/services/auth/rbac.service';
 
 const linkClass =
   'rounded-full px-3.5 py-2 text-sm text-fg/80 transition-colors duration-300 hover:bg-fg/10 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent';
 
-export async function Header() {
-  const session = await SessionService.getCurrentSession();
-  const isOwner = Boolean(session && RBACService.isAdmin(session.role));
+export function Header() {
   const name = env.NEXT_PUBLIC_APP_NAME;
 
   const links = (
@@ -41,16 +36,6 @@ export async function Header() {
           </nav>
 
           <div className="flex items-center gap-1.5">
-            {isOwner && (
-              <Link
-                href="/admin"
-                className="flex h-10 items-center gap-1.5 rounded-full border border-fg/25 px-3.5 text-sm font-semibold text-fg hover:bg-fg/10"
-              >
-                <LayoutDashboard className="h-4 w-4" aria-hidden />
-                <span className="hidden sm:inline">Dashboard</span>
-                <span className="sr-only sm:hidden">Dashboard</span>
-              </Link>
-            )}
             <Link
               href="/#shop"
               className="hidden h-10 shrink-0 items-center whitespace-nowrap rounded-full bg-accent px-4 text-sm font-semibold text-surface transition-colors duration-300 hover:bg-accent-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg sm:flex"

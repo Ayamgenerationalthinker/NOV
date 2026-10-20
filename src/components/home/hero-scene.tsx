@@ -11,7 +11,7 @@ import { COIN_SYMBOLS, coinFaceTexture, type CoinSymbol } from './coin-face';
  * (no model files) and driven by one number, the hero's scroll progress from 0 to 1.
  */
 
-const BLUE = '#60A5FA';
+const BLUE = '#4d8dff';
 
 /** The strip of the canvas the tree should sit in, as fractions of its height from the top. */
 export interface ArtBand {
@@ -223,11 +223,11 @@ function Limbs() {
   const limbs = useMemo(() => [tree.trunk, ...tree.roots, ...tree.branches], [tree]);
 
   const bark = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: '#dbe7ff', roughness: 0.55, metalness: 0.2, emissive: '#1d4ed8', emissiveIntensity: 0.22 }),
+    () => new THREE.MeshStandardMaterial({ color: '#dbe7ff', roughness: 0.55, metalness: 0.2, emissive: '#0848e0', emissiveIntensity: 0.22 }),
     [],
   );
   const rootSkin = useMemo(
-    () => new THREE.MeshStandardMaterial({ color: '#93c5fd', roughness: 0.45, metalness: 0.3, emissive: '#2563eb', emissiveIntensity: 0.55 }),
+    () => new THREE.MeshStandardMaterial({ color: '#7aa9ff', roughness: 0.45, metalness: 0.3, emissive: '#0b5cff', emissiveIntensity: 0.55 }),
     [],
   );
 
@@ -274,7 +274,7 @@ function Leaves({ items }: { items: Drifter[] }) {
     items.forEach((_, i) => {
       // A mix of white, sky blue and deeper blue leaves.
       const pick = rand();
-      colour.set(pick < 0.45 ? '#FFFFFF' : pick < 0.8 ? BLUE : '#2563EB');
+      colour.set(pick < 0.45 ? '#FFFFFF' : pick < 0.8 ? BLUE : '#0b5cff');
       instanced.setColorAt(i, colour);
     });
     if (instanced.instanceColor) instanced.instanceColor.needsUpdate = true;
@@ -303,7 +303,7 @@ function Leaves({ items }: { items: Drifter[] }) {
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, items.length]} frustumCulled={false}>
       <icosahedronGeometry args={[1, 0]} />
-      <meshStandardMaterial color="#ffffff" roughness={0.45} metalness={0.35} emissive="#1e40af" emissiveIntensity={0.35} flatShading />
+      <meshStandardMaterial color="#ffffff" roughness={0.45} metalness={0.35} emissive="#0a3bb5" emissiveIntensity={0.35} flatShading />
     </instancedMesh>
   );
 }
@@ -327,7 +327,7 @@ function Coins({ items, symbol }: { items: Drifter[]; symbol: CoinSymbol }) {
       roughness: 0.35,
       metalness: 0.25,
     });
-    const rim = new THREE.MeshStandardMaterial({ color: '#93c5fd', roughness: 0.3, metalness: 0.7, emissive: '#2563eb', emissiveIntensity: 0.5 });
+    const rim = new THREE.MeshStandardMaterial({ color: '#7aa9ff', roughness: 0.3, metalness: 0.7, emissive: '#0b5cff', emissiveIntensity: 0.5 });
     // A cylinder's materials go: side, top, bottom.
     return [rim, stamped, stamped];
   }, [symbol]);
@@ -433,10 +433,10 @@ function Seed() {
     <>
       <mesh ref={seed} position={[0, SEED_Y, 0]}>
         <sphereGeometry args={[1, 32, 24]} />
-        <meshStandardMaterial color="#eaf2ff" emissive="#3b82f6" emissiveIntensity={0.7} roughness={0.3} metalness={0.4} />
+        <meshStandardMaterial color="#eaf2ff" emissive="#2f74ff" emissiveIntensity={0.7} roughness={0.3} metalness={0.4} />
       </mesh>
-      <pointLight ref={glow} position={[0, SEED_Y, 0.4]} color="#9cc5ff" distance={5} decay={2} />
-      <pointLight ref={crown} position={[0, CANOPY.y, 1.2]} color="#9cc5ff" distance={7} decay={2} intensity={0} />
+      <pointLight ref={glow} position={[0, SEED_Y, 0.4]} color="#8fb4ff" distance={5} decay={2} />
+      <pointLight ref={crown} position={[0, CANOPY.y, 1.2]} color="#8fb4ff" distance={7} decay={2} intensity={0} />
     </>
   );
 }
@@ -499,7 +499,7 @@ function Scene({ progress, band, compact }: Pick<HeroSceneProps, 'progress' | 'b
       <Rig progress={progress} band={band} />
       <ambientLight color="#ffffff" intensity={0.6} />
       <directionalLight color="#ffffff" intensity={1.8} position={[4, 6, 5]} />
-      <directionalLight color="#60a5fa" intensity={0.7} position={[-5, 2, -3]} />
+      <directionalLight color="#4d8dff" intensity={0.7} position={[-5, 2, -3]} />
       <group ref={group}>
         <Soil />
         <Seed />

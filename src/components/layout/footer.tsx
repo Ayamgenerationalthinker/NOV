@@ -75,8 +75,9 @@ export function Footer() {
           </div>
 
           <div className="mt-10 flex flex-wrap items-center justify-between gap-3 border-t border-fg/10 pt-6 text-xs text-fg/70">
-            <p>© {new Date().getFullYear()} {name}</p>
-            <Link href="/login" className="hover:text-fg">Owner login</Link>
+            {/* The sign-in page is reached only from here, and looks like plain copyright text. */}
+            <Link href="/login" className="cursor-default">© {new Date().getFullYear()} {name}</Link>
+            <p>All rights reserved.</p>
           </div>
         </div>
       </Container>

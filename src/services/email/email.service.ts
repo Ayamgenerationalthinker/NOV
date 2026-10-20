@@ -125,7 +125,7 @@ export class EmailService {
             
             <!-- Header -->
             <div style="padding: 32px 32px 24px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 1px solid #334155;">
-              <div style="font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #93c5fd;">${env.NEXT_PUBLIC_APP_NAME}</div>
+              <div style="font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #7aa9ff;">${env.NEXT_PUBLIC_APP_NAME}</div>
               <h1 style="margin: 16px 0 4px; font-size: 24px; font-weight: 800; color: #ffffff;">Thank you for your purchase!</h1>
               <p style="margin: 0; font-size: 13px; color: #94a3b8;">Order #${order.orderNumber} • ${new Date(order.createdAt).toLocaleDateString()}</p>
             </div>
@@ -139,7 +139,7 @@ export class EmailService {
 
               <!-- CTA Button -->
               <div style="margin: 28px 0; text-align: center;">
-                <a href="${libraryUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 14px 32px; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);">
+                <a href="${libraryUrl}" style="display: inline-block; background-color: #0b5cff; color: #ffffff; padding: 14px 32px; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(11, 92, 255, 0.4);">
                   ${hasDigital ? 'Download your files →' : 'View your order →'}
                 </a>
               </div>
@@ -168,7 +168,7 @@ export class EmailService {
                     }
                     <tr>
                       <td style="padding: 12px 0 0; font-size: 16px; font-weight: 800; color: #ffffff; border-top: 1px solid #334155;">Total</td>
-                      <td style="padding: 12px 0 0; text-align: right; font-size: 16px; font-weight: 800; color: #3b82f6; border-top: 1px solid #334155;">${totalAmount}</td>
+                      <td style="padding: 12px 0 0; text-align: right; font-size: 16px; font-weight: 800; color: #2f74ff; border-top: 1px solid #334155;">${totalAmount}</td>
                     </tr>
                   </tfoot>
                 </table>
@@ -184,7 +184,7 @@ export class EmailService {
 
             <!-- Footer -->
             <div style="padding: 24px 32px; background-color: #0f172a; border-top: 1px solid #334155; text-align: center; font-size: 12px; color: #64748b;">
-              <p style="margin: 0 0 8px;">Need help with your download? Contact our creator team at <a href="mailto:${env.NEXT_PUBLIC_SUPPORT_EMAIL}" style="color: #3b82f6; text-decoration: none;">${env.NEXT_PUBLIC_SUPPORT_EMAIL}</a>.</p>
+              <p style="margin: 0 0 8px;">Need help with your download? Contact our creator team at <a href="mailto:${env.NEXT_PUBLIC_SUPPORT_EMAIL}" style="color: #2f74ff; text-decoration: none;">${env.NEXT_PUBLIC_SUPPORT_EMAIL}</a>.</p>
               <p style="margin: 0;">© ${new Date().getFullYear()} ${env.NEXT_PUBLIC_APP_NAME}. All rights reserved.</p>
             </div>
           </div>
@@ -221,10 +221,10 @@ export class EmailService {
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
-        <h2 style="color: #6366f1; margin-top: 0;">Refund Confirmation for Order #${order.orderNumber}</h2>
+        <h2 style="color: #0b5cff; margin-top: 0;">Refund Confirmation for Order #${order.orderNumber}</h2>
         <p>Hi ${customerName},</p>
         <p>A full refund of <strong>$${refundedTotal} ${order.currency}</strong> has been processed for your order #${order.orderNumber}.</p>
-        ${reason ? `<p style="background-color: #f8fafc; padding: 12px; border-left: 4px solid #6366f1; font-size: 13px;"><strong>Reason:</strong> ${reason}</p>` : ''}
+        ${reason ? `<p style="background-color: #f8fafc; padding: 12px; border-left: 4px solid #0b5cff; font-size: 13px;"><strong>Reason:</strong> ${reason}</p>` : ''}
         <p style="font-size: 13px; color: #64748b;">
           Please note that associated digital entitlements have been deactivated. The refunded funds will return to your original payment method within 3–7 business days depending on your bank or card issuer.
         </p>
@@ -277,7 +277,7 @@ export class EmailService {
 
       const html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
-          <h2 style="color: #2563eb; margin-top: 0;">New Version Available: ${product.title} v${versionNumber}</h2>
+          <h2 style="color: #0b5cff; margin-top: 0;">New Version Available: ${product.title} v${versionNumber}</h2>
           <p>Great news! An update has been released for <strong>${product.title}</strong> which you own in your ${env.NEXT_PUBLIC_APP_NAME} digital library.</p>
           ${
             changelog
@@ -290,7 +290,7 @@ export class EmailService {
               : ''
           }
           <div style="margin: 24px 0;">
-            <a href="${downloadUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+            <a href="${downloadUrl}" style="background-color: #0b5cff; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
               Download Update in Your Library →
             </a>
           </div>
@@ -319,11 +319,11 @@ export class EmailService {
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
-        <h2 style="color: #2563eb; margin-top: 0;">Reset Your ${env.NEXT_PUBLIC_APP_NAME} Password</h2>
+        <h2 style="color: #0b5cff; margin-top: 0;">Reset Your ${env.NEXT_PUBLIC_APP_NAME} Password</h2>
         <p>You requested a password reset for your account at ${env.NEXT_PUBLIC_APP_NAME}.</p>
         <p>Click the button below to choose a new password. This link will expire in 1 hour.</p>
         <div style="margin: 28px 0;">
-          <a href="${resetUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+          <a href="${resetUrl}" style="background-color: #0b5cff; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
             Reset Password
           </a>
         </div>
@@ -349,10 +349,10 @@ export class EmailService {
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
-        <h2 style="color: #2563eb; margin-top: 0;">Welcome to ${env.NEXT_PUBLIC_APP_NAME}!</h2>
+        <h2 style="color: #0b5cff; margin-top: 0;">Welcome to ${env.NEXT_PUBLIC_APP_NAME}!</h2>
         <p>Please confirm your email address to secure your account and digital library.</p>
         <div style="margin: 28px 0;">
-          <a href="${verifyUrl}" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+          <a href="${verifyUrl}" style="background-color: #0b5cff; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
             Verify Email Address
           </a>
         </div>
@@ -378,15 +378,15 @@ export class EmailService {
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
-        <h2 style="color: #2563eb; margin-top: 0;">Welcome to the ${env.NEXT_PUBLIC_APP_NAME} community!</h2>
+        <h2 style="color: #0b5cff; margin-top: 0;">Welcome to the ${env.NEXT_PUBLIC_APP_NAME} community!</h2>
         <p>Thanks for subscribing to our release notes, developer dispatches, and exclusive drops.</p>
         <p>As a warm welcome, here is an exclusive 10% discount on your first digital purchase:</p>
         <div style="margin: 20px 0; padding: 16px; background-color: #f1f5f9; border-radius: 8px; text-align: center;">
           <span style="font-size: 11px; text-transform: uppercase; color: #64748b; display: block; margin-bottom: 4px;">Your Coupon Code</span>
-          <span style="font-family: monospace; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #2563eb;">${discountCode}</span>
+          <span style="font-family: monospace; font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #0b5cff;">${discountCode}</span>
         </div>
         <div style="text-align: center; margin: 24px 0;">
-          <a href="${storefrontUrl}/products" style="background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+          <a href="${storefrontUrl}/products" style="background-color: #0b5cff; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
             Explore Digital Goods →
           </a>
         </div>
@@ -431,7 +431,7 @@ export class EmailService {
 
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0;">
-        <h2 style="color: #2563eb; margin-top: 0;">Did you leave something behind?</h2>
+        <h2 style="color: #0b5cff; margin-top: 0;">Did you leave something behind?</h2>
         <p>Hi ${customerName || 'there'},</p>
         <p>We noticed you didn't finish completing your order #${orderNumber} for your digital goods.</p>
         <div style="background-color: #f8fafc; padding: 16px; border-radius: 8px; margin: 20px 0;">
@@ -454,7 +454,7 @@ export class EmailService {
             : ''
         }
         <div style="text-align: center; margin: 28px 0;">
-          <a href="${recoveryUrl}" style="background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+          <a href="${recoveryUrl}" style="background-color: #0b5cff; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
             Complete Your Checkout →
           </a>
         </div>

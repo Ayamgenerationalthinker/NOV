@@ -49,12 +49,12 @@ export function TreePoster({ className }: { className?: string }) {
     >
       <defs>
         <radialGradient id="tp-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.34" />
-          <stop offset="100%" stopColor="#60A5FA" stopOpacity="0" />
+          <stop offset="0%" stopColor="#4d8dff" stopOpacity="0.34" />
+          <stop offset="100%" stopColor="#4d8dff" stopOpacity="0" />
         </radialGradient>
         <linearGradient id="tp-bark" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#eaf2ff" />
-          <stop offset="100%" stopColor="#93c5fd" />
+          <stop offset="100%" stopColor="#7aa9ff" />
         </linearGradient>
       </defs>
 
@@ -62,8 +62,8 @@ export function TreePoster({ className }: { className?: string }) {
       <ellipse cx="300" cy="545" rx="90" ry="60" fill="url(#tp-glow)" />
 
       {/* Soil line and roots */}
-      <ellipse cx="300" cy="520" rx="250" ry="14" fill="#173a7a" opacity="0.7" />
-      <g fill="none" stroke="#93c5fd" strokeLinecap="round" opacity="0.85">
+      <ellipse cx="300" cy="520" rx="250" ry="14" fill="#0a2d8a" opacity="0.7" />
+      <g fill="none" stroke="#7aa9ff" strokeLinecap="round" opacity="0.85">
         <path d="M300 545 C270 570 220 580 150 640" strokeWidth="5" />
         <path d="M300 545 C330 575 390 585 455 635" strokeWidth="5" />
         <path d="M300 545 C290 590 270 630 250 680" strokeWidth="4" />
@@ -92,16 +92,16 @@ export function TreePoster({ className }: { className?: string }) {
             rx={leaf.size}
             ry={Math.round(leaf.size * 0.55)}
             transform={`rotate(${leaf.turn} ${leaf.x} ${leaf.y})`}
-            fill={leaf.tone < 0.45 ? '#FFFFFF' : leaf.tone < 0.8 ? '#60A5FA' : '#2563EB'}
+            fill={leaf.tone < 0.45 ? '#FFFFFF' : leaf.tone < 0.8 ? '#4d8dff' : '#0b5cff'}
             opacity={leaf.alpha / 100}
           />
         ))}
         {COINS.map((coin, i) => (
           <g key={i}>
             <circle cx={coin.x} cy={coin.y} r="16" fill="#f8fbff" />
-            <circle cx={coin.x} cy={coin.y} r="13" fill="none" stroke="#3b82f6" strokeWidth="1.5" />
+            <circle cx={coin.x} cy={coin.y} r="13" fill="none" stroke="#2f74ff" strokeWidth="1.5" />
             {/* Dollar and cedi signs, turn about */}
-            <text x={coin.x} y={coin.y + 6} textAnchor="middle" fontSize="17" fontWeight="800" fill="#1d4ed8">
+            <text x={coin.x} y={coin.y + 6} textAnchor="middle" fontSize="17" fontWeight="800" fill="#0848e0">
               {i % 2 === 0 ? '$' : '₵'}
             </text>
           </g>

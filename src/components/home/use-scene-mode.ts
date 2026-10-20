@@ -12,13 +12,15 @@ interface NavigatorHints {
 
 function detect(): Exclude<SceneMode, 'pending'> {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'static';
-  // The scrubbed hero pins one screenful; very short screens (a phone on its side) can't hold it.
-  if (window.innerHeight < 620) return 'static';
+  // The scrubbed hero pins one screenful; a phone on its side is too short to hold it.
+  if (window.innerHeight < 480) return 'static';
 
+  // Phones get the lighter version of the scene (see hero-scene), so only skip it on truly weak
+  // devices. iPhones report 4 or fewer cores and are more than capable, so cores alone don't count.
   const nav = navigator as Navigator & NavigatorHints;
   if (nav.connection?.saveData) return 'static';
-  if (nav.deviceMemory !== undefined && nav.deviceMemory <= 2) return 'static';
-  if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) return 'static';
+  if (nav.deviceMemory !== undefined && nav.deviceMemory < 2) return 'static';
+  if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2) return 'static';
 
   try {
     const canvas = document.createElement('canvas');

@@ -5,7 +5,7 @@ export type CoinSymbol = '$' | '₵';
 export const COIN_SYMBOLS: CoinSymbol[] = ['$', '₵'];
 
 const SIZE = 256;
-const INK = '#1d4ed8';
+const INK = '#0848e0';
 const cache = new Map<CoinSymbol, THREE.CanvasTexture>();
 
 /**
@@ -29,7 +29,7 @@ export function coinFaceTexture(symbol: CoinSymbol): THREE.CanvasTexture {
   ctx.fillStyle = disc;
   ctx.fillRect(0, 0, SIZE, SIZE);
 
-  ctx.strokeStyle = '#3b82f6';
+  ctx.strokeStyle = '#2f74ff';
   ctx.lineWidth = 9;
   ctx.beginPath();
   ctx.arc(mid, mid, mid - 20, 0, Math.PI * 2);

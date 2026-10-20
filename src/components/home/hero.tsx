@@ -94,7 +94,7 @@ export function Hero({ headline, subline }: HeroProps) {
           {/* Backdrop: surface fading to deep, with a soft accent glow behind the tree */}
           <div
             aria-hidden
-            className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_30%,rgba(96,165,250,0.2),transparent_70%),linear-gradient(to_bottom,#0a1f44,#0a1f44_55%,#071630)] lg:bg-[radial-gradient(45%_55%_at_72%_45%,rgba(96,165,250,0.2),transparent_70%),linear-gradient(to_bottom,#0a1f44,#0a1f44_55%,#071630)]"
+            className="absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_30%,rgba(77,141,255,0.2),transparent_70%),linear-gradient(to_bottom,#001650,#001650_55%,#010f3e)] lg:bg-[radial-gradient(45%_55%_at_72%_45%,rgba(77,141,255,0.2),transparent_70%),linear-gradient(to_bottom,#001650,#001650_55%,#010f3e)]"
           />
 
           <TreePoster

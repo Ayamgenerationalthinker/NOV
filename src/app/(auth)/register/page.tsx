@@ -36,8 +36,8 @@ export default function RegisterPage() {
             <div className="flex items-start gap-3 p-3 rounded-xl bg-zinc-900/60 border border-zinc-800">
               <Lock className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
               <div className="text-xs">
-                <p className="font-semibold text-white">Owner & Administrator Console</p>
-                <p className="text-zinc-400 mt-0.5">Login is reserved strictly for the pre-configured store administrator.</p>
+                <p className="font-semibold text-white">Your downloads, by email</p>
+                <p className="text-zinc-400 mt-0.5">After payment we email your receipt and a link to your files.</p>
               </div>
             </div>
 
@@ -51,7 +51,7 @@ export default function RegisterPage() {
 
               <Link href="/login" className="w-full">
                 <Button variant="outline" className="w-full border-zinc-800 text-zinc-300 hover:text-white text-xs py-2.5">
-                  Admin Sign In
+                  Sign in
                 </Button>
               </Link>
             </div>

@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: env.NEXT_PUBLIC_APP_NAME,
     start_url: '/',
     display: 'standalone',
-    background_color: '#021648',
-    theme_color: '#021648',
+    background_color: '#001650',
+    theme_color: '#001650',
     icons: [
       { src: '/brand/icon-192.png', sizes: '192x192', type: 'image/png' },
       { src: '/brand/icon-512.png', sizes: '512x512', type: 'image/png' },

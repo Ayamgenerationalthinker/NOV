@@ -116,8 +116,8 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         <div className="space-y-2 text-center">
           <Link href="/" className="font-serif text-xl font-semibold tracking-[0.3em] text-stone-100">TOMEVARI</Link>
-          <h1 className="text-2xl font-semibold text-white">Owner sign in</h1>
-          <p className="text-sm text-stone-400">Manage your products and orders.</p>
+          <h1 className="text-2xl font-semibold text-white">Sign in</h1>
+          <p className="text-sm text-stone-400">Welcome back.</p>
         </div>
         <React.Suspense fallback={<div className="h-64" />}>
           <LoginForm />

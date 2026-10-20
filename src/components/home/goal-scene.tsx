@@ -12,7 +12,7 @@ import { COIN_SYMBOLS, coinFaceTexture, type CoinSymbol } from './coin-face';
  */
 
 const COUNT = 46;
-const NEUTRAL = '#60A5FA';
+const NEUTRAL = '#4d8dff';
 
 function geometryFor(motif: GoalMotif | 'dust') {
   switch (motif) {

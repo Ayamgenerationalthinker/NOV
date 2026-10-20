@@ -74,7 +74,7 @@ export function ProductMediaGallery({
         <div
           className={
             compact
-              ? 'relative mx-auto flex aspect-[3/4] w-full max-w-[13rem] items-center justify-center overflow-hidden rounded-2xl border border-zinc-800/80 bg-stone-900 shadow-xl shadow-black/30 sm:max-w-[16rem] md:max-w-sm'
+              ? 'relative mx-auto flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-xl border border-zinc-800/80 bg-stone-900 shadow-xl shadow-black/30 md:max-w-sm md:rounded-2xl'
               : 'relative aspect-[4/5] w-full overflow-hidden bg-stone-900 md:rounded-3xl md:border md:border-zinc-800/80 flex items-center justify-center'
           }
         >
@@ -97,7 +97,7 @@ export function ProductMediaGallery({
 
       {/* Thumbnail Strip */}
       {allImages.length > 1 && (
-        <div className="flex items-center gap-3 overflow-x-auto px-4 pb-2 md:px-0">
+        <div className={`items-center gap-3 overflow-x-auto pb-2 md:px-0 ${compact ? 'hidden md:flex' : 'flex px-4'}`}>
           {allImages.map((img, idx) => (
             <button
               key={idx}

@@ -105,7 +105,7 @@ export function HomeMotion() {
     <div
       aria-hidden
       data-scroll-progress
-      className="pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5 origin-left scale-x-0 bg-gradient-to-r from-[#60a5fa] to-white"
+      className="pointer-events-none fixed inset-x-0 top-0 z-50 h-0.5 origin-left scale-x-0 bg-gradient-to-r from-[#4d8dff] to-white"
     />
   );
 }

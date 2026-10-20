@@ -1,24 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #071630;
+  --background: #010f3e;
   --foreground: #f5f8fd;
-  --card: #0e2247;
+  --card: #021a5c;
   --card-foreground: #f5f8fd;
-  --primary: #93c5fd;
-  --primary-foreground: #071630;
-  --primary-hover: #bfdbfe;
-  --secondary: #1a3260;
+  --primary: #4d8dff;
+  --primary-foreground: #010f3e;
+  --primary-hover: #7aa9ff;
+  --secondary: #0b2a7a;
   --secondary-foreground: #f5f8fd;
-  --muted: #6680b4;
-  --muted-foreground: #8fa6d0;
-  --accent: #93c5fd;
-  --accent-foreground: #071630;
+  --muted: #6680c8;
+  --muted-foreground: #93a8dc;
+  --accent: #4d8dff;
+  --accent-foreground: #010f3e;
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --border: #1a3260;
-  --ring: #93c5fd;
+  --border: #0b2a7a;
+  --ring: #4d8dff;
   --radius: 0.5rem;
 }
 
@@ -40,7 +40,7 @@ body {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 50%, #818cf8 100%);
+  background: linear-gradient(135deg, #0b5cff 0%, #4d8dff 50%, #e6ebf5 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -54,40 +54,40 @@ body {
    accents, so every component inside it follows without any changes of its own.
    --------------------------------------------------------------------------- */
 @theme {
-  --color-surface: #0a1f44;
-  --color-surface-800: #0f2a5c;
-  --color-surface-700: #173a7a;
-  --color-deep: #071630;
+  --color-surface: #001650;
+  --color-surface-800: #021f6b;
+  --color-surface-700: #0a2d8a;
+  --color-deep: #010f3e;
   --color-fg: #ffffff;
-  --color-accent: #60a5fa;
-  --color-accent-200: #bfdbfe;
+  --color-accent: #4d8dff;
+  --color-accent-200: #9dbfff;
   --font-display: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* The shop, checkout, sign-in and admin screens are written with Tailwind's stone and zinc
      greys. Tinting those two scales navy turns every one of those screens blue in one place. */
-  --color-stone-50: #f5f8fd;
-  --color-stone-100: #eaf0fa;
-  --color-stone-200: #d5dff2;
-  --color-stone-300: #b6c6e4;
-  --color-stone-400: #8fa6d0;
-  --color-stone-500: #6680b4;
-  --color-stone-600: #44609a;
-  --color-stone-700: #2a4578;
-  --color-stone-800: #1a3260;
-  --color-stone-900: #0e2247;
-  --color-stone-950: #071630;
-  --color-zinc-50: #f5f8fd;
-  --color-zinc-100: #eaf0fa;
-  --color-zinc-200: #d5dff2;
-  --color-zinc-300: #b6c6e4;
-  --color-zinc-400: #8fa6d0;
-  --color-zinc-500: #6680b4;
-  --color-zinc-600: #44609a;
-  --color-zinc-700: #2a4578;
-  --color-zinc-800: #1a3260;
-  --color-zinc-900: #0e2247;
-  --color-zinc-950: #071630;
+  --color-stone-50: #f6f8fd;
+  --color-stone-100: #edf1fb;
+  --color-stone-200: #dbe3f6;
+  --color-stone-300: #bccaec;
+  --color-stone-400: #93a8dc;
+  --color-stone-500: #6680c8;
+  --color-stone-600: #3a5ab0;
+  --color-stone-700: #1c3d94;
+  --color-stone-800: #0b2a7a;
+  --color-stone-900: #021a5c;
+  --color-stone-950: #010f3e;
+  --color-zinc-50: #f6f8fd;
+  --color-zinc-100: #edf1fb;
+  --color-zinc-200: #dbe3f6;
+  --color-zinc-300: #bccaec;
+  --color-zinc-400: #93a8dc;
+  --color-zinc-500: #6680c8;
+  --color-zinc-600: #3a5ab0;
+  --color-zinc-700: #1c3d94;
+  --color-zinc-800: #0b2a7a;
+  --color-zinc-900: #021a5c;
+  --color-zinc-950: #010f3e;
 }
 
 :root {
@@ -95,40 +95,40 @@ body {
   --glass-to: rgba(255, 255, 255, 0.04);
   --glass-border: rgba(255, 255, 255, 0.16);
   --glass-inset: rgba(255, 255, 255, 0.07);
-  --glass-shadow: rgba(2, 8, 23, 0.75);
-  --glow: 96 165 250;
+  --glass-shadow: rgba(1, 10, 40, 0.75);
+  --glow: 11 92 255;
 }
 
 .light {
   --color-surface: #ffffff;
-  --color-surface-800: #eef4ff;
+  --color-surface-800: #eef3ff;
   --color-surface-700: #dbe7ff;
   --color-deep: #f2f6ff;
-  --color-fg: #0a1f44;
-  --color-accent: #1d4ed8;
-  --color-accent-200: #1e40af;
+  --color-fg: #001650;
+  --color-accent: #0b5cff;
+  --color-accent-200: #0848e0;
   --glass-from: rgba(255, 255, 255, 0.95);
   --glass-to: rgba(240, 245, 255, 0.8);
   --glass-border: rgba(10, 31, 68, 0.12);
   --glass-inset: rgba(255, 255, 255, 0.9);
-  --glass-shadow: rgba(29, 78, 216, 0.3);
-  --glow: 29 78 216;
+  --glass-shadow: rgba(11, 92, 255, 0.3);
+  --glow: 11 92 255;
 }
 
 /* Buyer-facing screens use amber for their main buttons and notices; here it becomes blue.
    The admin keeps real amber, where it marks orders and stock that need attention. */
 .shop-palette {
-  --color-amber-50: #eff6ff;
-  --color-amber-100: #dbeafe;
-  --color-amber-200: #bfdbfe;
-  --color-amber-300: #93c5fd;
-  --color-amber-400: #60a5fa;
-  --color-amber-500: #3b82f6;
-  --color-amber-600: #2563eb;
-  --color-amber-700: #1d4ed8;
-  --color-amber-800: #1e40af;
-  --color-amber-900: #1e3a8a;
-  --color-amber-950: #172554;
+  --color-amber-50: #eef4ff;
+  --color-amber-100: #d9e6ff;
+  --color-amber-200: #9dbfff;
+  --color-amber-300: #4d8dff;
+  --color-amber-400: #2f74ff;
+  --color-amber-500: #0b5cff;
+  --color-amber-600: #0848e0;
+  --color-amber-700: #0a3bb5;
+  --color-amber-800: #0d318f;
+  --color-amber-900: #0f2b70;
+  --color-amber-950: #0a1a47;
 }
 
 html {
@@ -157,13 +157,13 @@ html {
 
 /* The navbar floats over blue and white sections alike, so its glass is always blue. */
 .glass-nav {
-  background: linear-gradient(135deg, rgba(15, 42, 92, 0.86), rgba(10, 31, 68, 0.78));
+  background: linear-gradient(135deg, rgba(2, 31, 107, 0.86), rgba(0, 22, 80, 0.78));
   border: 1px solid rgba(255, 255, 255, 0.16);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   backdrop-filter: blur(18px) saturate(140%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 18px 40px -22px rgba(2, 8, 23, 0.7);
+    0 18px 40px -22px rgba(1, 10, 40, 0.7);
 }
 
 .glow-accent {

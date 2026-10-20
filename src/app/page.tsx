@@ -14,6 +14,7 @@ import { GoalSelector } from '@/components/home/goal-selector';
 import { ShopSection, type ShopProduct } from '@/components/home/shop-section';
 import { StepsSection } from '@/components/home/steps-section';
 import { StoriesSection } from '@/components/home/stories-section';
+import { TestimonialService } from '@/services/testimonial/testimonial.service';
 import { FaqSection } from '@/components/home/faq-section';
 
 export const dynamic = 'force-dynamic';
@@ -35,9 +36,10 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [{ products }, session] = await Promise.all([
+  const [{ products }, session, stories] = await Promise.all([
     ProductService.getPublishedProducts({ page: 1, limit: 48, sort: 'newest' }),
     SessionService.getCurrentSession(),
+    TestimonialService.getPublished(),
   ]);
   const isOwner = Boolean(session && RBACService.isAdmin(session.role));
   const hasDigital = products.some((p) => p.productKind === 'DIGITAL');
@@ -86,7 +88,7 @@ export default async function HomePage() {
         <ShopSection products={shopProducts} isOwner={isOwner} />
       </GoalProvider>
       <StepsSection />
-      <StoriesSection supportEmail={env.NEXT_PUBLIC_SUPPORT_EMAIL} />
+      <StoriesSection stories={stories} />
       <FaqSection supportEmail={env.NEXT_PUBLIC_SUPPORT_EMAIL} />
     </div>
   );

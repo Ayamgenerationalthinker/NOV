@@ -101,19 +101,6 @@ export const BUYING_STEPS = [
   { title: 'Download instantly', text: 'Your files open straight away, and we email you a link to keep.' },
 ] as const;
 
-export interface Testimonial {
-  quote: string;
-  name: string;
-  /** e.g. "Bought: Freelancing Starter Guide". Optional. */
-  context?: string;
-}
-
-/**
- * Real reader stories only. Leave this empty until you have words from an actual buyer who
- * agreed to be quoted; the page shows an invitation to share a story instead.
- */
-export const TESTIMONIALS: Testimonial[] = [];
-
 export interface SocialLink {
   /** e.g. "Instagram" */
   label: string;

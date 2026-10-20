@@ -18,6 +18,7 @@ import {
   ExternalLink,
   LogOut,
   X,
+  MessageSquareQuote,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/layout/brand-logo';
@@ -30,6 +31,7 @@ const PRIMARY = [
 
 const SECONDARY = [
   { label: 'Coupons', href: '/admin/coupons', icon: Tag },
+  { label: 'Stories', href: '/admin/stories', icon: MessageSquareQuote },
   { label: 'Customers', href: '/admin/customers', icon: Users },
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { label: 'Stock', href: '/admin/inventory', icon: Boxes },

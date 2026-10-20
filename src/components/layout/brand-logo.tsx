@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 
-/** Intrinsic size of /brand/tomevari-wordmark-80.webp (cut from the supplied logo, 1200×250 band). */
-const WIDTH = 384;
+/** Intrinsic size of /brand/tomevari-wordmark-80.webp (the supplied logo on its white band, with padding). */
+const WIDTH = 401;
 const HEIGHT = 80;
 
 /**
@@ -13,6 +13,7 @@ export function BrandLogo({ className, priority = false }: { className?: string;
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src="/brand/tomevari-wordmark-80.webp"
+      srcSet="/brand/tomevari-wordmark-80.webp 1x, /brand/tomevari-wordmark-160.webp 2x"
       alt="Tomevari"
       width={WIDTH}
       height={HEIGHT}

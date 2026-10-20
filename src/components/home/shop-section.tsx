@@ -151,8 +151,6 @@ export function ShopSection({ products, isOwner }: ShopSectionProps) {
 
 function ShopCard({ product }: { product: ShopProduct }) {
   const Placeholder = product.isPhysical ? Package : BookOpen;
-  // The goals this guide was written for, shown as chips under its title.
-  const chips = GOALS.filter((goal) => product.goals.includes(goal.slug)).map((goal) => goal.name);
 
   return (
     <TiltCard className="h-full rounded-3xl">
@@ -160,7 +158,7 @@ function ShopCard({ product }: { product: ShopProduct }) {
         href={productPath(product.slug)}
         className="glass group flex h-full flex-col overflow-hidden rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
-        <div className="relative aspect-[4/5] overflow-hidden bg-surface-800">
+        <div className="relative aspect-[5/6] overflow-hidden bg-surface-800">
           {product.coverImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -194,28 +192,19 @@ function ShopCard({ product }: { product: ShopProduct }) {
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col gap-2 p-3.5 sm:p-5">
-          <h3 className="line-clamp-2 text-base font-semibold sm:text-lg leading-snug tracking-tight text-fg">{product.title}</h3>
-          {product.summary && <p className="line-clamp-2 text-xs leading-relaxed text-fg/70 sm:text-sm">{product.summary}</p>}
-          {chips.length > 0 && (
-            <ul aria-label="Written for" className="flex flex-wrap gap-1.5">
-              {chips.map((chip) => (
-                <li key={chip} className="rounded-full border border-fg/15 bg-fg/5 px-2.5 py-1 text-[11px] font-medium text-fg/75">
-                  {chip}
-                </li>
-              ))}
-            </ul>
+        <div className="flex flex-1 flex-col gap-1 p-3 sm:p-4">
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight text-fg sm:text-base">{product.title}</h3>
+          {product.summary && (
+            <p className="hidden text-xs leading-relaxed text-fg/65 sm:line-clamp-1 sm:text-sm">{product.summary}</p>
           )}
-          <div className="mt-auto flex flex-col gap-2.5 pt-3 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
-            <p className="text-lg font-semibold leading-tight tabular-nums text-accent-200">
-              {formatCurrency(product.price, product.currency)}
+          <div className="mt-auto flex flex-col gap-2 pt-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="flex flex-wrap items-baseline gap-x-1.5 leading-tight tabular-nums">
+              <span className="text-base font-semibold text-accent-200 sm:text-lg">{formatCurrency(product.price, product.currency)}</span>
               {product.wasPrice !== null && (
-                <s className="block text-sm font-normal text-fg/60">
-                  {formatCurrency(product.wasPrice, product.currency)}
-                </s>
+                <s className="text-xs text-fg/55">{formatCurrency(product.wasPrice, product.currency)}</s>
               )}
             </p>
-            <span className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-accent px-4 text-sm font-semibold text-surface transition-colors duration-300 group-hover:bg-accent-200">
+            <span className="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-full bg-accent px-3.5 text-sm font-semibold text-surface transition-colors duration-300 group-hover:bg-accent-200">
               {product.soldOut ? 'View' : 'Buy now'} <ArrowRight className="h-4 w-4" aria-hidden />
             </span>
           </div>

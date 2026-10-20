@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 
-/** Intrinsic size of /brand/tomevari-wordmark-80.webp (the supplied logo on its white band, with padding). */
-const WIDTH = 401;
+/** Intrinsic size of /brand/tomevari-wordmark-80.webp (the supplied navy pill logo, transparent corners). */
+const WIDTH = 267;
 const HEIGHT = 80;
 
 /**
@@ -19,7 +19,7 @@ export function BrandLogo({ className, priority = false }: { className?: string;
       height={HEIGHT}
       decoding="async"
       fetchPriority={priority ? 'high' : undefined}
-      className={cn('block h-9 w-auto select-none rounded-md', className)}
+      className={cn('block h-9 w-auto select-none', className)}
     />
   );
 }

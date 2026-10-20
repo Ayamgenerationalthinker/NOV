@@ -197,15 +197,17 @@ function ShopCard({ product }: { product: ShopProduct }) {
           {product.summary && (
             <p className="hidden text-xs leading-relaxed text-fg/65 sm:line-clamp-1 sm:text-sm">{product.summary}</p>
           )}
-          <div className="mt-auto flex flex-col gap-2 pt-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
             <p className="flex flex-wrap items-baseline gap-x-1.5 leading-tight tabular-nums">
               <span className="text-base font-semibold text-accent-200 sm:text-lg">{formatCurrency(product.price, product.currency)}</span>
               {product.wasPrice !== null && (
                 <s className="text-xs text-fg/55">{formatCurrency(product.wasPrice, product.currency)}</s>
               )}
             </p>
-            <span className="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-full bg-accent px-3.5 text-sm font-semibold text-surface transition-colors duration-300 group-hover:bg-accent-200">
-              {product.soldOut ? 'View' : 'Buy now'} <ArrowRight className="h-4 w-4" aria-hidden />
+            {/* Phones: a round arrow button beside the price keeps the card short. */}
+            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1 rounded-full bg-accent text-sm font-semibold text-surface transition-colors duration-300 group-hover:bg-accent-200 sm:w-auto sm:px-3.5">
+              <span className="sr-only sm:not-sr-only">{product.soldOut ? 'View' : 'Buy now'}</span>
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </span>
           </div>
         </div>

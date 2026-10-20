@@ -25,14 +25,15 @@ export function StoriesSection({ stories }: { stories: PublishedStory[] }) {
             <ul className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {stories.map((story) => (
                 <li key={story.id} data-reveal>
-                  <figure className="glass flex h-full flex-col rounded-3xl p-7">
-                    <Quote className="h-6 w-6 text-accent" aria-hidden />
-                    <blockquote className="mt-4 flex-1 whitespace-pre-line text-base leading-relaxed text-fg/85">
+                  {/* The section is light, so the card names the site's dark navy and blue directly. */}
+                  <figure className="flex h-full flex-col rounded-3xl border border-white/10 bg-gradient-to-br from-[#021f6b] to-[#001650] p-7 text-white shadow-[0_20px_50px_-20px_rgba(11,92,255,0.55)]">
+                    <Quote className="h-6 w-6 text-[#4d8dff]" aria-hidden />
+                    <blockquote className="mt-4 flex-1 whitespace-pre-line text-base leading-relaxed text-white/90">
                       {story.quote}
                     </blockquote>
                     <figcaption className="mt-6 text-sm">
-                      <span className="font-semibold text-fg">{story.name}</span>
-                      {story.context && <span className="block text-fg/70">{story.context}</span>}
+                      <span className="font-semibold text-white">{story.name}</span>
+                      {story.context && <span className="block text-[#9dbfff]">{story.context}</span>}
                     </figcaption>
                   </figure>
                 </li>

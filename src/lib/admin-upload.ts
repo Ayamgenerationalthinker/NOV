@@ -28,8 +28,8 @@ function safeName(name: string): string {
 }
 
 /**
- * Browsers (Windows especially) often report no type for .mov, .m4a and similar files. Stored as
- * a generic binary, some phones then refuse to play them, so fall back on the file extension.
+ * Browsers (Windows especially) often report no type for .mov, .docx and similar files. Stored as
+ * a generic binary, some phones then refuse to play or open them, so fall back on the file extension.
  */
 const TYPES_BY_EXTENSION: Record<string, string> = {
   pdf: 'application/pdf',
@@ -39,14 +39,21 @@ const TYPES_BY_EXTENSION: Record<string, string> = {
   m4v: 'video/mp4',
   mov: 'video/quicktime',
   webm: 'video/webm',
-  mp3: 'audio/mpeg',
-  m4a: 'audio/mp4',
-  aac: 'audio/aac',
-  wav: 'audio/wav',
-  ogg: 'audio/ogg',
-  oga: 'audio/ogg',
-  opus: 'audio/ogg',
-  flac: 'audio/flac',
+  // Templates
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xls: 'application/vnd.ms-excel',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ppt: 'application/vnd.ms-powerpoint',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  csv: 'text/csv',
+  txt: 'text/plain',
+  psd: 'image/vnd.adobe.photoshop',
+  ai: 'application/postscript',
+  svg: 'image/svg+xml',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
 };
 
 function contentTypeOf(file: File): string {

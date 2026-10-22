@@ -70,7 +70,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // 3. Generate signed download URL (valid for 15 minutes)
-    // ?view=1 opens PDFs, videos and audio in the browser's own player instead of saving them. The
+    // ?view=1 opens PDFs and videos in the browser's own player instead of saving them. The
     // player keeps fetching parts of the file while it plays and seeks, so that link lasts longer.
     const inline = new URL(request.url).searchParams.get('view') === '1';
     const downloadUrl = await storageService.getSignedDownloadUrl({

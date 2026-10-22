@@ -20,21 +20,13 @@ export function StoriesSection({ stories }: { stories: PublishedStory[] }) {
       <Container>
         {stories.length > 0 ? (
           <>
-            {/* Laid out like the "How it works" steps: heading on the left on desktop, cards on the right. */}
-            <div className="grid gap-8 sm:gap-10 lg:grid-cols-[1fr_1.2fr] lg:gap-20">
-              <SectionHeading
-                id="stories-title"
-                eyebrow="Reader stories"
-                title="In readers’ own words."
-                className="lg:sticky lg:top-28 lg:self-start"
-              />
-              <ol className="relative space-y-4 sm:space-y-6">
-                <span aria-hidden className="absolute bottom-6 left-5 top-6 w-px bg-fg/10 sm:left-6" />
-                {stories.map((story) => (
-                  <StoryCard key={story.id} story={story} />
-                ))}
-              </ol>
-            </div>
+            <SectionHeading id="stories-title" eyebrow="Reader stories" title="In readers’ own words." />
+            {/* One row of compact cards that scrolls sideways when there are more than fit. */}
+            <ul className="-mx-4 mt-8 flex snap-x snap-mandatory items-start gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:mt-10 sm:px-0 [scrollbar-width:thin]">
+              {stories.map((story) => (
+                <StoryCard key={story.id} story={story} />
+              ))}
+            </ul>
             <ShareStoryForm className="mt-12" />
           </>
         ) : (

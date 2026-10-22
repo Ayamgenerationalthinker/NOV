@@ -16,15 +16,15 @@ describe('Product Validators', () => {
     expect(valid.success).toBe(true);
   });
 
-  it('accepts only Ebook, Course and Video as digital categories', () => {
+  it('accepts only Ebook, Course, Video and Template as digital categories', () => {
     const base = { title: 'Sample Product', description: 'A valid description for the test product.', price: 10 };
-    for (const ok of [ProductType.EBOOK, ProductType.COURSE, ProductType.VIDEO]) {
+    for (const ok of [ProductType.EBOOK, ProductType.COURSE, ProductType.VIDEO, ProductType.TEMPLATE]) {
       expect(productCreateSchema.safeParse({ ...base, productType: ok }).success).toBe(true);
     }
-    for (const retired of [ProductType.GRAPHICS, ProductType.SOFTWARE, ProductType.AUDIO, ProductType.TEMPLATE]) {
+    for (const retired of [ProductType.GRAPHICS, ProductType.SOFTWARE, ProductType.AUDIO]) {
       const result = productCreateSchema.safeParse({ ...base, productType: retired });
       expect(result.success).toBe(false);
-      expect(result.error?.issues[0].message).toMatch(/Ebook, Course or Video/);
+      expect(result.error?.issues[0].message).toMatch(/Ebook, Course, Video or Template/);
     }
   });
 

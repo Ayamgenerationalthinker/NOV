@@ -135,7 +135,7 @@ export default function AdminProductsPage() {
                         </span>
                       )}
                       {needsFile && <span className="text-amber-400">No file uploaded</span>}
-                      {needsCategory && <span className="text-amber-400">Choose Ebook, Course or Video</span>}
+                      {needsCategory && <span className="text-amber-400">Choose Ebook, Course, Video or Template</span>}
                     </div>
                     {p.isPublished ? (
                       <a href={productPath(p.slug)} target="_blank" rel="noreferrer" className="block truncate text-xs text-emerald-400 underline">

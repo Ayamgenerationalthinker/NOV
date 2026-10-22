@@ -135,11 +135,11 @@ describe('ProductService', () => {
   describe('publishing', () => {
     it('blocks publishing a digital product saved under a retired category', async () => {
       vi.mocked(prisma.product.findUnique).mockResolvedValue(
-        dbProduct({ productKind: ProductKind.DIGITAL, productType: 'TEMPLATE' }) as any
+        dbProduct({ productKind: ProductKind.DIGITAL, productType: 'AUDIO' }) as any
       );
       vi.mocked(prisma.productFile.count).mockResolvedValue(1);
 
-      await expect(ProductService.togglePublish('prod-1', true)).rejects.toThrow(/Ebook, Course or Video/);
+      await expect(ProductService.togglePublish('prod-1', true)).rejects.toThrow(/Ebook, Course, Video or Template/);
       expect(prisma.product.update).not.toHaveBeenCalled();
     });
 

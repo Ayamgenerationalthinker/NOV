@@ -69,7 +69,7 @@ export const productCreateSchema = z.object({
     .nativeEnum(ProductType)
     .refine(
       (type) => isDigitalProductType(type) || type === PHYSICAL_PRODUCT_TYPE,
-      'Category must be Ebook, Course or Video'
+      'Category must be Ebook, Course, Video or Template'
     )
     .default(ProductType.EBOOK),
   features: z.array(z.string()).default([]),

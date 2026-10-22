@@ -95,7 +95,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
   );
   const [description, setDescription] = React.useState(initialProduct?.description ?? '');
   const [whatYouGet, setWhatYouGet] = React.useState((initialProduct?.whatsIncluded ?? []).join('\n'));
-  // Products saved under a retired category (Template, Audio...) start with no choice, so the owner must pick one.
+  // Products saved under a retired category (Audio, Software...) start with no choice, so the owner must pick one.
   const [productType, setProductType] = React.useState<string>(
     !initialProduct ? 'EBOOK' : isDigitalProductType(initialProduct.productType) ? initialProduct.productType : ''
   );
@@ -170,7 +170,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
   const validate = (publish: boolean): string | null => {
     if (!kind) return 'Choose Digital or Physical first.';
     if (title.trim().length < 3) return 'Give your product a title (at least 3 characters).';
-    if (kind === 'DIGITAL' && !isDigitalProductType(productType)) return 'Choose a category: Ebook, Course or Video.';
+    if (kind === 'DIGITAL' && !isDigitalProductType(productType)) return 'Choose a category: Ebook, Course, Video or Template.';
     const priceNum = Number(price);
     if (price === '' || Number.isNaN(priceNum) || priceNum < 0) return 'Enter a valid price in GH₵.';
     if (salePrice !== '' && (Number.isNaN(Number(salePrice)) || Number(salePrice) >= priceNum)) {
@@ -381,7 +381,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
             </select>
             {hasLegacyType && (
               <p className="mt-1.5 text-xs text-amber-400">
-                This product used a category that is no longer offered. Pick Ebook, Course or Video to save it.
+                This product used a category that is no longer offered. Pick Ebook, Course, Video or Template to save it.
               </p>
             )}
           </div>
@@ -467,7 +467,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
       {!isPhysical && (
         <section className="space-y-3">
           <span className={labelClass}>File buyers receive</span>
-          <p className="text-xs text-stone-500 -mt-1">PDF, EPUB, ZIP… Buyers download it right after paying and get a link by email.</p>
+          <p className="text-xs text-stone-500 -mt-1">PDF, EPUB, ZIP, MP4, Word, Excel, PowerPoint… Buyers download it right after paying and get a link by email.</p>
           {existingFiles.map((f) => (
             <div key={f.id} className="flex items-center justify-between gap-3 rounded-xl border border-stone-800 bg-stone-900 px-3 py-2.5">
               <div className="flex items-center gap-2 min-w-0">

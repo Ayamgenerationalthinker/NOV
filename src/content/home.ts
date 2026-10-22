@@ -19,7 +19,7 @@ export const GROWTH_STAGES: GrowthStage[] = [
 
 export const HERO_FACTS = [
   { title: 'Instant download', text: 'Your files are ready right after you pay.' },
-  { title: 'Mobile Money & card', text: 'Secure checkout in GH₵.' },
+  { title: 'Pay in any currency', text: 'Mobile Money or card, from anywhere.' },
   { title: 'No account needed', text: 'Buy as a guest in a few taps.' },
 ] as const;
 

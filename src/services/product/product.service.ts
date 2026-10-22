@@ -244,7 +244,7 @@ export class ProductService {
   ) {
     if (productKind === ProductKind.DIGITAL) {
       if (!isDigitalProductType(productType)) {
-        throw new ProductValidationError('Choose a category (Ebook, Course or Video) before publishing this product.');
+        throw new ProductValidationError('Choose a category (Ebook, Course, Video or Template) before publishing this product.');
       }
       const fileCount = await tx.productFile.count({ where: { productId } });
       if (fileCount === 0) {
@@ -254,13 +254,13 @@ export class ProductService {
   }
 
   /**
-   * The category to store: digital products must use a current one (Ebook, Course, Video);
+   * The category to store: digital products must use a current one (Ebook, Course, Video, Template);
    * physical items always get the internal physical type.
    */
   private static categoryForKind(productKind: ProductKind, productType: ProductType | undefined): ProductType {
     if (productKind === ProductKind.PHYSICAL) return PHYSICAL_PRODUCT_TYPE;
     if (!isDigitalProductType(productType)) {
-      throw new ProductValidationError('Category must be Ebook, Course or Video.');
+      throw new ProductValidationError('Category must be Ebook, Course, Video or Template.');
     }
     return productType as ProductType;
   }

@@ -8,7 +8,7 @@ export const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'
 export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif'];
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
 
-/** Delivery files (ebooks, zips, audio, video...). Large files upload straight to storage. */
+/** Delivery files (ebooks, templates, zips, video...). Large files upload straight to storage. */
 export const MAX_PRODUCT_FILE_BYTES = 500 * 1024 * 1024; // 500 MB
 
 export function isMediaKey(key: string): boolean {

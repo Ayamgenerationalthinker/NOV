@@ -27,6 +27,34 @@ function safeName(name: string): string {
   return name.normalize('NFKD').replace(/[^A-Za-z0-9._-]+/g, '_').slice(-120) || 'file';
 }
 
+/**
+ * Browsers (Windows especially) often report no type for .mov, .m4a and similar files. Stored as
+ * a generic binary, some phones then refuse to play them, so fall back on the file extension.
+ */
+const TYPES_BY_EXTENSION: Record<string, string> = {
+  pdf: 'application/pdf',
+  epub: 'application/epub+zip',
+  zip: 'application/zip',
+  mp4: 'video/mp4',
+  m4v: 'video/mp4',
+  mov: 'video/quicktime',
+  webm: 'video/webm',
+  mp3: 'audio/mpeg',
+  m4a: 'audio/mp4',
+  aac: 'audio/aac',
+  wav: 'audio/wav',
+  ogg: 'audio/ogg',
+  oga: 'audio/ogg',
+  opus: 'audio/ogg',
+  flac: 'audio/flac',
+};
+
+function contentTypeOf(file: File): string {
+  if (file.type) return file.type;
+  const ext = file.name.toLowerCase().split('.').pop() ?? '';
+  return TYPES_BY_EXTENSION[ext] ?? 'application/octet-stream';
+}
+
 async function readError(res: Response, fallback: string): Promise<string> {
   try {
     const data = await res.json();
@@ -41,7 +69,7 @@ function putToSignedUrl(url: string, file: File, onProgress?: (percentage: numbe
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('PUT', url);
-    xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+    xhr.setRequestHeader('Content-Type', contentTypeOf(file));
     xhr.setRequestHeader('x-upsert', 'true');
     if (onProgress) {
       xhr.upload.onprogress = (e) => {
@@ -77,7 +105,7 @@ async function uploadViaSignedUrl(
   const res = await fetch('/api/admin/uploads/sign', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ kind, fileName: file.name, contentType: file.type, size: file.size, productId }),
+    body: JSON.stringify({ kind, fileName: file.name, contentType: contentTypeOf(file), size: file.size, productId }),
   });
   if (!res.ok) throw new Error(await readError(res, 'Upload could not start'));
   const { uploadUrl, key } = (await res.json()) as { uploadUrl: string; key: string };
@@ -124,7 +152,7 @@ export async function uploadProductFile(
       const blob = await upload(`products/${productId}/${safeName(file.name)}`, file, {
         access: 'private',
         handleUploadUrl: '/api/admin/uploads',
-        contentType: file.type || 'application/octet-stream',
+        contentType: contentTypeOf(file),
         multipart: file.size > 50 * 1024 * 1024,
         onUploadProgress: onProgress ? ({ percentage }) => onProgress(percentage) : undefined,
       });

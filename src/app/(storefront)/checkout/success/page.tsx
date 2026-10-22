@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { BookOpen, CheckCircle2, Download, FileText, Loader2, Mail, PlayCircle, Truck, Clock } from 'lucide-react';
+import { BookOpen, CheckCircle2, Download, FileText, Headphones, Loader2, Mail, PlayCircle, Truck, Clock } from 'lucide-react';
 import { formatCurrency, formatFileSize } from '@/lib/utils';
 import { productPath } from '@/lib/product-url';
 import { trackEvent } from '@/lib/track';
@@ -41,17 +41,18 @@ const POLL_LIMIT = 20;
 /** Every few polls, ask the server to re-verify with the payment provider (in case no webhook arrives). */
 const RECHECK_EVERY = 4;
 
-type ViewKind = 'pdf' | 'video' | null;
+type ViewKind = 'pdf' | 'video' | 'audio' | null;
 
 function viewKind(fileName: string): ViewKind {
   const ext = fileName.toLowerCase().split('.').pop() ?? '';
   if (ext === 'pdf') return 'pdf';
   if (['mp4', 'webm', 'm4v', 'mov'].includes(ext)) return 'video';
+  if (['mp3', 'm4a', 'aac', 'wav', 'ogg', 'oga', 'opus', 'flac'].includes(ext)) return 'audio';
   return null;
 }
 
 /**
- * Opens a purchased PDF or video in a fixed-height viewer. The source is the order's download
+ * Opens a purchased PDF, video or audio file in the page. The source is the order's download
  * route, which checks payment and returns a short-lived signed link, so nothing is public.
  */
 function FileViewer({ src, kind, title, onClose }: { src: string; kind: Exclude<ViewKind, null>; title: string; onClose: () => void }) {
@@ -61,7 +62,7 @@ function FileViewer({ src, kind, title, onClose }: { src: string; kind: Exclude<
         <p className="truncate text-sm text-stone-300">{title}</p>
         <div className="flex shrink-0 items-center gap-3 text-sm">
           <a href={src} target="_blank" rel="noopener noreferrer" className="text-amber-300 underline">
-            Full screen
+            {kind === 'audio' ? 'Open' : 'Full screen'}
           </a>
           <button type="button" onClick={onClose} className="text-stone-400 hover:text-white">
             Close
@@ -74,8 +75,10 @@ function FileViewer({ src, kind, title, onClose }: { src: string; kind: Exclude<
           title={title}
           className="h-[70vh] min-h-80 w-full rounded-xl border border-stone-800 bg-white"
         />
-      ) : (
+      ) : kind === 'video' ? (
         <video src={src} controls playsInline preload="metadata" className="aspect-video w-full rounded-xl border border-stone-800 bg-black" />
+      ) : (
+        <audio src={src} controls preload="metadata" className="w-full" />
       )}
       {kind === 'pdf' && (
         <p className="text-xs text-stone-500">If the reader stays blank, use “Full screen” or download the file.</p>
@@ -259,8 +262,14 @@ function SuccessContent() {
                             }}
                             className="flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl border border-stone-700 px-4 font-semibold text-stone-100 hover:bg-stone-900"
                           >
-                            {kind === 'pdf' ? <BookOpen className="h-4 w-4" aria-hidden /> : <PlayCircle className="h-4 w-4" aria-hidden />}
-                            {kind === 'pdf' ? 'Read online' : 'Watch'}
+                            {kind === 'pdf' ? (
+                              <BookOpen className="h-4 w-4" aria-hidden />
+                            ) : kind === 'audio' ? (
+                              <Headphones className="h-4 w-4" aria-hidden />
+                            ) : (
+                              <PlayCircle className="h-4 w-4" aria-hidden />
+                            )}
+                            {kind === 'pdf' ? 'Read online' : kind === 'audio' ? 'Listen' : 'Watch'}
                           </button>
                         )}
                       </div>

@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { BookOpen, CheckCircle2, Download, FileText, Loader2, Mail, PlayCircle, Truck, Clock } from 'lucide-react';
 import { formatCurrency, formatFileSize } from '@/lib/utils';
 import { productPath } from '@/lib/product-url';
+import { trackEvent } from '@/lib/track';
 
 interface OrderReceipt {
   id: string;
@@ -104,6 +105,20 @@ function SuccessContent() {
       setChecking(false);
     }
   };
+
+  // Count each paid order once in the owner's visitor activity, even if the receipt is reopened.
+  const paidOrderNumber = order?.status === 'PAID' ? order.orderNumber : null;
+  React.useEffect(() => {
+    if (!paidOrderNumber) return;
+    const key = `tv_paid_${paidOrderNumber}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+    } catch {
+      // Private mode: may count twice, which is fine.
+    }
+    trackEvent('purchase', paidOrderNumber);
+  }, [paidOrderNumber]);
 
   React.useEffect(() => {
     if (!orderId) {

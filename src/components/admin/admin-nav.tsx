@@ -19,6 +19,7 @@ import {
   LogOut,
   X,
   MessageSquareQuote,
+  Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/layout/brand-logo';
@@ -33,6 +34,7 @@ const SECONDARY = [
   { label: 'Coupons', href: '/admin/coupons', icon: Tag },
   { label: 'Stories', href: '/admin/stories', icon: MessageSquareQuote },
   { label: 'Customers', href: '/admin/customers', icon: Users },
+  { label: 'Visitors', href: '/admin/visitors', icon: Eye },
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { label: 'Stock', href: '/admin/inventory', icon: Boxes },
   { label: 'Deliveries', href: '/admin/fulfillments', icon: Truck },

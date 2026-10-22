@@ -8,6 +8,7 @@ import { GOALS } from '@/content/home';
 import { productPath } from '@/lib/product-url';
 import { DIGITAL_PRODUCT_TYPE_OPTIONS, type DigitalProductType } from '@/lib/product-types';
 import { cn, formatCurrency } from '@/lib/utils';
+import { trackEvent } from '@/lib/track';
 import { useGoal } from './goal-context';
 import { primaryButton, SectionHeading } from './primitives';
 import { TiltCard } from './tilt-card';
@@ -252,6 +253,7 @@ function NotifyForm() {
         const data = await res.json().catch(() => null);
         throw new Error(data?.error || 'Something went wrong. Please try again.');
       }
+      trackEvent('newsletter');
       setState('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');

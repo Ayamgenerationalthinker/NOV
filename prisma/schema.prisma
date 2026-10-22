@@ -739,3 +739,26 @@ model Testimonial {
 
   @@index([isPublished, publishedAt])
 }
+
+/// One page view or action from a shop visitor. Visitors are anonymous: a random id kept in
+/// their browser, never an IP address. The owner's own visits are not recorded.
+model VisitEvent {
+  id        String   @id @default(cuid())
+  visitorId String
+  sessionId String
+  /// page_view, buy_click, checkout_submit, purchase, newsletter, story
+  type      String
+  path      String
+  /// e.g. the product slug or order number the action was about
+  label     String?
+  /// Where the visit came from: utm_source or the referring site
+  source    String?
+  country   String?
+  city      String?
+  device    String?
+  browser   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([visitorId, createdAt])
+}

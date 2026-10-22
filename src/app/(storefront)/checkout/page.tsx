@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { trackEvent } from '@/lib/track';
 import { AlertCircle, ArrowLeft, Loader2, Lock, Tag, X } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { formatCurrency } from '@/lib/utils';
@@ -301,6 +302,11 @@ function CheckoutForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialCoupon, subtotal]);
 
+  const onOrderCreated = React.useCallback(
+    (orderNumber?: string) => trackEvent('checkout_submit', orderNumber || productSlug || 'cart'),
+    [productSlug]
+  );
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!lines || lines.length === 0 || submitting) return;
@@ -369,6 +375,7 @@ function CheckoutForm() {
 
       if (!productSlug) cart.clearCart();
 
+      onOrderCreated(data.orderNumber);
       if (data.paymentUrl) {
         window.location.href = data.paymentUrl;
       } else {

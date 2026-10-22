@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { CheckCircle2, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { trackEvent } from '@/lib/track';
 import { primaryButton } from './primitives';
 
 const field =
@@ -25,6 +26,7 @@ export function ShareStoryForm({ className }: { className?: string }) {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || 'We could not send your testimony. Please try again.');
+      trackEvent('story');
       setStatus('sent');
     } catch (err) {
       setError((err as Error).message);

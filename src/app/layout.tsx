@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { SiteChrome } from '@/components/layout/site-chrome';
 import { env } from '@/lib/env';
+import { VisitTracker } from '@/components/analytics/visit-tracker';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
@@ -46,6 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${inter.variable}`}>
       <body className="min-h-screen flex flex-col bg-stone-950 text-stone-100 antialiased selection:bg-blue-300 selection:text-stone-950">
+        <VisitTracker />
         <CartProvider>
           <SiteChrome header={<Header />} footer={<Footer />}>
             {children}

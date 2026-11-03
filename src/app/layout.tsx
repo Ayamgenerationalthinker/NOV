@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Hanken_Grotesk, Inter, Newsreader } from 'next/font/google';
+import { Hanken_Grotesk, Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -8,7 +8,7 @@ import { env } from '@/lib/env';
 import { VisitTracker } from '@/components/analytics/visit-tracker';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
-const newsreader = Newsreader({ subsets: ['latin'], variable: '--font-newsreader', display: 'swap' });
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-jakarta', display: 'swap' });
 const hanken = Hanken_Grotesk({ subsets: ['latin'], variable: '--font-hanken', display: 'swap' });
 
 export const metadata: Metadata = {
@@ -47,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${newsreader.variable} ${hanken.variable}`}>
+    <html lang="en" className={`dark ${inter.variable} ${jakarta.variable} ${hanken.variable}`}>
       <body className="min-h-screen flex flex-col bg-stone-950 text-stone-100 antialiased selection:bg-blue-300 selection:text-stone-950">
         <VisitTracker />
         <CartProvider>

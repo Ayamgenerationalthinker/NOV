@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircle, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { isSafeRedirect } from '@/lib/safe-redirect';
+import { AuthShell, authButton, authField, authLabel } from '@/components/auth/auth-shell';
 
-const fieldClass =
-  'w-full rounded-xl border border-stone-700 bg-stone-900 px-3.5 py-3 text-base text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-300/60';
+const fieldClass = authField;
 
 function LoginForm() {
   const router = useRouter();
@@ -52,14 +52,14 @@ function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-900 bg-red-950/50 p-3 text-sm text-red-200">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+        <div role="alert" className="flex items-start gap-2 rounded-2xl border border-[#b3261e]/30 bg-[#fcebea] p-3 text-[15px] text-[#b3261e]">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden />
           <span>{error}</span>
         </div>
       )}
 
       <div>
-        <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-stone-300">Email</label>
+        <label htmlFor="email" className={authLabel}>Email</label>
         <input
           id="email"
           type="email"
@@ -74,8 +74,8 @@ function LoginForm() {
 
       <div>
         <div className="mb-1.5 flex items-center justify-between">
-          <label htmlFor="password" className="text-sm font-medium text-stone-300">Password</label>
-          <Link href="/forgot-password" className="text-xs text-stone-400 hover:text-white">Forgot password?</Link>
+          <label htmlFor="password" className="text-[15px] font-semibold text-[#001650]">Password</label>
+          <Link href="/forgot-password" className="flex min-h-11 items-center text-sm font-semibold text-[#0848e0] hover:underline">Forgot password?</Link>
         </div>
         <div className="relative">
           <input
@@ -91,9 +91,9 @@ function LoginForm() {
             type="button"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-stone-400 hover:text-white"
+            className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-[#46557d] hover:text-[#001650]"
           >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showPassword ? <EyeOff className="h-5 w-5" aria-hidden /> : <Eye className="h-5 w-5" aria-hidden />}
           </button>
         </div>
       </div>
@@ -101,9 +101,9 @@ function LoginForm() {
       <button
         type="submit"
         disabled={isLoading}
-        className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-amber-300 font-semibold text-stone-950 hover:bg-amber-200 disabled:opacity-60"
+        className={authButton}
       >
-        {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+        {isLoading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
         Sign in
       </button>
     </form>
@@ -112,20 +112,19 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm space-y-8">
-        <div className="space-y-2 text-center">
-          <Link href="/" className="font-serif text-xl font-semibold tracking-[0.3em] text-stone-100">TOMEVARI</Link>
-          <h1 className="text-2xl font-semibold text-white">Sign in</h1>
-          <p className="text-sm text-stone-400">Welcome back.</p>
-        </div>
-        <React.Suspense fallback={<div className="h-64" />}>
-          <LoginForm />
-        </React.Suspense>
-        <p className="text-center text-xs text-stone-500">
-          Buying something? You don’t need an account. <Link href="/" className="text-stone-300 underline">Go to the shop</Link>
-        </p>
-      </div>
-    </div>
+    <AuthShell
+      title="Welcome back"
+      subtitle="Sign in to manage your guides, orders and payments."
+      footer={
+        <>
+          Buying a guide? You don’t need an account.{' '}
+          <Link href="/products" className="font-semibold text-[#0848e0] underline underline-offset-4">Go to the shop</Link>
+        </>
+      }
+    >
+      <React.Suspense fallback={<div className="h-64" />}>
+        <LoginForm />
+      </React.Suspense>
+    </AuthShell>
   );
 }

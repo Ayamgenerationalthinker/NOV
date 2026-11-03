@@ -4,7 +4,7 @@ import { formatCurrency } from '@/lib/utils';
 
 import React, { useState } from 'react';
 import { DailySalesData } from '@/services/admin/analytics.service';
-import { BarChart2, TrendingUp, Calendar } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 interface AnalyticsChartProps {
   initialData: DailySalesData[];
@@ -24,102 +24,77 @@ export function AnalyticsChart({
   const maxRevenue = Math.max(...data.map((d) => d.revenue), 10);
   const totalRevenue = data.reduce((sum, d) => sum + d.revenue, 0);
   const totalOrders = data.reduce((sum, d) => sum + d.orderCount, 0);
+  const shown = hoveredPoint ?? null;
 
   return (
-    <div className="rounded-xl border border-stone-800 bg-stone-900/60 p-6 space-y-6">
-      {/* Chart Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white">Revenue & Sales Velocity</h3>
-              <p className="text-[11px] text-stone-400">
-                Daily transaction volume for trailing {timeframe} days
-              </p>
-            </div>
+    <div className="rounded-3xl border border-[#e1e7f4] bg-[#ffffff] p-5 shadow-[0_1px_2px_rgba(0,22,80,0.04)] sm:p-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <div className="flex items-center gap-3">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e7efff] text-[#0b5cff]">
+            <TrendingUp className="h-5 w-5" aria-hidden />
+          </span>
+          <div>
+            <h2 className="font-heading text-lg font-bold text-[#001650]">Sales</h2>
+            <p className="text-sm text-[#46557d]">Paid orders over the last {timeframe} days</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center rounded-lg bg-stone-950/80 p-0.5 border border-stone-800 text-xs">
-            {(['7', '14', '30'] as const).map((tf) => (
-              <button
-                key={tf}
-                type="button"
-                onClick={() => setTimeframe(tf)}
-                className={`px-3 py-1 rounded-md font-medium transition-all ${
-                  timeframe === tf
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-stone-400 hover:text-white'
-                }`}
-              >
-                {tf}D
-              </button>
-            ))}
-          </div>
-
-          <div className="hidden sm:block text-right border-l border-stone-800 pl-3">
-            <div className="text-xs font-bold text-white">
-              ${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-            <div className="text-[10px] text-stone-400">{totalOrders} orders</div>
-          </div>
+        <div role="group" aria-label="Time range" className="flex w-fit items-center rounded-full bg-[#f3f6fd] p-1 text-sm">
+          {(['7', '14', '30'] as const).map((tf) => (
+            <button
+              key={tf}
+              type="button"
+              aria-pressed={timeframe === tf}
+              onClick={() => setTimeframe(tf)}
+              className={`min-h-9 rounded-full px-3.5 font-semibold transition-colors ${
+                timeframe === tf ? 'bg-[#0b5cff] text-[#ffffff] shadow-sm' : 'text-[#46557d] hover:text-[#001650]'
+              }`}
+            >
+              {tf} days
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* SVG Bar / Area Chart */}
-      <div className="relative pt-6 pb-2">
-        {/* Tooltip */}
-        {hoveredPoint && (
-          <div className="absolute top-0 right-4 rounded-lg bg-stone-800/95 border border-stone-700 px-3 py-1.5 text-xs text-white shadow-lg pointer-events-none flex items-center gap-3 z-10 backdrop-blur-sm">
-            <span className="text-stone-400 text-[11px]">{hoveredPoint.date}</span>
-            <span className="font-bold text-emerald-400">
-              {formatCurrency(hoveredPoint.revenue, currency)}
-            </span>
-            <span className="text-stone-300 text-[11px]">
-              {hoveredPoint.orderCount} {hoveredPoint.orderCount === 1 ? 'order' : 'orders'}
-            </span>
-          </div>
-        )}
+      <div className="mt-5 flex flex-wrap items-end gap-x-8 gap-y-2">
+        <div>
+          <p className="text-sm text-[#46557d]">{shown ? shown.date : 'Revenue'}</p>
+          <p className="font-heading text-[28px] font-extrabold tabular-nums text-[#001650]">
+            {formatCurrency(shown ? shown.revenue : totalRevenue, currency)}
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-[#46557d]">Orders</p>
+          <p className="font-heading text-[28px] font-extrabold tabular-nums text-[#001650]">{shown ? shown.orderCount : totalOrders}</p>
+        </div>
+      </div>
 
-        <div className="h-48 w-full flex items-end gap-1 sm:gap-2">
-          {data.map((point) => {
-            const heightPercent = Math.max(6, (point.revenue / maxRevenue) * 100);
-            const isHovered = hoveredPoint?.date === point.date;
-
-            return (
+      <div className="mt-5 flex h-48 w-full items-end gap-1 sm:gap-1.5">
+        {data.map((point) => {
+          const heightPercent = Math.max(4, (point.revenue / maxRevenue) * 100);
+          const isHovered = hoveredPoint?.date === point.date;
+          return (
+            <div
+              key={point.date}
+              className="flex h-full flex-1 cursor-pointer flex-col justify-end"
+              onMouseEnter={() => setHoveredPoint(point)}
+              onMouseLeave={() => setHoveredPoint(null)}
+              title={`${point.date}: ${formatCurrency(point.revenue, currency)}, ${point.orderCount} order${point.orderCount === 1 ? '' : 's'}`}
+            >
               <div
-                key={point.date}
-                className="flex-1 flex flex-col items-center h-full justify-end group relative cursor-pointer"
-                onMouseEnter={() => setHoveredPoint(point)}
-                onMouseLeave={() => setHoveredPoint(null)}
-              >
-                <div
-                  style={{ height: `${heightPercent}%` }}
-                  className={`w-full rounded-t-sm transition-all duration-200 ${
-                    point.revenue > 0
-                      ? isHovered
-                        ? 'bg-blue-400 shadow-md shadow-blue-500/50'
-                        : 'bg-blue-600/80 hover:bg-blue-500'
-                      : 'bg-stone-800/40 hover:bg-stone-700/60'
-                  }`}
-                />
-              </div>
-            );
-          })}
-        </div>
-
-        {/* X-Axis Labels */}
-        <div className="flex justify-between items-center text-[10px] text-stone-500 mt-2 border-t border-stone-800/80 pt-2 font-mono">
-          <span>{data[0]?.date}</span>
-          <span className="hidden sm:inline">
-            {data[Math.floor(data.length / 2)]?.date}
-          </span>
-          <span>{data[data.length - 1]?.date}</span>
-        </div>
+                style={{ height: `${heightPercent}%` }}
+                className={`w-full rounded-t-md transition-colors duration-200 ${
+                  point.revenue > 0 ? (isHovered ? 'bg-[#001650]' : 'bg-gradient-to-t from-[#0b5cff] to-[#5b93ff]') : 'bg-[#e7efff]'
+                }`}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-2 flex items-center justify-between border-t border-[#e1e7f4] pt-2 text-xs tabular-nums text-[#56668f]">
+        <span>{data[0]?.date}</span>
+        <span className="hidden sm:inline">{data[Math.floor(data.length / 2)]?.date}</span>
+        <span>{data[data.length - 1]?.date}</span>
       </div>
     </div>
   );

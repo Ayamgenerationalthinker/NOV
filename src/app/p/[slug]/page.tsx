@@ -120,7 +120,7 @@ export default async function ProductLandingPage({ params, searchParams }: Produ
             <div className="min-w-0 space-y-5">
               <div>
                 {category && <span className="rounded-md bg-brand-soft px-2 py-1 text-xs font-bold tracking-wide text-brand-hover">{category}</span>}
-                <h1 className="mt-3 break-words font-serif text-[38px] font-medium leading-[1.1] text-ink lg:text-[52px] lg:leading-[1.08]">{product.title}</h1>
+                <h1 className="mt-3 break-words font-heading text-[38px] font-extrabold tracking-[-0.02em] leading-[1.1] text-ink lg:text-[52px] lg:leading-[1.08]">{product.title}</h1>
                 {summary && <p className="mt-3 text-base leading-relaxed text-ink-soft lg:text-[19px]">{summary}</p>}
                 {copy?.audience && <p className="mt-2 text-base text-ink">{copy.audience}.</p>}
                 {hasReviews && (

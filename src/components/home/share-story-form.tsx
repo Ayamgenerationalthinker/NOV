@@ -7,7 +7,7 @@ import { trackEvent } from '@/lib/track';
 import { primaryButton } from './primitives';
 
 const field =
-  'min-h-12 w-full rounded-[10px] border border-line-strong bg-card px-3.5 py-3 text-base text-ink placeholder:text-ink-soft';
+  'min-h-12 w-full rounded-2xl border border-line-strong bg-card px-3.5 py-3 text-base text-ink placeholder:text-ink-soft';
 
 /** Testimony box shown straight on the page: write it, add name and email, send. The owner publishes it later. */
 export function ShareStoryForm({ className }: { className?: string }) {
@@ -36,7 +36,7 @@ export function ShareStoryForm({ className }: { className?: string }) {
 
   if (status === 'sent') {
     return (
-      <div role="status" className={cn('max-w-xl rounded-[14px] border border-line bg-card px-6 py-8 text-center', className)}>
+      <div role="status" className={cn('max-w-xl rounded-3xl border border-line bg-card px-6 py-8 text-center', className)}>
         <CheckCircle2 className="mx-auto h-8 w-8 text-ok" aria-hidden />
         <p className="mt-3 text-lg font-bold text-ink">Thank you for sharing.</p>
         <p className="mt-1 text-sm text-ink-soft">Your testimony will appear here once we have reviewed it.</p>
@@ -45,7 +45,7 @@ export function ShareStoryForm({ className }: { className?: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className={cn('max-w-xl space-y-3 rounded-[14px] border border-line bg-card p-4 text-left sm:p-5', className)}>
+    <form onSubmit={onSubmit} className={cn('max-w-xl space-y-3 rounded-3xl border border-line bg-card p-5 text-left sm:p-6', className)}>
       <label htmlFor="story-quote" className="sr-only">
         Your testimony
       </label>

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Briefcase, Globe, Laptop, PenTool, PiggyBank, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Briefcase, Globe, Laptop, PenTool, PiggyBank, type LucideIcon } from 'lucide-react';
 import { GOALS } from '@/content/home';
 import { pageWidth, SectionHeading } from './primitives';
 
@@ -14,10 +14,10 @@ const ICONS: Record<string, LucideIcon> = {
 /** Each tile opens the shop filtered to that goal. */
 export function GoalTiles({ counts }: { counts: Record<string, number> }) {
   return (
-    <section id="goals" aria-labelledby="goals-title" className="bg-band py-8 lg:py-10">
+    <section id="goals" aria-labelledby="goals-title" className="bg-paper py-14 lg:py-20">
       <div className={pageWidth}>
-        <SectionHeading id="goals-title" title="What do you want to do next?" text="Choose a goal to see the guides written for it." />
-        <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:gap-4">
+        <SectionHeading id="goals-title" eyebrow="Browse by goal" title="What do you want to do next?" text="Choose a goal to see the guides written for it." />
+        <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:gap-4">
           {GOALS.map((goal) => {
             const Icon = ICONS[goal.slug] ?? Briefcase;
             const count = counts[goal.slug] ?? 0;
@@ -25,19 +25,18 @@ export function GoalTiles({ counts }: { counts: Record<string, number> }) {
               <li key={goal.slug}>
                 <Link
                   href={`/products?goal=${goal.slug}`}
-                  className="flex h-full min-h-11 items-center gap-3 rounded-[14px] border border-line bg-card p-3 transition-colors hover:border-ink lg:flex-col lg:items-start lg:p-4"
+                  className="group flex h-full min-h-11 items-center gap-4 rounded-3xl border border-line bg-card p-4 transition duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_20px_40px_-24px_rgba(0,22,80,0.35)] motion-reduce:hover:translate-y-0 lg:flex-col lg:items-start lg:p-5"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-brand-soft text-brand-hover">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-ink text-white shadow-[0_10px_20px_-10px_rgba(11,92,255,0.8)]">
                     <Icon className="h-5 w-5" aria-hidden />
                   </span>
-                  <span className="min-w-0">
-                    <span className="block text-[17px] font-bold leading-snug text-ink">{goal.name}</span>
-                    <span className="mt-0.5 block text-sm leading-normal text-ink-soft">{goal.blurb}</span>
-                    {count > 0 && (
-                      <span className="mt-1 block text-[13px] font-semibold text-brand-hover">
-                        {count} guide{count === 1 ? '' : 's'}
-                      </span>
-                    )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-heading text-[17px] font-bold leading-snug text-ink">{goal.name}</span>
+                    <span className="mt-1 block text-sm leading-normal text-ink-soft">{goal.blurb}</span>
+                    <span className="mt-2 flex items-center gap-1 text-sm font-bold text-brand-hover">
+                      {count > 0 ? `${count} guide${count === 1 ? '' : 's'}` : 'See guides'}
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                    </span>
                   </span>
                 </Link>
               </li>

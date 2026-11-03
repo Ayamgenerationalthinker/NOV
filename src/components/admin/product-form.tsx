@@ -74,7 +74,7 @@ interface ProductFormProps {
 }
 
 const fieldClass =
-  'w-full rounded-xl border border-stone-800 bg-stone-900 px-3.5 py-3 text-base sm:text-sm text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60';
+  'w-full rounded-xl border border-stone-800 bg-stone-900 px-3.5 py-3 text-base sm:text-sm text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-blue-500/60';
 const labelClass = 'block text-xs font-semibold text-stone-300 mb-1.5';
 const optionalTag = <span className="ml-1 font-normal text-stone-500">(optional)</span>;
 
@@ -317,9 +317,9 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
               key={k}
               type="button"
               onClick={() => setKind(k)}
-              className="text-left rounded-2xl border border-stone-800 bg-stone-900/70 p-5 hover:border-emerald-500/60 hover:bg-stone-900 transition-colors"
+              className="text-left rounded-2xl border border-stone-800 bg-stone-900/70 p-5 hover:border-blue-500/60 hover:bg-stone-900 transition-colors"
             >
-              <Icon className="w-6 h-6 text-emerald-400 mb-3" />
+              <Icon className="w-6 h-6 text-blue-400 mb-3" />
               <div className="font-semibold text-white">{t}</div>
               <div className="text-xs text-stone-400 mt-1">{text}</div>
             </button>
@@ -398,7 +398,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
                   type="button"
                   aria-pressed={on}
                   onClick={() => setGoals(on ? goals.filter((g) => g !== goal.slug) : [...goals, goal.slug])}
-                  className={`rounded-full border px-3.5 py-2 text-sm ${on ? 'border-emerald-500 bg-emerald-500/15 text-emerald-200' : 'border-stone-800 bg-stone-900 text-stone-300'}`}
+                  className={`rounded-full border px-3.5 py-2 text-sm ${on ? 'border-blue-500 bg-blue-500/15 text-blue-200' : 'border-stone-800 bg-stone-900 text-stone-300'}`}
                 >
                   {goal.name}
                 </button>
@@ -471,7 +471,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
           {existingFiles.map((f) => (
             <div key={f.id} className="flex items-center justify-between gap-3 rounded-xl border border-stone-800 bg-stone-900 px-3 py-2.5">
               <div className="flex items-center gap-2 min-w-0">
-                <FileText className="w-4 h-4 shrink-0 text-emerald-400" />
+                <FileText className="w-4 h-4 shrink-0 text-blue-400" />
                 <span className="truncate text-sm text-stone-200">{f.fileName}</span>
                 <span className="shrink-0 text-xs text-stone-500">{formatFileSize(f.fileSize)}</span>
               </div>
@@ -481,7 +481,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
             </div>
           ))}
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-stone-700 bg-stone-900/50 px-4 py-4 text-sm text-stone-300">
-            <Upload className="w-4 h-4 text-emerald-400" />
+            <Upload className="w-4 h-4 text-blue-400" />
             <span className="truncate">
               {uploading?.startsWith('file:')
                 ? `Uploading ${pendingFile?.name ?? 'file'}… ${uploading.slice(5)}%`
@@ -500,7 +500,7 @@ export function ProductForm({ initialProduct, onSaved }: ProductFormProps) {
       {isPhysical && (
         <section className="space-y-4">
           <label className="flex items-center gap-3 text-sm text-stone-200">
-            <input type="checkbox" className="h-5 w-5 accent-emerald-500" checked={hasOptions} onChange={(e) => setHasOptions(e.target.checked)} />
+            <input type="checkbox" className="h-5 w-5 accent-blue-500" checked={hasOptions} onChange={(e) => setHasOptions(e.target.checked)} />
             This product has options (size, colour…){optionalTag}
           </label>
 

@@ -43,17 +43,17 @@ export function ShopSection({ products, isOwner = false, initialGoal = null, ini
   };
   const chipClass = (on: boolean) =>
     cn(
-      'min-h-11 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition-colors',
-      on ? 'border-ink bg-ink text-white' : 'border-line-strong bg-card text-ink hover:border-ink',
+      'min-h-11 shrink-0 rounded-full border px-4 text-sm font-bold transition-colors',
+      on ? 'border-brand bg-brand text-white shadow-[0_8px_18px_-10px_rgba(11,92,255,0.8)]' : 'border-line bg-card text-ink hover:border-brand/50',
     );
   const Title = pageHeading ? 'h1' : 'h2';
 
   return (
-    <section id="shop" aria-labelledby="shop-title" className={cn('bg-paper', pageHeading ? 'pb-14 pt-8 lg:pb-[72px] lg:pt-14' : 'py-10 lg:py-[72px]')}>
+    <section id="shop" aria-labelledby="shop-title" className={cn('bg-paper', pageHeading ? 'bg-gradient-to-b from-band to-paper to-[340px] pb-14 pt-10 lg:pb-20 lg:pt-16' : 'py-14 lg:py-20')}>
       <div className={pageWidth}>
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-12">
           <div className="max-w-2xl">
-            <Title id="shop-title" className={cn('font-serif font-medium text-ink', pageHeading ? 'text-[38px] leading-[1.12] lg:text-[52px] lg:leading-[1.08]' : 'text-[28px] leading-[1.18] lg:text-[38px] lg:leading-[1.12]')}>
+            <Title id="shop-title" className={cn('font-heading font-extrabold tracking-[-0.02em] text-ink', pageHeading ? 'text-[38px] leading-[1.12] lg:text-[52px] lg:leading-[1.08]' : 'text-[28px] leading-[1.18] lg:text-[38px] lg:leading-[1.12]')}>
               {pageHeading ? 'All guides' : 'Find your next guide'}
             </Title>
             <p className="mt-2 text-base leading-relaxed text-ink-soft">
@@ -72,7 +72,7 @@ export function ShopSection({ products, isOwner = false, initialGoal = null, ini
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search guides"
-                className="min-h-12 w-full rounded-[10px] border border-line-strong bg-card pl-11 pr-4 text-base text-ink placeholder:text-ink-soft"
+                className="min-h-12 w-full rounded-full border border-line-strong bg-card pl-11 pr-4 text-base text-ink shadow-[0_1px_2px_rgba(0,22,80,0.05)] placeholder:text-ink-soft"
               />
             </div>
           )}
@@ -106,7 +106,7 @@ export function ShopSection({ products, isOwner = false, initialGoal = null, ini
           {products.length === 0 ? (
             <ComingSoon isOwner={isOwner} />
           ) : visible.length === 0 ? (
-            <div className="rounded-[14px] border border-line bg-card px-6 py-12 text-center">
+            <div className="rounded-3xl border border-line bg-card px-6 py-12 text-center">
               <h3 className="text-lg font-bold text-ink">No guides match {needle ? `“${query.trim()}”` : 'this goal'} yet.</h3>
               <p className="mt-2 text-sm text-ink-soft">Try another goal above, or look through everything we have.</p>
               <button type="button" onClick={clearFilters} className={cn(primaryButton, 'mt-5')}>
@@ -114,7 +114,7 @@ export function ShopSection({ products, isOwner = false, initialGoal = null, ini
               </button>
             </div>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+            <ul className="grid gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
               {visible.map((product) => (
                 <li key={product.id}>
                   <GuideCard product={product} headingLevel={pageHeading ? 2 : 3} />
@@ -138,7 +138,7 @@ export function ShopSection({ products, isOwner = false, initialGoal = null, ini
 
 function ComingSoon({ isOwner }: { isOwner: boolean }) {
   return (
-    <div className="mx-auto max-w-2xl rounded-[14px] border border-line bg-card px-6 py-12 text-center sm:px-10">
+    <div className="mx-auto max-w-2xl rounded-3xl border border-line bg-card px-6 py-12 text-center sm:px-10">
       <h3 className="text-xl font-bold text-ink">New guides are coming soon.</h3>
       <p className="mt-2 text-sm text-ink-soft">Leave your email and we will tell you when the first guides are ready.</p>
       <NotifyForm />

@@ -3,11 +3,11 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Container } from '@/components/ui/container';
+import { AuthShell } from '@/components/auth/auth-shell';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Lock, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 function ResetPasswordForm() {
   const router = useRouter();
@@ -133,20 +133,10 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Container className="py-16 md:py-24">
-      <div className="mx-auto max-w-md">
-        <div className="text-center mb-8">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 mb-4">
-            <Lock className="h-6 w-6" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">Create New Password</h1>
-          <p className="mt-2 text-xs text-slate-400">Set a strong password for your account</p>
-        </div>
-
+    <AuthShell title="Choose a new password" subtitle="Set a strong password for your account.">
         <React.Suspense fallback={<div className="h-64 rounded-xl bg-slate-900/50 animate-pulse border border-slate-800" />}>
           <ResetPasswordForm />
         </React.Suspense>
-      </div>
-    </Container>
+    </AuthShell>
   );
 }

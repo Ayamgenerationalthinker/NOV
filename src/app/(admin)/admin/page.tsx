@@ -1,15 +1,12 @@
 import { formatCurrency } from '@/lib/utils';
 import { RBACService } from '@/services/auth/rbac.service';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { AnalyticsService, type CatalogPaymentCounts } from '@/services/admin/analytics.service';
 import { AnalyticsChart } from '@/components/admin/analytics-chart';
 import {
   DollarSign,
   ShoppingCart,
   Users,
-  Download,
   ArrowUpRight,
   Plus,
   Package,
@@ -67,299 +64,191 @@ export default async function AdminOverviewPage() {
     console.error('Error fetching admin overview data:', err);
   }
 
-  const getStatusBadge = (status: OrderStatus) => {
-    switch (status) {
-      case OrderStatus.PAID:
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-800/60">
-            <CheckCircle2 className="w-2.5 h-2.5" />
-            PAID
-          </span>
-        );
-      case OrderStatus.PENDING:
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-950/60 text-amber-400 border border-amber-800/60">
-            <Clock className="w-2.5 h-2.5" />
-            PENDING
-          </span>
-        );
-      case OrderStatus.REFUNDED:
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-950/60 text-purple-400 border border-purple-800/60">
-            <RotateCcw className="w-2.5 h-2.5" />
-            REFUNDED
-          </span>
-        );
-      case OrderStatus.CANCELLED:
-      case OrderStatus.FAILED:
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-950/60 text-red-400 border border-red-800/60">
-            <XCircle className="w-2.5 h-2.5" />
-            {status}
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-stone-800 text-stone-300">
-            {status}
-          </span>
-        );
-    }
+  const STATUS: Partial<Record<OrderStatus, { label: string; className: string; icon: typeof CheckCircle2 }>> = {
+    [OrderStatus.PAID]: { label: 'Paid', className: 'bg-[#e6f4ec] text-[#17693f]', icon: CheckCircle2 },
+    [OrderStatus.PENDING]: { label: 'Pending', className: 'bg-[#fdf2df] text-[#7f4d00]', icon: Clock },
+    [OrderStatus.REFUNDED]: { label: 'Refunded', className: 'bg-[#efe9fb] text-[#5b3aa8]', icon: RotateCcw },
+    [OrderStatus.CANCELLED]: { label: 'Cancelled', className: 'bg-[#fcebea] text-[#b3261e]', icon: XCircle },
+    [OrderStatus.FAILED]: { label: 'Failed', className: 'bg-[#fcebea] text-[#b3261e]', icon: XCircle },
   };
 
-  return (
-    <div className="space-y-8">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <h1 className="text-2xl font-black text-white tracking-tight">Overview</h1>
-          </div>
-          <p className="text-xs text-stone-400 mt-1">
-            Your sales at a glance.
-          </p>
-        </div>
+  const getStatusBadge = (status: OrderStatus) => {
+    const s = STATUS[status];
+    const Icon = s?.icon;
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${s?.className ?? 'bg-[#f3f6fd] text-[#46557d]'}`}>
+        {Icon && <Icon className="h-3.5 w-3.5" aria-hidden />}
+        {s?.label ?? status}
+      </span>
+    );
+  };
 
-        <div className="flex items-center gap-2">
-          <Link href="/admin/orders">
-            <Button size="sm" variant="outline" className="border-stone-800 text-xs">
-              Manage Orders
-            </Button>
+  const card = 'rounded-3xl border border-[#e1e7f4] bg-[#ffffff] shadow-[0_1px_2px_rgba(0,22,80,0.04)]';
+
+  const kpis = [
+    {
+      label: 'Revenue',
+      value: formatCurrency(overview.grossRevenue, overview.currency),
+      note: `Net ${formatCurrency(overview.netRevenue, overview.currency)}${overview.totalRefunds > 0 ? `, ${formatCurrency(overview.totalRefunds, overview.currency)} refunded` : ''}`,
+      icon: DollarSign,
+      tint: 'bg-[#0b5cff] text-[#ffffff]',
+    },
+    {
+      label: 'Orders',
+      value: String(overview.totalOrders),
+      note: `${overview.paidOrders} paid, ${overview.conversionRate}% completed`,
+      icon: ShoppingCart,
+      tint: 'bg-[#e7efff] text-[#0b5cff]',
+    },
+    {
+      label: 'Average order',
+      value: formatCurrency(overview.averageOrderValue, overview.currency),
+      note: `${overview.activeEntitlements} active downloads`,
+      icon: ShieldCheck,
+      tint: 'bg-[#e7efff] text-[#0b5cff]',
+    },
+    {
+      label: 'Customers',
+      value: String(overview.totalCustomers),
+      note: `${overview.totalDownloads} file downloads`,
+      icon: Users,
+      tint: 'bg-[#e7efff] text-[#0b5cff]',
+    },
+  ];
+
+  return (
+    <div className="space-y-6 lg:space-y-8">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#0b5cff]">Overview</p>
+          <h1 className="mt-1 font-heading text-[30px] font-extrabold leading-tight tracking-[-0.02em] text-[#001650] lg:text-[36px]">Your shop at a glance</h1>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/admin/orders" className="inline-flex min-h-11 items-center rounded-full border border-[#c7d1e8] bg-[#ffffff] px-5 text-sm font-bold text-[#001650] hover:border-[#001650]">
+            Manage orders
           </Link>
-          <Link href="/admin/products/new">
-            <Button size="sm" className="gap-1.5 shadow-md shadow-blue-600/30 text-xs">
-              <Plus className="w-3.5 h-3.5" />
-              Add Product
-            </Button>
+          <Link href="/admin/products/new" className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-[#0b5cff] px-5 text-sm font-bold text-[#ffffff] shadow-[0_12px_28px_-12px_rgba(11,92,255,0.75)] hover:bg-[#0848e0]">
+            <Plus className="h-4 w-4" aria-hidden /> Add a guide
           </Link>
         </div>
       </div>
 
       {loadFailed && (
-        <div role="alert" className="rounded-xl border border-red-900 bg-red-950/60 p-3 text-sm text-red-200">
+        <div role="alert" className="rounded-2xl border border-[#b3261e]/30 bg-[#fcebea] p-4 text-[15px] text-[#b3261e]">
           Some figures could not be loaded from the database. Refresh the page to try again.
         </div>
       )}
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {kpis.map(({ label, value, note, icon: Icon, tint }, i) => (
+          <div key={label} className={i === 0 ? 'relative overflow-hidden rounded-3xl bg-[#001650] p-5 text-[#ffffff] shadow-[0_24px_48px_-28px_rgba(0,22,80,0.8)]' : `${card} p-5`}>
+            {i === 0 && <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_80%_at_100%_0%,rgba(11,92,255,0.6),transparent_70%)]" />}
+            <div className="relative flex items-start justify-between gap-3">
+              <p className={`text-sm font-semibold ${i === 0 ? 'text-[#ffffff]/80' : 'text-[#46557d]'}`}>{label}</p>
+              <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${tint}`}>
+                <Icon className="h-5 w-5" aria-hidden />
+              </span>
+            </div>
+            <p className={`relative mt-3 font-heading text-[28px] font-extrabold tabular-nums leading-none ${i === 0 ? 'text-[#ffffff]' : 'text-[#001650]'}`}>{value}</p>
+            <p className={`relative mt-2 text-sm ${i === 0 ? 'text-[#ffffff]/75' : 'text-[#56668f]'}`}>{note}</p>
+          </div>
+        ))}
+      </div>
+
       {counts && (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
-            { label: 'Products', value: counts.totalProducts, href: '/admin/products', note: `${counts.publishedProducts} published` },
+            { label: 'Guides', value: counts.totalProducts, href: '/admin/products', note: `${counts.publishedProducts} published`, icon: Package },
             {
               label: 'Drafts',
               value: counts.draftProducts,
               href: '/admin/products',
               note: counts.productsNeedingAttention > 0 ? `${counts.productsNeedingAttention} need a file or category` : 'Not visible to buyers',
               warn: counts.productsNeedingAttention > 0,
+              icon: Package,
             },
-            { label: 'Successful payments', value: counts.successfulPayments, href: '/admin/orders', note: 'Verified with Paystack' },
-            {
-              label: 'Pending / failed',
-              value: `${counts.pendingPayments} / ${counts.failedPayments}`,
-              href: '/admin/orders',
-              note: 'Payment attempts',
-            },
+            { label: 'Successful payments', value: counts.successfulPayments, href: '/admin/orders', note: 'Verified with Paystack', icon: CheckCircle2 },
+            { label: 'Pending / failed', value: `${counts.pendingPayments} / ${counts.failedPayments}`, href: '/admin/orders', note: 'Payment attempts', icon: Clock },
           ].map((tile) => (
-            <Link
-              key={tile.label}
-              href={tile.href}
-              className="rounded-xl border border-stone-800 bg-stone-900/60 p-4 transition-colors hover:border-stone-700"
-            >
-              <p className="text-[11px] font-medium uppercase tracking-wider text-stone-400">{tile.label}</p>
-              <p className="mt-1 text-2xl font-black tabular-nums text-white">{tile.value}</p>
-              <p className={`mt-1 text-[11px] ${tile.warn ? 'text-amber-400' : 'text-stone-500'}`}>{tile.note}</p>
+            <Link key={tile.label} href={tile.href} className={`${card} group p-4 transition-colors hover:border-[#0b5cff]/50`}>
+              <p className="flex items-center gap-2 text-sm font-semibold text-[#46557d]">
+                <tile.icon className="h-4 w-4 text-[#0b5cff]" aria-hidden /> {tile.label}
+              </p>
+              <p className="mt-2 font-heading text-2xl font-extrabold tabular-nums text-[#001650]">{tile.value}</p>
+              <p className={`mt-1 text-sm ${tile.warn ? 'font-semibold text-[#7f4d00]' : 'text-[#56668f]'}`}>{tile.note}</p>
             </Link>
           ))}
         </div>
       )}
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Gross Revenue */}
-        <Card className="border-stone-800 bg-stone-900/60 p-5">
-          <CardContent className="p-0 flex items-start justify-between">
-            <div>
-              <p className="text-[11px] text-stone-400 font-medium uppercase tracking-wider">Gross Revenue</p>
-              <h3 className="text-2xl font-black text-white mt-1">
-                {formatCurrency(overview.grossRevenue, overview.currency)}
-              </h3>
-              <p className="text-[11px] text-emerald-400 font-medium mt-2 flex items-center gap-1">
-                <span>Net: {formatCurrency(overview.netRevenue, overview.currency)}</span>
-                {overview.totalRefunds > 0 && (
-                  <span className="text-purple-400 text-[10px]">(−{formatCurrency(overview.totalRefunds, overview.currency)} refunded)</span>
-                )}
-              </p>
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30">
-              <DollarSign className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Orders */}
-        <Card className="border-stone-800 bg-stone-900/60 p-5">
-          <CardContent className="p-0 flex items-start justify-between">
-            <div>
-              <p className="text-[11px] text-stone-400 font-medium uppercase tracking-wider">Total Orders</p>
-              <h3 className="text-2xl font-black text-white mt-1">{overview.totalOrders}</h3>
-              <p className="text-[11px] text-stone-400 mt-2">
-                <span className="text-white font-semibold">{overview.paidOrders} paid</span> ({overview.conversionRate}% completion)
-              </p>
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
-              <ShoppingCart className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Average Order Value (AOV) */}
-        <Card className="border-stone-800 bg-stone-900/60 p-5">
-          <CardContent className="p-0 flex items-start justify-between">
-            <div>
-              <p className="text-[11px] text-stone-400 font-medium uppercase tracking-wider">Avg Order Value</p>
-              <h3 className="text-2xl font-black text-white mt-1">
-                {formatCurrency(overview.averageOrderValue, overview.currency)}
-              </h3>
-              <p className="text-[11px] text-stone-400 mt-2">
-                <span className="text-white font-semibold">{overview.activeEntitlements}</span> active licenses
-              </p>
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Customers */}
-        <Card className="border-stone-800 bg-stone-900/60 p-5">
-          <CardContent className="p-0 flex items-start justify-between">
-            <div>
-              <p className="text-[11px] text-stone-400 font-medium uppercase tracking-wider">Customers & Files</p>
-              <h3 className="text-2xl font-black text-white mt-1">{overview.totalCustomers}</h3>
-              <p className="text-[11px] text-stone-400 mt-2 flex items-center gap-1">
-                <Download className="w-3 h-3 text-blue-400" />
-                <span className="text-white font-semibold">{overview.totalDownloads}</span> file downloads
-              </p>
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
-              <Users className="w-5 h-5" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Interactive Sales Velocity Chart */}
       <AnalyticsChart initialData={timeSeries} currency={overview.currency} />
 
-      {/* Two Column Grid: Recent Orders & Top Selling Products */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Orders (2 Columns on large screens) */}
-        <div className="lg:col-span-2 rounded-xl border border-stone-800 bg-stone-900/60 p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4 text-blue-400" />
-              Recent Orders Stream
-            </h3>
-            <Link
-              href="/admin/orders"
-              className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium"
-            >
-              View all orders
-              <ArrowUpRight className="w-3 h-3" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <section aria-labelledby="recent-title" className={`${card} p-5 sm:p-6 lg:col-span-2`}>
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="recent-title" className="font-heading text-lg font-bold text-[#001650]">Recent orders</h2>
+            <Link href="/admin/orders" className="flex min-h-11 items-center gap-1 text-sm font-bold text-[#0848e0] hover:underline">
+              View all <ArrowUpRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>
-
           {recentOrders.length === 0 ? (
-            <div className="py-12 text-center text-xs text-stone-500">
-              No orders recorded yet. Complete a checkout to stream transactions.
-            </div>
+            <p className="py-12 text-center text-[15px] text-[#56668f]">No orders yet. They appear here as soon as someone checks out.</p>
           ) : (
-            <div className="divide-y divide-stone-800/80">
+            <ul className="mt-2 divide-y divide-[#e1e7f4]">
               {recentOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="py-3 flex items-center justify-between gap-4 hover:bg-stone-800/30 rounded-lg px-2 transition-colors"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-xs text-white">
-                        {order.orderNumber}
-                      </span>
-                      {getStatusBadge(order.status)}
-                    </div>
-                    <p className="text-[11px] text-stone-400 truncate mt-0.5">
-                      {order.customer?.name || order.guestName || 'Guest'}{' '}
-                      <span className="text-stone-500">
-                        ({order.customer?.email || order.guestEmail || 'no-email'})
-                      </span>
-                    </p>
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    <div className="text-xs font-bold text-white">
-                      {formatCurrency(Number(order.total), overview.currency)}
-                    </div>
-                    <div className="text-[10px] text-stone-500">
-                      {new Date(order.createdAt).toLocaleDateString()}
+                <li key={order.id} className="flex items-center justify-between gap-4 py-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e7efff] text-sm font-bold text-[#0b5cff]">
+                      {(order.customer?.name || order.guestName || 'G').trim().charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="flex flex-wrap items-center gap-2">
+                        <span className="text-[15px] font-semibold text-[#001650]">{order.customer?.name || order.guestName || 'Guest'}</span>
+                        {getStatusBadge(order.status)}
+                      </p>
+                      <p className="truncate text-sm text-[#56668f]">
+                        <span className="tabular-nums">{order.orderNumber}</span> · {order.customer?.email || order.guestEmail || 'No email'}
+                      </p>
                     </div>
                   </div>
-                </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-[15px] font-bold tabular-nums text-[#001650]">{formatCurrency(Number(order.total), overview.currency)}</p>
+                    <p className="text-sm text-[#56668f]">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
-        </div>
+        </section>
 
-        {/* Top Selling Products */}
-        <div className="rounded-xl border border-stone-800 bg-stone-900/60 p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              Top Products
-            </h3>
-            <Link
-              href="/admin/products"
-              className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium"
-            >
-              Catalog
-              <ArrowUpRight className="w-3 h-3" />
+        <section aria-labelledby="top-title" className={`${card} p-5 sm:p-6`}>
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="top-title" className="flex items-center gap-2 font-heading text-lg font-bold text-[#001650]">
+              <Sparkles className="h-5 w-5 text-[#0b5cff]" aria-hidden /> Best sellers
+            </h2>
+            <Link href="/admin/products" className="flex min-h-11 items-center gap-1 text-sm font-bold text-[#0848e0] hover:underline">
+              All guides <ArrowUpRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>
-
           {topProducts.length === 0 ? (
-            <div className="py-12 text-center text-xs text-stone-500">
-              No product sales yet.
-            </div>
+            <p className="py-12 text-center text-[15px] text-[#56668f]">No sales yet.</p>
           ) : (
-            <div className="space-y-3">
+            <ol className="mt-3 space-y-3">
               {topProducts.map((p, idx) => (
-                <div
-                  key={p.productId}
-                  className="flex items-center gap-3 p-2.5 rounded-lg bg-stone-950/60 border border-stone-800/60"
-                >
-                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-stone-800 font-bold text-xs text-stone-300 shrink-0">
-                    #{idx + 1}
-                  </div>
-
+                <li key={p.productId} className="flex items-center gap-3 rounded-2xl bg-[#f3f6fd] p-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#ffffff] text-sm font-bold tabular-nums text-[#001650]">{idx + 1}</span>
                   <div className="min-w-0 flex-1">
-                    <h4 className="text-xs font-semibold text-white truncate">
-                      {p.title}
-                    </h4>
-                    <p className="text-[10px] text-stone-400">
-                      {p.unitsSold} {p.unitsSold === 1 ? 'sale' : 'sales'} • {formatCurrency(p.price, overview.currency)} each
+                    <p className="truncate text-[15px] font-semibold text-[#001650]">{p.title}</p>
+                    <p className="text-sm text-[#56668f]">
+                      {p.unitsSold} {p.unitsSold === 1 ? 'sale' : 'sales'} · {formatCurrency(p.price, overview.currency)} each
                     </p>
                   </div>
-
-                  <div className="text-right shrink-0">
-                    <span className="text-xs font-bold text-emerald-400">
-                      {formatCurrency(p.totalRevenue, overview.currency)}
-                    </span>
-                  </div>
-                </div>
+                  <span className="shrink-0 text-[15px] font-bold tabular-nums text-[#17693f]">{formatCurrency(p.totalRevenue, overview.currency)}</span>
+                </li>
               ))}
-            </div>
+            </ol>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

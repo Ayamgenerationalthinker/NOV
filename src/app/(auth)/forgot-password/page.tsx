@@ -2,11 +2,11 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Container } from '@/components/ui/container';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { AuthShell } from '@/components/auth/auth-shell';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { KeyRound, ArrowLeft, Mail, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Mail, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = React.useState('');
@@ -43,24 +43,10 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <Container className="py-16 md:py-24">
-      <div className="mx-auto max-w-md">
-        <div className="text-center mb-8">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 mb-4">
-            <KeyRound className="h-6 w-6" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">Reset Password</h1>
-          <p className="mt-2 text-xs text-slate-400">Enter your email and we will send a secure reset link</p>
-        </div>
-
-        <Card className="border-slate-800 bg-slate-900/90 shadow-2xl">
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-base">Password Recovery</CardTitle>
-            <CardDescription className="text-xs">We will email you instructions to choose a new password.</CardDescription>
-          </CardHeader>
-
+    <AuthShell title="Reset your password" subtitle="Enter your email and we will send you a secure reset link.">
+        <Card className="border-0 bg-transparent shadow-none backdrop-blur-none">
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 p-0">
               {error && (
                 <div className="flex items-center gap-2 rounded-lg border border-red-800/40 bg-red-950/40 p-3 text-xs text-red-300">
                   <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
@@ -91,15 +77,14 @@ export default function ForgotPasswordPage() {
               </Button>
             </CardContent>
 
-            <CardFooter className="flex flex-col border-t border-slate-800/80 pt-4 text-center">
-              <Link href="/login" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white">
+            <CardFooter className="mt-5 flex flex-col border-t border-slate-800/80 p-0 pt-4 text-center">
+              <Link href="/login" className="flex min-h-11 items-center gap-1.5 text-sm font-semibold text-slate-400 hover:text-white">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Return to sign in
               </Link>
             </CardFooter>
           </form>
         </Card>
-      </div>
-    </Container>
+    </AuthShell>
   );
 }

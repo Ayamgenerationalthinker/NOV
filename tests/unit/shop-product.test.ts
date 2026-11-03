@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isFocusedRoute, isPaperRoute } from '@/components/layout/site-chrome';
+import { isFocusedRoute, isOwnerRoute, isPaperRoute } from '@/components/layout/site-chrome';
 import { toShopProducts } from '@/lib/shop-product';
 
 const base = {
@@ -54,6 +54,11 @@ describe('customer page theme', () => {
     for (const path of ['/admin', '/admin/products', '/login', '/cart', '/pricing']) {
       expect(isPaperRoute(path)).toBe(false);
     }
+  });
+
+  it('puts the owner and sign-in screens on the owner theme', () => {
+    for (const path of ['/admin', '/admin/orders', '/login', '/register', '/account']) expect(isOwnerRoute(path)).toBe(true);
+    for (const path of ['/', '/products', '/checkout']) expect(isOwnerRoute(path)).toBe(false);
   });
 
   it('keeps product and checkout pages on their own header', () => {

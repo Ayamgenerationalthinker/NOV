@@ -4,6 +4,7 @@ import { env } from '@/lib/env';
 import { SessionService } from '@/services/auth/session.service';
 import { RBACService } from '@/services/auth/rbac.service';
 import { toShopProducts } from '@/lib/shop-product';
+import { formatCurrency } from '@/lib/utils';
 import { Hero } from '@/components/home/hero';
 import { GoalTiles } from '@/components/home/goal-tiles';
 import { ShopSection } from '@/components/home/shop-section';
@@ -40,6 +41,8 @@ export default async function HomePage() {
   const isOwner = Boolean(session && RBACService.isAdmin(session.role));
   const shopProducts = toShopProducts(products);
 
+  const cheapest = shopProducts.reduce<(typeof shopProducts)[number] | null>((low, p) => (!low || p.price < low.price ? p : low), null);
+
   const goalCounts: Record<string, number> = {};
   for (const product of shopProducts) {
     for (const goal of product.goals) goalCounts[goal] = (goalCounts[goal] ?? 0) + 1;
@@ -47,7 +50,7 @@ export default async function HomePage() {
 
   return (
     <div>
-      <Hero featured={shopProducts.slice(0, 3)} />
+      <Hero featured={shopProducts.slice(0, 3)} total={shopProducts.length} fromPrice={cheapest ? formatCurrency(cheapest.price, cheapest.currency) : null} />
       <GoalTiles counts={goalCounts} />
       <ShopSection products={shopProducts} isOwner={isOwner} limit={8} />
       <StepsSection />

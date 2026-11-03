@@ -483,7 +483,7 @@ function CheckoutForm() {
       <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
       {/* Contact */}
       <section className="space-y-4">
-        <h2 className="font-serif text-[28px] font-medium leading-tight text-ink">Your details</h2>
+        <h2 className="font-heading text-[28px] font-extrabold tracking-[-0.02em] leading-tight text-ink">Your details</h2>
         <div>
           <label className={labelClass} htmlFor="co-name">Full name</label>
           <input id="co-name" className={fieldClass} autoComplete="name" required minLength={2} value={name} onChange={(e) => setName(e.target.value)} />
@@ -502,7 +502,7 @@ function CheckoutForm() {
       {/* Delivery address (physical only) */}
       {hasPhysical && (
         <section className="space-y-4">
-          <h2 className="font-serif text-[28px] font-medium leading-tight text-ink">Delivery address</h2>
+          <h2 className="font-heading text-[28px] font-extrabold tracking-[-0.02em] leading-tight text-ink">Delivery address</h2>
           <div>
             <label className={labelClass} htmlFor="co-region">Region</label>
             <select id="co-region" className={fieldClass} value={region} onChange={(e) => setRegion(e.target.value)}>
@@ -588,7 +588,7 @@ function CheckoutContent() {
           <RetryPanel orderId={retryOrderId} errorCode={errorCode} />
         ) : (
           <>
-            <h1 className="mb-5 font-serif text-[38px] font-medium leading-[1.1] text-ink lg:mb-8 lg:text-[52px]">Checkout</h1>
+            <h1 className="mb-5 font-heading text-[38px] font-extrabold tracking-[-0.02em] leading-[1.1] text-ink lg:mb-8 lg:text-[52px]">Checkout</h1>
             {errorCode && (
               <div role="alert" className="mb-5 rounded-[10px] border border-warn/40 bg-warn-soft p-3 text-[15px] text-ink">
                 {(PAYMENT_MESSAGES[errorCode] ?? UNCONFIRMED_MESSAGE).body}

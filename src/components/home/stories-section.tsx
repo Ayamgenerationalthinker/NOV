@@ -15,9 +15,9 @@ export interface PublishedStory {
  */
 export function StoriesSection({ stories }: { stories: PublishedStory[] }) {
   return (
-    <section id="stories" aria-labelledby="stories-title" className="bg-band py-10 lg:py-[72px]">
+    <section id="stories" aria-labelledby="stories-title" className="bg-band py-14 lg:py-20">
       <div className={pageWidth}>
-        <SectionHeading id="stories-title" title="In readers’ own words" />
+        <SectionHeading id="stories-title" eyebrow="Reader stories" title="In readers’ own words" />
         {stories.length > 0 ? (
           <>
             {/* One row of compact cards that scrolls sideways when there are more than fit. */}

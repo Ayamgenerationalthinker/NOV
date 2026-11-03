@@ -14,7 +14,7 @@ export function StoryCard({ story }: { story: PublishedStory }) {
 
   return (
     <li className="w-72 shrink-0 snap-start sm:w-[380px]">
-      <figure className="rounded-[14px] border border-line bg-card p-5">
+      <figure className="rounded-3xl border border-line bg-card p-6 shadow-[0_1px_2px_rgba(0,22,80,0.04)]">
         <Quote className="h-5 w-5 text-brand" aria-hidden />
         <blockquote className={`mt-2 whitespace-pre-line text-base leading-relaxed text-ink ${foldable && !open ? 'line-clamp-4' : ''}`}>
           {story.quote}

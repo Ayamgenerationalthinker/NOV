@@ -197,7 +197,7 @@ function SuccessContent() {
         ) : (
           <Clock className="mx-auto h-14 w-14 text-warn" aria-hidden />
         )}
-        <h1 className="font-serif text-[38px] font-medium leading-[1.1] text-ink lg:text-[52px]">
+        <h1 className="font-heading text-[38px] font-extrabold tracking-[-0.02em] leading-[1.1] text-ink lg:text-[52px]">
           {isPaid ? `Thank you${order.guestName ? `, ${order.guestName.split(' ')[0]}` : ''}!` : 'Confirming your payment…'}
         </h1>
         <p className="text-base text-ink-soft">

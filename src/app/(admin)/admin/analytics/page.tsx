@@ -33,7 +33,7 @@ export default async function AdminAnalyticsPage() {
     totalCustomers: 0,
     totalDownloads: 0,
     activeEntitlements: 0,
-    currency: 'USD',
+    currency: 'GHS',
   };
 
   let timeSeries: any[] = [];

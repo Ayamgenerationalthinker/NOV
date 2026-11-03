@@ -408,7 +408,7 @@ export function CouponManagement() {
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white focus:outline-none focus:border-blue-500"
                   >
                     <option value={DiscountType.PERCENTAGE}>Percentage (%)</option>
-                    <option value={DiscountType.FIXED_AMOUNT}>Fixed Amount ($)</option>
+                    <option value={DiscountType.FIXED_AMOUNT}>Fixed amount (GH₵)</option>
                   </select>
                 </div>
               </div>
@@ -431,7 +431,7 @@ export function CouponManagement() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">Minimum Order ($)</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Minimum order (GH₵)</label>
                   <input
                     type="number"
                     min="0"

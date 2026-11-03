@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Box, Image as ImageIcon } from 'lucide-react';
+import { CoverImage } from './cover-image';
 
 // three.js is large: only download it when a product actually has a 3D model and the buyer opens it.
 const Product3DViewer = dynamic(
@@ -79,12 +80,12 @@ export function ProductMediaGallery({
           }
         >
           {selectedImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <CoverImage
               src={selectedImage}
               alt={productTitle}
+              sizes="(max-width: 1023px) 260px, 420px"
+              priority
               className={compact ? "h-full w-auto max-w-full rounded-xl object-contain shadow-[0_24px_48px_-20px_rgba(0,0,0,0.6)]" : "w-full h-full object-contain"}
-              fetchPriority="high"
             />
           ) : (
             <div className="text-center text-ink-soft p-8">

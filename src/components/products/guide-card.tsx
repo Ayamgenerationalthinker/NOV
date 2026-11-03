@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowUpRight, BookOpen, Package } from 'lucide-react';
 import { productPath } from '@/lib/product-url';
+import { CoverImage } from './cover-image';
 import type { ShopProduct } from '@/lib/shop-product';
 import { cn, formatCurrency } from '@/lib/utils';
 
@@ -13,14 +14,9 @@ export function GuideCard({ product, headingLevel = 3 }: { product: ShopProduct;
     <article className="group relative flex h-full overflow-hidden rounded-3xl border border-line bg-card shadow-[0_1px_2px_rgba(0,22,80,0.04)] transition duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_48px_-24px_rgba(0,22,80,0.35)] motion-reduce:hover:translate-y-0 sm:flex-col">
       <div className="relative flex w-[118px] shrink-0 items-center justify-center bg-gradient-to-br from-band to-[#dce7ff] p-2.5 sm:h-[270px] sm:w-full sm:p-7">
         {product.coverImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <CoverImage
             src={product.coverImage}
-            alt=""
-            width={300}
-            height={400}
-            loading="lazy"
-            decoding="async"
+            sizes="(max-width: 639px) 110px, 240px"
             className={cn(
               'h-auto max-h-full w-auto max-w-full rounded-lg object-contain shadow-[0_16px_30px_-14px_rgba(0,22,80,0.55)] transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:group-hover:scale-100',
               product.soldOut && 'opacity-50',

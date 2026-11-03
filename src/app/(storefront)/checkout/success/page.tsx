@@ -243,6 +243,7 @@ function SuccessContent() {
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <a
                           href={downloadHref}
+                          onClick={() => trackEvent('download', item.product.slug)}
                           className="flex min-h-12 min-w-0 flex-1 items-center justify-between gap-3 rounded-[10px] bg-brand px-4 py-3 text-[15px] font-semibold text-white hover:bg-brand-hover"
                         >
                           <span className="flex min-w-0 items-center gap-2">
@@ -263,6 +264,7 @@ function SuccessContent() {
                                 window.open(`${downloadHref}?view=1`, '_blank', 'noopener');
                                 return;
                               }
+                              if (viewing !== file.id) trackEvent('download', item.product.slug);
                               setViewing(viewing === file.id ? null : file.id);
                             }}
                             className={`${secondaryButton} shrink-0 px-4`}

@@ -269,11 +269,11 @@ export default function CartPage() {
                     <div className="flex flex-col items-end gap-2">
                       <div className="text-right">
                         <span className="text-sm font-bold font-mono text-white">
-                          {formatCurrency((item.discountPrice ?? item.price) * item.quantity, item.currency || 'USD')}
+                          {formatCurrency((item.discountPrice ?? item.price) * item.quantity, item.currency || 'GHS')}
                         </span>
                         {item.discountPrice && (
                           <span className="block text-[10px] font-mono text-zinc-500 line-through">
-                            {formatCurrency(item.price * item.quantity, item.currency || 'USD')}
+                            {formatCurrency(item.price * item.quantity, item.currency || 'GHS')}
                           </span>
                         )}
                       </div>

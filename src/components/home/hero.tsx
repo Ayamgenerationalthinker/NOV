@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight, Download, Lock, UserRound } from 'lucide-react';
 import { productPath } from '@/lib/product-url';
+import { CoverImage } from '@/components/products/cover-image';
 import type { ShopProduct } from '@/lib/shop-product';
 import { cn, formatCurrency } from '@/lib/utils';
 import { inverseButton, pageWidth, primaryButton } from './primitives';
@@ -79,8 +80,7 @@ export function Hero({ featured, total, fromPrice }: HeroProps) {
                       {product.title}, {formatCurrency(product.price, product.currency)}
                     </span>
                     {product.coverImage && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={product.coverImage} alt="" width={300} height={400} fetchPriority="high" className="aspect-[3/4] w-full rounded-xl object-cover" />
+                      <CoverImage src={product.coverImage} sizes="(max-width: 639px) 150px, 260px" priority className="aspect-[3/4] w-full rounded-xl object-cover" />
                     )}
                   </Link>
                 </li>

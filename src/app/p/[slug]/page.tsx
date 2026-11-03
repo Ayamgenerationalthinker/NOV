@@ -8,7 +8,8 @@ import { ProductBuyActions } from '@/components/products/product-buy-actions';
 import { ProductMediaGallery } from '@/components/products/product-media-gallery';
 import { GuideCard } from '@/components/products/guide-card';
 import { formatCurrency, formatFileSize } from '@/lib/utils';
-import { buildProductMetadata } from '@/lib/product-metadata';
+import { absoluteUrl, buildProductMetadata } from '@/lib/product-metadata';
+import { productUrl } from '@/lib/product-url';
 import { availableStock, buildCheckoutUrl, productDisplayPrice, resolveBuyState } from '@/lib/product-purchase';
 import { env } from '@/lib/env';
 import { GUIDE_COPY } from '@/content/guides';
@@ -93,9 +94,30 @@ export default async function ProductLandingPage({ params, searchParams }: Produ
 
   const checkoutHref = buildCheckoutUrl({ slug: product.slug, variantId: buyState.selectedId, quantity: buyState.quantity, coupon: buyState.coupon });
   const canBuyBelow = !isPhysical;
+  const soldOutEverywhere = isPhysical && product.variants.every((v) => availableStock(v) <= 0);
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.title,
+    description: summary || product.description.slice(0, 300),
+    ...(product.coverImage ? { image: absoluteUrl(product.coverImage) } : {}),
+    url: productUrl(product.slug),
+    offers: {
+      '@type': 'Offer',
+      price: displayPrice.price.toFixed(2),
+      priceCurrency: product.currency,
+      availability: soldOutEverywhere ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+      url: productUrl(product.slug),
+    },
+  };
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        // JSON.stringify output with "<" escaped cannot close the script tag.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }}
+      />
       <Header />
       <div className="flex-1 bg-paper text-ink">
         <div className={`${pageWidth} pb-10 pt-5 lg:pb-16 lg:pt-8`}>

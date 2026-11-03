@@ -24,6 +24,7 @@ const EVENT_STYLES: Record<VisitEventType, string> = {
   buy_click: 'text-amber-300',
   checkout_submit: 'text-blue-300',
   purchase: 'text-emerald-400',
+  download: 'text-sky-400',
   newsletter: 'text-purple-300',
   story: 'text-pink-300',
 };

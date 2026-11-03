@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 
-export const VISIT_EVENT_TYPES = ['page_view', 'buy_click', 'checkout_submit', 'purchase', 'newsletter', 'story'] as const;
+export const VISIT_EVENT_TYPES = ['page_view', 'buy_click', 'checkout_submit', 'purchase', 'download', 'newsletter', 'story'] as const;
 export type VisitEventType = (typeof VISIT_EVENT_TYPES)[number];
 
 /** How each event reads in the owner's activity feed. */
@@ -9,6 +9,7 @@ export const VISIT_EVENT_LABELS: Record<VisitEventType, string> = {
   buy_click: 'Clicked buy',
   checkout_submit: 'Went to payment',
   purchase: 'Paid',
+  download: 'Downloaded',
   newsletter: 'Joined the newsletter',
   story: 'Shared a testimony',
 };

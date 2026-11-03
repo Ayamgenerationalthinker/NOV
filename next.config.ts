@@ -10,6 +10,13 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   serverExternalPackages: ['@prisma/client', 'bcryptjs', 'pg'],
+  images: {
+    // Product covers come from the shop's own media route; see components/products/cover-image.tsx.
+    localPatterns: [{ pathname: '/api/media/**', search: '' }],
+    remotePatterns: [{ protocol: 'https', hostname: 'tomevari.vercel.app', pathname: '/api/media/**' }],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 2678400,
+  },
   ...(publicAppUrl ? { env: { NEXT_PUBLIC_APP_URL: publicAppUrl } } : {}),
 };
 

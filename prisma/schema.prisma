@@ -746,7 +746,7 @@ model VisitEvent {
   id        String   @id @default(cuid())
   visitorId String
   sessionId String
-  /// page_view, buy_click, checkout_submit, purchase, newsletter, story
+  /// page_view, buy_click, checkout_submit, purchase, download, newsletter, story
   type      String
   path      String
   /// e.g. the product slug or order number the action was about

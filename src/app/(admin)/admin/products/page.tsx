@@ -63,7 +63,7 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Products</h1>
           <p className="text-sm text-stone-400">
@@ -72,7 +72,7 @@ export default function AdminProductsPage() {
           </p>
         </div>
         <Link href="/admin/products/new">
-          <Button variant="success">
+          <Button variant="success" className="whitespace-nowrap">
             <Plus className="w-4 h-4" /> New product
           </Button>
         </Link>

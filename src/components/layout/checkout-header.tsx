@@ -11,7 +11,7 @@ export function CheckoutHeader({ backHref, backLabel }: { backHref: string; back
           <Link
             href={backHref}
             aria-label={backLabel}
-            className="flex min-h-11 items-center gap-2 rounded-lg px-1 text-[15px] font-medium text-white/85 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-1 text-[15px] font-medium text-white/85 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden />
             <span className="hidden sm:inline">Back</span>

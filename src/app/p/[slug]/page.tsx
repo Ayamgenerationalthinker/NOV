@@ -100,7 +100,7 @@ export default async function ProductLandingPage({ params, searchParams }: Produ
       <div className="flex-1 bg-paper text-ink">
         <div className={`${pageWidth} pb-10 pt-5 lg:pb-16 lg:pt-8`}>
           <nav aria-label="Breadcrumb" className="text-sm text-ink-soft">
-            <Link href="/products" className="underline underline-offset-4 hover:text-ink">Shop</Link>
+            <Link href="/products" className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-ink">Shop</Link>
             <span aria-hidden> / </span>
             <span aria-current="page" className="text-ink">{product.title}</span>
           </nav>

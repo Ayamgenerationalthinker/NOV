@@ -120,9 +120,9 @@ export function AdminTopBar({ email }: { email: string }) {
         </Link>
         <div className="flex items-center gap-1">
           <span className="sr-only">Signed in as {email}</span>
-          <Link href="/" target="_blank" className="flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm text-[#ffffff]/85 hover:bg-[#ffffff]/10">
+          <Link href="/" target="_blank" className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-xl px-3 text-sm text-[#ffffff]/85 hover:bg-[#ffffff]/10">
             <ExternalLink className="h-4 w-4" aria-hidden />
-            <span className="hidden sm:inline">View shop</span>
+            <span className="sr-only sm:not-sr-only">View shop</span>
           </Link>
           <button type="button" onClick={signOut} className="hidden min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm text-[#ffffff]/85 hover:bg-[#ffffff]/10 md:flex">
             <LogOut className="h-4 w-4" aria-hidden /> Sign out

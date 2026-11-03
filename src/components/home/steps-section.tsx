@@ -14,17 +14,19 @@ export function StepsSection() {
           {BUYING_STEPS.map((step, i) => {
             const Icon = ICONS[i] ?? Search;
             return (
-              <li key={step.title} className="rounded-3xl border border-white/10 bg-white/[0.06] p-6">
-                <div className="flex items-center justify-between">
+              <li key={step.title} className="flex gap-4 rounded-3xl border border-white/10 bg-white/[0.06] p-5 md:block md:p-6">
+                <div className="flex shrink-0 items-start justify-between md:items-center">
                   <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand text-white">
                     <Icon className="h-5 w-5" aria-hidden />
                   </span>
-                  <span aria-hidden className="font-heading text-4xl font-extrabold tabular-nums text-white/20">
+                  <span aria-hidden className="hidden font-heading text-4xl font-extrabold tabular-nums text-white/20 md:inline">
                     0{i + 1}
                   </span>
                 </div>
-                <h3 className="mt-5 font-heading text-xl font-bold text-white">{step.title}</h3>
-                <p className="mt-2 text-base leading-relaxed text-white/80">{step.text}</p>
+                <div>
+                  <h3 className="font-heading text-lg font-bold text-white md:mt-5 md:text-xl">{step.title}</h3>
+                  <p className="mt-1 text-[15px] leading-relaxed text-white/80 md:mt-2 md:text-base">{step.text}</p>
+                </div>
               </li>
             );
           })}

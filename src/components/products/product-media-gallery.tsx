@@ -74,7 +74,7 @@ export function ProductMediaGallery({
         <div
           className={
             compact
-              ? 'relative mx-auto flex aspect-[3/4] w-full max-w-60 items-center justify-center overflow-hidden rounded-[14px] border border-line bg-band p-2 lg:max-w-none lg:p-4'
+              ? 'relative mx-auto flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-[#0b5cff] to-[#001650] p-5 sm:aspect-[3/4] lg:p-8'
               : 'relative aspect-[4/5] w-full overflow-hidden rounded-[14px] border border-line bg-band flex items-center justify-center'
           }
         >
@@ -83,7 +83,7 @@ export function ProductMediaGallery({
             <img
               src={selectedImage}
               alt={productTitle}
-              className="w-full h-full object-contain"
+              className={compact ? "h-full w-auto max-w-full rounded-xl object-contain shadow-[0_24px_48px_-20px_rgba(0,0,0,0.6)]" : "w-full h-full object-contain"}
               fetchPriority="high"
             />
           ) : (

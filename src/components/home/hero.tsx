@@ -32,7 +32,7 @@ export function Hero({ featured, total, fromPrice }: HeroProps) {
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_65%_at_80%_35%,rgba(11,92,255,0.55),transparent_70%),radial-gradient(40%_50%_at_10%_100%,rgba(11,92,255,0.28),transparent_70%)]"
       />
-      <div className={cn(pageWidth, 'relative grid items-center gap-12 pb-14 pt-10 lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:pb-24 lg:pt-20')}>
+      <div className={cn(pageWidth, 'relative grid items-center gap-10 pb-12 pt-8 lg:grid-cols-[1.05fr_1fr] lg:gap-8 lg:pb-24 lg:pt-20')}>
         <div className="max-w-2xl">
           {total > 0 && (
             <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-sm font-semibold">
@@ -66,7 +66,7 @@ export function Hero({ featured, total, fromPrice }: HeroProps) {
         </div>
 
         {front && (
-          <div className="relative mx-auto aspect-[5/4] w-full max-w-[540px]">
+          <div className="relative mx-auto aspect-[5/4] w-full max-w-[290px] min-[400px]:max-w-[330px] sm:max-w-[540px]">
             <div aria-hidden className="absolute inset-x-[6%] bottom-[6%] top-[16%] rounded-[40px] bg-white/[0.06] ring-1 ring-white/10" />
             <ul aria-label="Popular starting points">
               {fan.map((product, i) => (
@@ -91,7 +91,7 @@ export function Hero({ featured, total, fromPrice }: HeroProps) {
                 <Download className="h-5 w-5" />
               </span>
               <span>
-                <span className="block text-sm font-bold">{front.title}</span>
+                <span className="block max-w-[200px] truncate text-sm font-bold sm:max-w-none">{front.title}</span>
                 <span className="block text-sm text-ink-soft">{formatCurrency(front.price, front.currency)} · instant PDF</span>
               </span>
             </p>

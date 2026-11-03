@@ -46,11 +46,18 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
         <p className="relative text-sm text-[#ffffff]/60">Tomevari · practical guides, paid in GH₵</p>
       </aside>
 
-      <div className="flex flex-col items-center justify-center px-4 py-10 sm:px-8">
-        <Link href="/" aria-label="Tomevari home" className="mb-8 flex min-h-11 items-center rounded-lg lg:hidden">
-          <BrandLogo className="h-10" />
-        </Link>
-        <div className="w-full max-w-[420px] rounded-3xl border border-[#dde5f6] bg-[#ffffff] p-6 shadow-[0_30px_60px_-30px_rgba(0,22,80,0.35)] sm:p-8">
+      <div className="flex flex-col items-center px-4 pb-10 sm:px-8 lg:justify-center lg:py-10">
+        {/* Phones: a navy band with the logo, and the form card overlapping its bottom edge. */}
+        <div className="relative -mx-4 w-[calc(100%+2rem)] overflow-hidden bg-[#001650] px-6 pb-20 pt-8 text-[#ffffff] sm:-mx-8 sm:w-[calc(100%+4rem)] lg:hidden">
+          <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_80%_at_90%_10%,rgba(11,92,255,0.6),transparent_70%)]" />
+          <Link href="/" aria-label="Tomevari home" className="relative flex min-h-11 w-fit items-center rounded-lg">
+            <BrandLogo className="h-9" />
+          </Link>
+          <p className="relative mt-6 max-w-xs font-heading text-[26px] font-extrabold leading-[1.1] tracking-[-0.02em]">
+            Run your guide shop from one calm place.
+          </p>
+        </div>
+        <div className="relative z-10 -mt-14 w-full max-w-[420px] rounded-3xl border border-[#dde5f6] bg-[#ffffff] p-6 shadow-[0_30px_60px_-30px_rgba(0,22,80,0.35)] sm:p-8 lg:mt-0">
           <h1 className="font-heading text-[28px] font-extrabold leading-tight tracking-[-0.02em] text-[#001650]">{title}</h1>
           {subtitle && <p className="mt-2 text-[15px] leading-relaxed text-[#46557d]">{subtitle}</p>}
           <div className="mt-6">{children}</div>

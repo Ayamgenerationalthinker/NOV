@@ -481,3 +481,29 @@ html {
   outline: 2px solid #0b5cff;
   outline-offset: 2px;
 }
+
+/* Owner screens on phones: the admin is written compactly for desktop, so lift the smallest
+   text to a readable size and give every control a 44px tap height. */
+@media (max-width: 767px) {
+  .owner-light main .text-xs {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+  }
+  .owner-light main .text-\[10px\],
+  .owner-light main .text-\[11px\] {
+    font-size: 0.75rem;
+    line-height: 1.1rem;
+  }
+  .owner-light main button,
+  .owner-light main select,
+  .owner-light main input:not([type='checkbox']):not([type='radio']):not([type='file']),
+  .owner-light main summary {
+    min-height: 44px;
+  }
+  .owner-light main a.inline-flex,
+  .owner-light main a[class*='rounded'] {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}

@@ -36,7 +36,7 @@ export function ShopSection({ products, isOwner = false, initialGoal = null, ini
   );
   const filtered = Boolean(goal || needle);
   const visible = limit && !filtered ? matches.slice(0, limit) : matches;
-  const hidden = limit && !filtered && products.length > limit;
+  const hidden = limit && !filtered && products.length > Math.min(limit, 4);
   const clearFilters = () => {
     setGoal(null);
     setQuery('');
@@ -114,7 +114,7 @@ export function ShopSection({ products, isOwner = false, initialGoal = null, ini
               </button>
             </div>
           ) : (
-            <ul className="grid gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+            <ul className={cn('grid gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4', limit && !filtered && 'max-sm:[&>li:nth-child(n+5)]:hidden')}>
               {visible.map((product) => (
                 <li key={product.id}>
                   <GuideCard product={product} headingLevel={pageHeading ? 2 : 3} />

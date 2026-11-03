@@ -18,8 +18,8 @@ export function Footer() {
   return (
     <footer className="bg-ink-deep font-body text-white">
       <div className="mx-auto w-full max-w-[1440px] px-4 pb-8 pt-12 lg:px-16 lg:pt-14">
-        <div className={cn('grid gap-10 sm:grid-cols-2', hasSocial ? 'lg:grid-cols-[1.6fr_1fr_1fr_1.2fr_1fr]' : 'lg:grid-cols-[1.6fr_1fr_1fr_1.2fr]')}>
-          <div className="sm:col-span-2 lg:col-span-1">
+        <div className={cn('grid grid-cols-2 gap-x-6 gap-y-8 sm:gap-10', hasSocial ? 'lg:grid-cols-[1.6fr_1fr_1fr_1.2fr_1fr]' : 'lg:grid-cols-[1.6fr_1fr_1fr_1.2fr]')}>
+          <div className="col-span-2 lg:col-span-1">
             <Link href="/" aria-label={`${name} home`} className="inline-flex min-h-11 items-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
               <BrandLogo className="h-10" />
             </Link>
@@ -45,7 +45,7 @@ export function Footer() {
             <Link href="/#stories" className={linkClass}>Reader stories</Link>
           </nav>
 
-          <nav aria-label="Contact" className="flex flex-col text-[15px]">
+          <nav aria-label="Contact" className="col-span-2 flex flex-col text-[15px] sm:col-span-1">
             <p className={columnTitle}>Contact</p>
             <a href={mailto} className={cn(linkClass, 'break-all')}>{email}</a>
             <a href={`${mailto}?subject=Order%20help`} className={linkClass}>Help with an order</a>

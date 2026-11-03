@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { Minus, Plus, Tag, Lock } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { BuyState, MAX_QUANTITY_PER_ORDER, buildCheckoutUrl } from '@/lib/product-purchase';
+import { primaryButton } from '@/components/home/primitives';
 
 interface ProductBuyActionsProps {
   slug: string;
+  title: string;
   currency: string;
   isPhysical: boolean;
   /** Price shown when there are no options to choose. */
@@ -20,10 +22,21 @@ interface ProductBuyActionsProps {
 /**
  * The single purchase control on the product landing page: option picker and quantity for
  * physical items (driven by real stock), and one "Buy now" button that goes straight to checkout.
+ * On phones a bar with the same button slides in once the main one has scrolled away.
  */
-export function ProductBuyActions({ slug, currency, isPhysical, basePrice, baseAvailable, initial }: ProductBuyActionsProps) {
+export function ProductBuyActions({ slug, title, currency, isPhysical, basePrice, baseAvailable, initial }: ProductBuyActionsProps) {
   const [selectedId, setSelectedId] = React.useState<string | null>(initial.selectedId);
   const [quantity, setQuantity] = React.useState(initial.quantity);
+  const [showBar, setShowBar] = React.useState(false);
+  const mainButton = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const el = mainButton.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => setShowBar(!entry.isIntersecting && entry.boundingClientRect.top < 0));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const selectedOption = initial.options.find((o) => o.id === selectedId) ?? null;
   const price = selectedOption ? { price: selectedOption.price, compareAtPrice: selectedOption.compareAtPrice } : basePrice;
@@ -31,6 +44,7 @@ export function ProductBuyActions({ slug, currency, isPhysical, basePrice, baseA
   const maxQuantity = Math.min(MAX_QUANTITY_PER_ORDER, Math.max(1, available ?? 1));
   const soldOut = isPhysical && (available ?? 0) <= 0;
   const qty = Math.min(quantity, maxQuantity);
+  const total = formatCurrency(price.price * (isPhysical ? qty : 1), currency);
 
   const checkoutHref = buildCheckoutUrl({
     slug,
@@ -40,10 +54,17 @@ export function ProductBuyActions({ slug, currency, isPhysical, basePrice, baseA
   });
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
+      <p className="flex flex-wrap items-baseline gap-x-3 tabular-nums">
+        <span className="text-[32px] font-bold leading-tight text-ink">{total}</span>
+        {price.compareAtPrice !== null && (
+          <s className="text-base text-ink-soft">{formatCurrency(price.compareAtPrice * (isPhysical ? qty : 1), currency)}</s>
+        )}
+      </p>
+
       {initial.options.length > 0 && (
         <fieldset>
-          <legend className="mb-2 text-sm font-medium text-stone-300">Choose an option</legend>
+          <legend className="mb-2 text-[15px] font-semibold text-ink">Choose an option</legend>
           <div className="flex flex-wrap gap-2">
             {initial.options.map((option) => {
               const isSelected = option.id === selectedId;
@@ -58,9 +79,9 @@ export function ProductBuyActions({ slug, currency, isPhysical, basePrice, baseA
                     setQuantity(1);
                   }}
                   className={cn(
-                    'min-h-11 min-w-14 rounded-xl border px-4 py-2 text-sm font-medium transition-colors',
-                    isSelected ? 'border-amber-300 bg-amber-300 text-stone-950' : 'border-stone-700 bg-stone-900 text-stone-100 hover:border-stone-500',
-                    isOut && !isSelected && 'text-stone-500 line-through'
+                    'min-h-11 min-w-14 rounded-[10px] border px-4 py-2 text-sm font-semibold transition-colors',
+                    isSelected ? 'border-ink bg-ink text-white' : 'border-line-strong bg-card text-ink hover:border-ink',
+                    isOut && !isSelected && 'text-ink-soft line-through',
                   )}
                 >
                   {option.label}
@@ -73,23 +94,23 @@ export function ProductBuyActions({ slug, currency, isPhysical, basePrice, baseA
 
       {isPhysical && (
         <div className="flex items-center justify-between gap-4">
-          <div className="text-sm">
+          <div className="text-sm font-semibold">
             {soldOut ? (
-              <span className="font-semibold text-red-400">Sold out</span>
+              <span className="text-bad">Sold out</span>
             ) : available !== null && available <= 5 ? (
-              <span className="text-amber-300">Only {available} left</span>
+              <span className="text-warn">Only {available} left</span>
             ) : (
-              <span className="text-emerald-400">In stock</span>
+              <span className="text-ok">In stock</span>
             )}
           </div>
           {!soldOut && (
-            <div className="flex items-center rounded-xl border border-stone-700 bg-stone-900" role="group" aria-label="Quantity">
-              <button type="button" aria-label="Decrease quantity" disabled={qty <= 1} onClick={() => setQuantity(Math.max(1, qty - 1))} className="flex h-11 w-11 items-center justify-center text-stone-200 disabled:opacity-30">
-                <Minus className="h-4 w-4" />
+            <div className="flex items-center rounded-[10px] border border-line-strong bg-card" role="group" aria-label="Quantity">
+              <button type="button" aria-label="Decrease quantity" disabled={qty <= 1} onClick={() => setQuantity(Math.max(1, qty - 1))} className="flex h-11 w-11 items-center justify-center text-ink disabled:opacity-30">
+                <Minus className="h-4 w-4" aria-hidden />
               </button>
-              <span className="w-8 text-center tabular-nums text-sm text-white" aria-live="polite">{qty}</span>
-              <button type="button" aria-label="Increase quantity" disabled={qty >= maxQuantity} onClick={() => setQuantity(Math.min(maxQuantity, qty + 1))} className="flex h-11 w-11 items-center justify-center text-stone-200 disabled:opacity-30">
-                <Plus className="h-4 w-4" />
+              <span className="w-8 text-center text-sm tabular-nums text-ink" aria-live="polite">{qty}</span>
+              <button type="button" aria-label="Increase quantity" disabled={qty >= maxQuantity} onClick={() => setQuantity(Math.min(maxQuantity, qty + 1))} className="flex h-11 w-11 items-center justify-center text-ink disabled:opacity-30">
+                <Plus className="h-4 w-4" aria-hidden />
               </button>
             </div>
           )}
@@ -97,38 +118,42 @@ export function ProductBuyActions({ slug, currency, isPhysical, basePrice, baseA
       )}
 
       {initial.coupon && (
-        <p className="flex items-center gap-2 text-xs text-emerald-300">
-          <Tag className="h-3.5 w-3.5" /> Code <strong className="tabular-nums">{initial.coupon}</strong> will be applied at checkout
+        <p className="flex items-center gap-2 text-sm text-ok">
+          <Tag className="h-4 w-4" aria-hidden /> Code <strong className="tabular-nums">{initial.coupon}</strong> will be applied at checkout
         </p>
       )}
 
-      {/* Fixed to the bottom of the screen on phones, inline on larger screens */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-800 bg-stone-950/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur md:static md:z-auto md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-none">
-        <div className="mx-auto flex max-w-xl items-center gap-4">
-          <div className="md:hidden">
-            <div className="tabular-nums text-lg font-bold text-white">{formatCurrency(price.price * (isPhysical ? qty : 1), currency)}</div>
-            {price.compareAtPrice !== null && (
-              <div className="tabular-nums text-xs text-stone-500 line-through">{formatCurrency(price.compareAtPrice * (isPhysical ? qty : 1), currency)}</div>
-            )}
-          </div>
-          {soldOut ? (
-            <span className="flex h-12 flex-1 items-center justify-center rounded-xl bg-stone-800 text-base font-semibold text-stone-400">
-              Sold out
-            </span>
-          ) : (
-            <Link
-              href={checkoutHref}
-              className="flex h-12 flex-1 items-center justify-center rounded-xl bg-amber-300 text-base font-bold text-stone-950 shadow-lg shadow-amber-900/20 transition-colors hover:bg-amber-200 active:bg-amber-400"
-            >
+      <div ref={mainButton}>
+        {soldOut ? (
+          <span className="flex min-h-12 w-full items-center justify-center rounded-[10px] bg-band text-[15px] font-semibold text-ink-soft">Sold out</span>
+        ) : (
+          <Link href={checkoutHref} className={cn(primaryButton, 'w-full')}>
+            <Lock className="h-4 w-4" aria-hidden /> Buy now
+          </Link>
+        )}
+      </div>
+      {!soldOut && <p className="text-sm text-ink-soft">Next, you enter your details and pay with Mobile Money or card. No account needed.</p>}
+
+      {/* Phones only: repeats the title, price and button after the main one scrolls away. */}
+      {!soldOut && (
+        <div
+          aria-hidden={!showBar}
+          className={cn(
+            'fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 transition-transform duration-200 md:hidden',
+            showBar ? 'translate-y-0' : 'pointer-events-none translate-y-full',
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-ink">{title}</p>
+              <p className="text-base font-bold tabular-nums text-ink">{total}</p>
+            </div>
+            <Link href={checkoutHref} tabIndex={showBar ? undefined : -1} className={cn(primaryButton, 'shrink-0')}>
               Buy now
             </Link>
-          )}
+          </div>
         </div>
-      </div>
-
-      <p className="hidden items-center gap-1.5 text-xs text-stone-400 md:flex">
-        <Lock className="h-3.5 w-3.5" /> Pay securely with Mobile Money or card. No account needed.
-      </p>
+      )}
     </div>
   );
 }

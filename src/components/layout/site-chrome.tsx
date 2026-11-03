@@ -5,13 +5,25 @@ import { cn } from '@/lib/utils';
 
 /**
  * Routes that render without the shop header and footer: product landing pages and checkout
- * (distraction-free for buyers) and the owner's admin / sign-in screens (they have their own).
+ * bring their own, and the owner's admin / sign-in screens have theirs.
  */
 const FOCUSED_PREFIXES = ['/p', '/checkout', '/admin', '/login', '/forgot-password', '/reset-password'];
 
+/** Customer pages on the light paper theme. */
+const PAPER_PREFIXES = ['/products', '/p', '/checkout'];
+
+function matches(pathname: string, prefix: string): boolean {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
 export function isFocusedRoute(pathname: string | null): boolean {
   if (!pathname) return false;
-  return FOCUSED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return FOCUSED_PREFIXES.some((prefix) => matches(pathname, prefix));
+}
+
+export function isPaperRoute(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return pathname === '/' || PAPER_PREFIXES.some((prefix) => matches(pathname, prefix));
 }
 
 interface SiteChromeProps {
@@ -23,13 +35,12 @@ interface SiteChromeProps {
 export function SiteChrome({ header, footer, children }: SiteChromeProps) {
   const pathname = usePathname();
   const focused = isFocusedRoute(pathname);
-  // The header floats over the page. The homepage hero runs underneath it; other pages start below it.
-  const clearHeader = !focused && pathname !== '/';
-  // Every screen swaps amber for the brand's electric blue (see .shop-palette in globals.css).
+  const paper = isPaperRoute(pathname);
+  // The older screens swap amber for the brand's electric blue (see .shop-palette in globals.css).
   return (
     <>
       {!focused && header}
-      <main className={cn('flex-1 flex flex-col shop-palette', clearHeader && 'pt-20')}>{children}</main>
+      <main className={cn('flex-1 flex flex-col', paper ? 'paper' : 'shop-palette')}>{children}</main>
       {!focused && footer}
     </>
   );

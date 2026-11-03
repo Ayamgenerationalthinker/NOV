@@ -7,7 +7,7 @@ import { Box, Image as ImageIcon } from 'lucide-react';
 // three.js is large: only download it when a product actually has a 3D model and the buyer opens it.
 const Product3DViewer = dynamic(
   () => import('@/components/3d/product-3d-viewer').then((m) => m.Product3DViewer),
-  { ssr: false, loading: () => <div className="aspect-square w-full animate-pulse rounded-3xl bg-zinc-900" /> }
+  { ssr: false, loading: () => <div className="aspect-square w-full animate-pulse rounded-[14px] bg-band" /> }
 );
 
 interface ProductMediaGalleryProps {
@@ -36,14 +36,14 @@ export function ProductMediaGallery({
     <div className="space-y-4">
       {/* Tab Switcher if 3D is available */}
       {model3dUrl && (
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-900 border border-zinc-800 rounded-xl w-fit">
+        <div className="flex items-center gap-1.5 p-1 bg-band border border-line rounded-[10px] w-fit">
           <button
             type="button"
             onClick={() => setActiveTab('PHOTO')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`flex min-h-11 items-center gap-1.5 px-3 rounded-lg text-sm font-medium transition-colors ${
               activeTab === 'PHOTO'
-                ? 'bg-zinc-800 text-stone-100 shadow-sm'
-                : 'text-zinc-400 hover:text-stone-200'
+                ? 'bg-ink text-white'
+                : 'text-ink-soft hover:text-ink'
             }`}
           >
             <ImageIcon className="w-3.5 h-3.5" /> High-Res Photography
@@ -52,10 +52,10 @@ export function ProductMediaGallery({
           <button
             type="button"
             onClick={() => setActiveTab('3D')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`flex min-h-11 items-center gap-1.5 px-3 rounded-lg text-sm font-medium transition-colors ${
               activeTab === '3D'
-                ? 'bg-stone-200 text-zinc-950 font-semibold shadow-sm'
-                : 'text-zinc-400 hover:text-stone-200'
+                ? 'bg-ink text-white font-semibold'
+                : 'text-ink-soft hover:text-ink'
             }`}
           >
             <Box className="w-3.5 h-3.5" /> Interactive 360° Inspection
@@ -74,8 +74,8 @@ export function ProductMediaGallery({
         <div
           className={
             compact
-              ? 'relative mx-auto flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-xl border border-zinc-800/80 bg-stone-900 shadow-xl shadow-black/30 md:max-w-sm md:rounded-2xl'
-              : 'relative aspect-[4/5] w-full overflow-hidden bg-stone-900 md:rounded-3xl md:border md:border-zinc-800/80 flex items-center justify-center'
+              ? 'relative mx-auto flex aspect-[3/4] w-full max-w-60 items-center justify-center overflow-hidden rounded-[14px] border border-line bg-band p-2 lg:max-w-none lg:p-4'
+              : 'relative aspect-[4/5] w-full overflow-hidden rounded-[14px] border border-line bg-band flex items-center justify-center'
           }
         >
           {selectedImage ? (
@@ -83,13 +83,13 @@ export function ProductMediaGallery({
             <img
               src={selectedImage}
               alt={productTitle}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
               fetchPriority="high"
             />
           ) : (
-            <div className="text-center text-zinc-600 p-8">
+            <div className="text-center text-ink-soft p-8">
               <ImageIcon className="w-12 h-12 mx-auto mb-2" />
-              <p className="text-xs">No image provided</p>
+              <p className="text-sm">No image provided</p>
             </div>
           )}
         </div>
@@ -97,7 +97,7 @@ export function ProductMediaGallery({
 
       {/* Thumbnail Strip */}
       {allImages.length > 1 && (
-        <div className={`items-center gap-3 overflow-x-auto pb-2 md:px-0 ${compact ? 'hidden md:flex' : 'flex px-4'}`}>
+        <div className={'flex items-center gap-3 overflow-x-auto pb-2'}>
           {allImages.map((img, idx) => (
             <button
               key={idx}
@@ -106,10 +106,10 @@ export function ProductMediaGallery({
                 setSelectedImage(img);
                 setActiveTab('PHOTO');
               }}
-              className={`relative w-20 h-20 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all ${
+              className={`relative w-20 h-20 rounded-[10px] overflow-hidden border-2 flex-shrink-0 transition-colors ${
                 activeTab === 'PHOTO' && selectedImage === img
-                  ? 'border-emerald-500 shadow-md'
-                  : 'border-zinc-800 opacity-60 hover:opacity-100'
+                  ? 'border-brand'
+                  : 'border-line hover:border-ink'
               }`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}

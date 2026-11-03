@@ -1,18 +1,24 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { Download, FileText, Star, Truck, Lock } from 'lucide-react';
+import { Download, FileText, LifeBuoy, Star, Truck } from 'lucide-react';
 import { ProductService } from '@/services/product/product.service';
 import { ReviewService } from '@/services/review/review.service';
 import { InventoryService } from '@/services/inventory/inventory.service';
 import { ProductBuyActions } from '@/components/products/product-buy-actions';
 import { ProductMediaGallery } from '@/components/products/product-media-gallery';
+import { GuideCard } from '@/components/products/guide-card';
 import { formatCurrency, formatFileSize } from '@/lib/utils';
 import { buildProductMetadata } from '@/lib/product-metadata';
-import { availableStock, productDisplayPrice, resolveBuyState } from '@/lib/product-purchase';
+import { availableStock, buildCheckoutUrl, productDisplayPrice, resolveBuyState } from '@/lib/product-purchase';
 import { env } from '@/lib/env';
+import { GUIDE_COPY } from '@/content/guides';
+import { productGoals } from '@/lib/goals';
+import { toShopProducts } from '@/lib/shop-product';
 import { productTypeLabel } from '@/lib/product-types';
 import Link from 'next/link';
-import { BrandLogo } from '@/components/layout/brand-logo';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
+import { pageWidth, primaryButton, SectionHeading } from '@/components/home/primitives';
 import { ExpandableText } from '@/components/products/expandable-text';
 import { ExpandableList } from '@/components/products/expandable-list';
 
@@ -63,175 +69,216 @@ export default async function ProductLandingPage({ params, searchParams }: Produ
   );
   const displayPrice = productDisplayPrice(product);
   const defaultVariant = product.variants.find((v) => v.id === buyState.defaultVariantId);
-  const savingsPercent =
-    displayPrice.compareAtPrice !== null
-      ? Math.round((1 - displayPrice.price / displayPrice.compareAtPrice) * 100)
-      : 0;
 
-  const reviews = await ReviewService.getProductReviews(product.id, { limit: 5 });
+  const [reviews, catalog] = await Promise.all([
+    ReviewService.getProductReviews(product.id, { limit: 5 }),
+    // Related guides are a nice extra: a failed lookup must never take the buying page down.
+    ProductService.getPublishedProducts({ page: 1, limit: 48, sort: 'newest' }).catch(() => ({ products: [] })),
+  ]);
   const hasReviews = reviews.metrics.totalReviews > 0;
 
   const whatYouGet = product.whatsIncluded.length > 0 ? product.whatsIncluded : product.features;
   const files = product.files;
-  const category = isPhysical ? null : productTypeLabel(product.productType);
+  const category = isPhysical ? null : product.productType === 'EBOOK' ? 'PDF guide' : productTypeLabel(product.productType);
   const totalFileSize = files.reduce((sum, f) => sum + Number(f.fileSize), 0);
   const formats = Array.from(new Set(files.map((f) => fileFormat(f.fileName))));
-  // Many summaries repeat the title or the opening of the description; show them only when they add something.
-  const summary = product.shortDescription?.trim() ?? '';
-  const showSummary =
-    summary.length > 0 && summary !== product.title.trim() && !product.description.includes(summary.slice(0, 120));
+  const copy = GUIDE_COPY[product.slug];
+  const summary = copy?.outcome ?? product.shortDescription?.trim();
+  const email = env.NEXT_PUBLIC_SUPPORT_EMAIL;
+
+  // Guides that share a goal with this one first, so the suggestions are never random.
+  const goals = productGoals(product);
+  const others = toShopProducts(catalog.products).filter((p) => p.id !== product.id);
+  const related = [...others.filter((p) => p.goals.some((g) => goals.includes(g))), ...others.filter((p) => !p.goals.some((g) => goals.includes(g)))].slice(0, 4);
+
+  const checkoutHref = buildCheckoutUrl({ slug: product.slug, variantId: buyState.selectedId, quantity: buyState.quantity, coupon: buyState.coupon });
+  const canBuyBelow = !isPhysical;
 
   return (
-    <div className="min-h-screen bg-stone-950 pb-28 text-stone-100 md:pb-16">
-      <header className="border-b border-stone-800/70">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 md:px-6">
-          <Link href="/" aria-label={`${env.NEXT_PUBLIC_APP_NAME} home`} className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300">
-            <BrandLogo className="h-8 sm:h-9" />
-          </Link>
-          <Link href="/products" className="text-sm text-stone-400 hover:text-white">
-            More products
-          </Link>
-        </div>
-      </header>
+    <>
+      <Header />
+      <div className="flex-1 bg-paper text-ink">
+        <div className={`${pageWidth} pb-10 pt-5 lg:pb-16 lg:pt-8`}>
+          <nav aria-label="Breadcrumb" className="text-sm text-ink-soft">
+            <Link href="/products" className="underline underline-offset-4 hover:text-ink">Shop</Link>
+            <span aria-hidden> / </span>
+            <span aria-current="page" className="text-ink">{product.title}</span>
+          </nav>
 
-      {/* Phones: a small cover beside the title and price, then everything else full width.
-          Larger screens: the cover stays put on the left while the details scroll on the right. */}
-      <div
-        className={
-          isPhysical
-            ? 'mx-auto max-w-5xl md:grid md:grid-cols-2 md:gap-x-10 md:px-6 md:pt-10'
-            : 'mx-auto grid max-w-5xl grid-cols-[7rem_minmax(0,1fr)] gap-x-4 px-4 pt-5 sm:grid-cols-[9rem_minmax(0,1fr)] md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-x-10 md:px-6 md:pt-10'
-        }
-      >
-        <div className={isPhysical ? 'md:row-span-2' : 'md:sticky md:top-8 md:row-span-2 md:self-start'}>
-          <ProductMediaGallery
-            coverImage={product.coverImage}
-            galleryImages={product.galleryImages}
-            model3dUrl={product.model3dUrl}
-            model3dPoster={product.model3dPoster}
-            productTitle={product.title}
-            compact={!isPhysical}
-          />
-        </div>
+          <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-14">
+            <div className="lg:sticky lg:top-24 lg:self-start">
+              <ProductMediaGallery
+                coverImage={product.coverImage}
+                galleryImages={isPhysical ? product.galleryImages : []}
+                model3dUrl={product.model3dUrl}
+                model3dPoster={product.model3dPoster}
+                productTitle={product.title}
+                compact={!isPhysical}
+              />
+            </div>
 
-        <div className={isPhysical ? 'space-y-3 px-4 pt-5 md:px-0 md:pt-0' : 'min-w-0 space-y-2 self-center md:space-y-3 md:self-start'}>
-          {category && (
-            <span className="inline-flex rounded-full border border-amber-300/40 bg-amber-300/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-200 md:text-xs">
-              {category}
-            </span>
-          )}
-          <h1 className="break-words text-xl font-bold leading-tight tracking-tight text-white sm:text-2xl md:text-3xl">{product.title}</h1>
-          {hasReviews && (
-            <a href="#reviews" className="flex items-center gap-2 text-sm">
-              <span className="flex text-amber-300" aria-hidden>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <Star key={n} className={`h-4 w-4 ${n <= Math.round(reviews.metrics.averageRating) ? 'fill-amber-300' : 'text-stone-700'}`} />
-                ))}
-              </span>
-              <span className="text-stone-300">
-                {reviews.metrics.averageRating.toFixed(1)} · {reviews.metrics.totalReviews} review{reviews.metrics.totalReviews === 1 ? '' : 's'}
-              </span>
-            </a>
-          )}
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <span className="tabular-nums text-2xl font-bold text-white md:text-3xl">{formatCurrency(displayPrice.price, product.currency)}</span>
-            {displayPrice.compareAtPrice !== null && (
-              <>
-                <span className="tabular-nums text-base text-stone-500 line-through">
-                  {formatCurrency(displayPrice.compareAtPrice, product.currency)}
-                </span>
-                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300">Save {savingsPercent}%</span>
-              </>
-            )}
+            <div className="min-w-0 space-y-5">
+              <div>
+                {category && <span className="rounded-md bg-brand-soft px-2 py-1 text-xs font-bold tracking-wide text-brand-hover">{category}</span>}
+                <h1 className="mt-3 break-words font-serif text-[38px] font-medium leading-[1.1] text-ink lg:text-[52px] lg:leading-[1.08]">{product.title}</h1>
+                {summary && <p className="mt-3 text-base leading-relaxed text-ink-soft lg:text-[19px]">{summary}</p>}
+                {copy?.audience && <p className="mt-2 text-base text-ink">{copy.audience}.</p>}
+                {hasReviews && (
+                  <a href="#reviews" className="mt-2 flex min-h-11 items-center gap-2 text-sm">
+                    <span className="flex text-brand" aria-hidden>
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star key={n} className={`h-4 w-4 ${n <= Math.round(reviews.metrics.averageRating) ? 'fill-brand' : 'text-line-strong'}`} />
+                      ))}
+                    </span>
+                    <span className="text-ink">
+                      {reviews.metrics.averageRating.toFixed(1)} from {reviews.metrics.totalReviews} review{reviews.metrics.totalReviews === 1 ? '' : 's'}
+                    </span>
+                  </a>
+                )}
+              </div>
+
+              <ProductBuyActions
+                slug={product.slug}
+                title={product.title}
+                currency={product.currency}
+                isPhysical={isPhysical}
+                basePrice={displayPrice}
+                baseAvailable={isPhysical ? (defaultVariant ? availableStock(defaultVariant) : 0) : null}
+                initial={buyState}
+              />
+
+              {/* Reassurance beside the decision. Every line here describes how checkout really works. */}
+              <ul className="space-y-3 rounded-[14px] border border-line bg-card p-4 text-sm leading-normal text-ink-soft">
+                {isPhysical ? (
+                  <li className="flex gap-3">
+                    <Truck className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />
+                    <span><strong className="block font-semibold text-ink">Delivered to your address</strong>We’ll call or WhatsApp you on the number you give at checkout.</span>
+                  </li>
+                ) : (
+                  <li className="flex gap-3">
+                    <Download className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />
+                    <span><strong className="block font-semibold text-ink">Download after payment</strong>Your download appears once payment is confirmed, and we email you a link.</span>
+                  </li>
+                )}
+                <li className="flex gap-3">
+                  <LifeBuoy className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden />
+                  <span>
+                    <strong className="block font-semibold text-ink">Help if something goes wrong</strong>
+                    Email <a href={`mailto:${email}`} className="break-all font-medium text-brand-hover underline underline-offset-4">{email}</a> with your order number. <Link href="/#faq" className="font-medium text-brand-hover underline underline-offset-4">Refunds and delivery</Link>
+                  </span>
+                </li>
+              </ul>
+
+              {!isPhysical && (
+                <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-line bg-line text-sm">
+                  <div className="bg-card p-3.5">
+                    <dt className="text-ink-soft">Format</dt>
+                    <dd className="mt-0.5 flex items-center gap-1.5 font-semibold text-ink">
+                      <FileText className="h-4 w-4 shrink-0 text-brand" aria-hidden />
+                      {formats.length > 0 ? formats.join(', ') : category}
+                    </dd>
+                  </div>
+                  <div className="bg-card p-3.5">
+                    <dt className="text-ink-soft">{files.length > 1 ? `${files.length} files` : 'Size'}</dt>
+                    <dd className="mt-0.5 font-semibold tabular-nums text-ink">{totalFileSize > 0 ? formatFileSize(totalFileSize) : 'Listed at download'}</dd>
+                  </div>
+                </dl>
+              )}
+            </div>
           </div>
         </div>
 
-        <div
-          className={
-            isPhysical
-              ? 'mt-5 space-y-6 px-4 md:col-start-2 md:mt-6 md:px-0'
-              : 'col-span-2 mt-5 space-y-6 md:col-span-1 md:col-start-2 md:mt-6'
-          }
-        >
-          {showSummary && <p className="text-[15px] leading-relaxed text-stone-300">{product.shortDescription}</p>}
-
-          <ProductBuyActions
-            slug={product.slug}
-            currency={product.currency}
-            isPhysical={isPhysical}
-            basePrice={displayPrice}
-            baseAvailable={isPhysical ? (defaultVariant ? availableStock(defaultVariant) : 0) : null}
-            initial={buyState}
-          />
-
-          {isPhysical ? (
-            <div className="flex items-start gap-3 rounded-2xl border border-stone-800 bg-stone-900/60 p-4 text-sm text-stone-300">
-              <Truck className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
-              <p>Delivered to your address. We’ll call or WhatsApp you on the number you give at checkout.</p>
-            </div>
-          ) : (
-            <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-stone-800 bg-stone-800 text-sm">
-              <div className="bg-stone-950 p-3.5">
-                <dt className="text-xs text-stone-400">Format</dt>
-                <dd className="mt-0.5 flex items-center gap-1.5 font-medium text-white">
-                  <FileText className="h-4 w-4 shrink-0 text-amber-300" aria-hidden />
-                  {formats.length > 0 ? formats.join(', ') : category}
-                </dd>
-              </div>
-              <div className="bg-stone-950 p-3.5">
-                <dt className="text-xs text-stone-400">{files.length > 1 ? `${files.length} files` : 'Size'}</dt>
-                <dd className="mt-0.5 font-medium tabular-nums text-white">{totalFileSize > 0 ? formatFileSize(totalFileSize) : '—'}</dd>
-              </div>
-              <div className="col-span-2 flex items-start gap-2.5 bg-stone-950 p-3.5 text-stone-300">
-                <Download className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" aria-hidden />
-                <dt className="sr-only">Delivery</dt>
-                <dd>Download right after payment is confirmed, plus a link by email. The file is only available to buyers.</dd>
-              </div>
-            </dl>
-          )}
-
-          <section aria-labelledby="about-title" className="border-t border-stone-800/70 pt-6">
-            <h2 id="about-title" className="mb-3 text-lg font-semibold text-white">
-              About this {isPhysical ? 'item' : (category ?? 'product').toLowerCase()}
-            </h2>
-            <ExpandableText text={product.description} />
-          </section>
-
-          {whatYouGet.length > 0 && (
-            <section className="border-t border-stone-800/70 pt-6">
-              <h2 className="mb-3 text-lg font-semibold text-white">What you get</h2>
-              <ExpandableList items={whatYouGet} />
-            </section>
-          )}
-
-          {hasReviews && (
-            <section id="reviews" className="border-t border-stone-800/70 pt-6">
-              <h2 className="mb-4 text-lg font-semibold text-white">What buyers say</h2>
-              <ul className="space-y-4">
-                {reviews.reviews.map((review) => (
-                  <li key={review.id} className="rounded-2xl border border-stone-800 p-4">
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="flex text-amber-300" aria-label={`${review.rating} out of 5`}>
-                        {[1, 2, 3, 4, 5].map((n) => (
-                          <Star key={n} className={`h-3.5 w-3.5 ${n <= review.rating ? 'fill-amber-300' : 'text-stone-700'}`} />
-                        ))}
-                      </span>
-                      <span className="text-xs text-stone-400">{review.customerName?.split(' ')[0] || 'Buyer'}</span>
-                      {review.isVerifiedPurchase && <span className="text-[11px] text-emerald-400">Verified buyer</span>}
-                    </div>
-                    {review.title && <p className="font-medium text-white">{review.title}</p>}
-                    <p className="text-sm text-stone-300">{review.comment}</p>
+        {!isPhysical && product.galleryImages.length > 0 && (
+          <section aria-labelledby="inside-title" className="bg-band py-10 lg:py-14">
+            <div className={pageWidth}>
+              <SectionHeading id="inside-title" title="Look inside" />
+              <ul className="-mx-4 mt-5 flex snap-x gap-4 overflow-x-auto px-4 pb-2 lg:mx-0 lg:px-0">
+                {product.galleryImages.map((image, i) => (
+                  <li key={image} className="w-60 shrink-0 snap-start lg:w-72">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={image} alt={`Page from ${product.title}, sample ${i + 1}`} loading="lazy" width={288} height={384} className="h-auto w-full rounded-[10px] border border-line bg-card" />
                   </li>
                 ))}
               </ul>
+            </div>
+          </section>
+        )}
+
+        <div className={`${pageWidth} grid gap-10 py-10 lg:grid-cols-2 lg:gap-16 lg:py-14`}>
+          {whatYouGet.length > 0 && (
+            <section aria-labelledby="get-title">
+              <SectionHeading id="get-title" title="What you get" />
+              <div className="mt-4">
+                <ExpandableList items={whatYouGet} />
+              </div>
             </section>
           )}
-
-          <p className="flex items-center justify-center gap-1.5 pb-4 text-xs text-stone-500 md:justify-start">
-            <Lock className="h-3.5 w-3.5" /> Secure checkout · Mobile Money or card · GH₵
-          </p>
+          <section aria-labelledby="about-title">
+            <SectionHeading id="about-title" title={`About this ${isPhysical ? 'item' : 'guide'}`} />
+            <div className="mt-4">
+              <ExpandableText text={product.description} />
+            </div>
+            {!isPhysical && (
+              <p className="mt-4 text-sm leading-relaxed text-ink-soft">
+                This guide gives you information and steps to follow. Results depend on your effort and your situation.
+              </p>
+            )}
+          </section>
         </div>
+
+        {hasReviews && (
+          <section id="reviews" aria-labelledby="reviews-title" className="bg-band py-10 lg:py-14">
+            <div className={pageWidth}>
+              <SectionHeading id="reviews-title" title="What buyers say" />
+              <ul className="mt-5 grid gap-4 lg:grid-cols-3">
+                {reviews.reviews.map((review) => (
+                  <li key={review.id} className="rounded-[14px] border border-line bg-card p-4">
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <span className="flex text-brand" role="img" aria-label={`${review.rating} out of 5`}>
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <Star key={n} className={`h-4 w-4 ${n <= review.rating ? 'fill-brand' : 'text-line-strong'}`} aria-hidden />
+                        ))}
+                      </span>
+                      <span className="text-sm text-ink-soft">{review.customerName?.split(' ')[0] || 'Buyer'}</span>
+                      {review.isVerifiedPurchase && <span className="text-sm font-semibold text-ok">Verified buyer</span>}
+                    </div>
+                    {review.title && <p className="font-semibold text-ink">{review.title}</p>}
+                    <p className="text-sm leading-relaxed text-ink-soft">{review.comment}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {related.length > 0 && (
+          <section aria-labelledby="related-title" className="py-10 lg:py-14">
+            <div className={pageWidth}>
+              <SectionHeading id="related-title" title="Related guides" />
+              <ul className="mt-5 grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+                {related.map((item) => (
+                  <li key={item.id}>
+                    <GuideCard product={item} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
+
+        {canBuyBelow && (
+          <section aria-label={`Buy ${product.title}`} className="bg-brand-soft">
+            <div className={`${pageWidth} flex flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between`}>
+              <div>
+                <p className="text-[17px] font-bold text-ink">{product.title}</p>
+                <p className="text-lg font-bold tabular-nums text-ink">{formatCurrency(displayPrice.price, product.currency)}</p>
+              </div>
+              <Link href={checkoutHref} className={primaryButton}>Buy now</Link>
+            </div>
+          </section>
+        )}
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }

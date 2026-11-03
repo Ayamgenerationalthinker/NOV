@@ -19,13 +19,13 @@ export function ExpandableText({ text, previewChars = 280, className }: { text: 
       <div
         id={id}
         className={cn(
-          'relative whitespace-pre-line break-words text-[15px] leading-relaxed text-stone-300',
-          isLong && !open && 'max-h-32 overflow-hidden'
+          'relative whitespace-pre-line break-words text-base leading-relaxed text-ink-soft',
+          isLong && !open && 'max-h-36 overflow-hidden',
         )}
       >
         <RichLine text={text} />
         {isLong && !open && (
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-stone-950 to-transparent" />
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-paper to-transparent" />
         )}
       </div>
       {isLong && (
@@ -34,7 +34,7 @@ export function ExpandableText({ text, previewChars = 280, className }: { text: 
           aria-expanded={open}
           aria-controls={id}
           onClick={() => setOpen((v) => !v)}
-          className="mt-3 inline-flex items-center gap-1 rounded-lg text-sm font-semibold text-amber-300 hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+          className="mt-2 inline-flex min-h-11 items-center gap-1 rounded-lg text-[15px] font-semibold text-brand-hover hover:text-ink"
         >
           {open ? 'Show less' : 'Read more'}
           <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} aria-hidden />

@@ -1,104 +1,50 @@
 /**
- * Everything the homepage says that is not a product lives here: growth stages, the goal
- * categories, "Why Tomevari", the buying steps, the FAQ and reader stories.
+ * Everything the homepage says that is not a product lives here: the goal categories, the
+ * buying steps and the FAQ.
  * Products themselves come from the database (add them in /admin/products).
  *
  * Keep this honest: no invented numbers, no made-up reviews, no income promises.
  */
-
-export interface GrowthStage {
-  label: string;
-  caption: string;
-}
-
-export const GROWTH_STAGES: GrowthStage[] = [
-  { label: 'Seed', caption: 'Plant the idea' },
-  { label: 'Growth', caption: 'Grow the skill' },
-  { label: 'Harvest', caption: 'Harvest the income' },
-];
-
-export const HERO_FACTS = [
-  { title: 'Instant download', text: 'Your files are ready right after you pay.' },
-  { title: 'Pay in any currency', text: 'Mobile Money or card, from anywhere.' },
-  { title: 'No account needed', text: 'Buy as a guest in a few taps.' },
-] as const;
-
-export const WHY_CARDS = [
-  {
-    number: '01',
-    tag: 'The guides',
-    title: 'Practical, step-by-step guides',
-    text: 'Each guide is written to be followed, one clear step at a time. What you get out of it depends on the work you put in.',
-  },
-  {
-    number: '02',
-    tag: 'Delivery',
-    title: 'Instant PDF delivery',
-    text: 'Download buttons appear as soon as your payment goes through, and a link is sent to your email as well.',
-  },
-  {
-    number: '03',
-    tag: 'Payment',
-    title: 'Pay your way in GH₵',
-    text: 'Use Mobile Money or a card. Prices are in Ghana cedis and you never have to create an account.',
-  },
-] as const;
-
-export type GoalMotif = 'blocks' | 'rings' | 'coins' | 'darts' | 'chips';
 
 export interface Goal {
   /** Also the tag saved on a product when the owner ticks this goal in the admin. */
   slug: string;
   name: string;
   blurb: string;
-  /** Shape used by the 3D background behind the selector. */
-  motif: GoalMotif;
-  /** Tint of that background (and of the static fallback gradient). */
-  color: string;
 }
 
 export const GOALS: Goal[] = [
   {
     slug: 'start-a-business',
-    name: 'Start a Business',
+    name: 'Start a business',
     blurb: 'From first idea to first customer.',
-    motif: 'blocks',
-    color: '#4d8dff',
   },
   {
     slug: 'online-income',
-    name: 'Online Income',
+    name: 'Online income',
     blurb: 'Ways to earn using the internet.',
-    motif: 'rings',
-    color: '#3d9bff',
   },
   {
     slug: 'saving-investing',
-    name: 'Saving & Investing',
+    name: 'Saving and investing',
     blurb: 'Keep more of what you make and put it to work.',
-    motif: 'coins',
-    color: '#9dbfff',
   },
   {
     slug: 'freelancing',
     name: 'Freelancing',
     blurb: 'Find clients and get paid for your skills.',
-    motif: 'darts',
-    color: '#b8c8f0',
   },
   {
     slug: 'digital-skills',
-    name: 'Digital Skills',
+    name: 'Digital skills',
     blurb: 'Learn the tools that open doors.',
-    motif: 'chips',
-    color: '#7aa9ff',
   },
 ];
 
 export const BUYING_STEPS = [
-  { title: 'Choose', text: 'Pick the guide that fits your goal and tap Buy now.' },
-  { title: 'Pay with MoMo or card', text: 'Check out as a guest in GH₵. It takes a few taps on your phone.' },
-  { title: 'Download instantly', text: 'Your files open straight away, and we email you a link to keep.' },
+  { title: 'Choose a guide', text: 'Pick the guide that fits your goal and see what is inside before you buy.' },
+  { title: 'Pay on a secure page', text: 'Check out as a guest in GH₵ with Mobile Money or card. No account needed.' },
+  { title: 'Download your file', text: 'Your download appears once payment is confirmed, and we email you a link to keep.' },
 ] as const;
 
 export interface SocialLink {

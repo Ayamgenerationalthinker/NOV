@@ -26,12 +26,12 @@ export function ExpandableList({ items, previewCount = 5 }: { items: string[]; p
         {items.map((item, idx) => {
           const hidden = isLong && !open && idx >= previewCount;
           return isHeading(item) ? (
-            <li key={idx} className={cn('pt-2 text-sm font-semibold text-white first:pt-0', hidden && 'hidden')}>
+            <li key={idx} className={cn('pt-2 text-[15px] font-bold text-ink first:pt-0', hidden && 'hidden')}>
               {item.trim().replace(/:$/, '')}
             </li>
           ) : (
-            <li key={idx} className={cn('flex items-start gap-3 text-[15px] leading-relaxed text-stone-300', hidden && 'hidden')}>
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" aria-hidden />
+            <li key={idx} className={cn('flex items-start gap-3 text-base leading-relaxed text-ink-soft', hidden && 'hidden')}>
+              <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-brand" aria-hidden />
               <span className="min-w-0 break-words">
                 <RichLine text={item} />
               </span>
@@ -45,7 +45,7 @@ export function ExpandableList({ items, previewCount = 5 }: { items: string[]; p
           aria-expanded={open}
           aria-controls={id}
           onClick={() => setOpen((v) => !v)}
-          className="mt-3 inline-flex items-center gap-1 rounded-lg text-sm font-semibold text-amber-300 hover:text-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+          className="mt-2 inline-flex min-h-11 items-center gap-1 rounded-lg text-[15px] font-semibold text-brand-hover hover:text-ink"
         >
           {open ? 'Show less' : `Show all ${items.length}`}
           <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} aria-hidden />

@@ -8,7 +8,7 @@ export function RichLine({ text }: { text: string }) {
     <>
       {parts.map((part, idx) =>
         idx % 2 === 1 ? (
-          <strong key={idx} className="font-semibold text-white">{part}</strong>
+          <strong key={idx} className="font-semibold text-ink">{part}</strong>
         ) : (
           part.replace(/\*\*/g, '')
         )

@@ -62,6 +62,27 @@ body {
   --color-accent: #4d8dff;
   --color-accent-200: #9dbfff;
   --font-display: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Customer pages: light paper surfaces with navy text. See .paper below. */
+  --color-ink: #001650;
+  --color-ink-deep: #010f3e;
+  --color-ink-soft: #4a5470;
+  --color-paper: #fbf9f4;
+  --color-band: #f4f0e7;
+  --color-card: #ffffff;
+  --color-line: #e3ddd0;
+  --color-line-strong: #868da1;
+  --color-brand: #0b5cff;
+  --color-brand-hover: #0848e0;
+  --color-brand-soft: #e7efff;
+  --color-ok: #17693f;
+  --color-ok-soft: #e6f4ec;
+  --color-warn: #7f4d00;
+  --color-warn-soft: #fdf2df;
+  --color-bad: #b3261e;
+  --color-bad-soft: #fcebea;
   --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* The shop, checkout, sign-in and admin screens are written with Tailwind's stone and zinc
@@ -131,17 +152,24 @@ body {
   --color-amber-950: #0a1a47;
 }
 
+/* Customer pages. The admin, account and sign-in screens keep the navy theme above. */
+.paper {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+.paper :focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
 html {
-  scroll-padding-top: 5rem;
+  scroll-padding-top: 5.5rem;
 }
 
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
-  }
-  /* Lenis drives the scroll on desktop; native smooth scrolling would fight it. */
-  html.lenis {
-    scroll-behavior: auto;
   }
 }
 

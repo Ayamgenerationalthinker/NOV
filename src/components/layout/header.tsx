@@ -1,52 +1,48 @@
 import Link from 'next/link';
 import { MobileMenu } from './mobile-menu';
 import { BrandLogo } from './brand-logo';
-import { Container } from '@/components/ui/container';
 import { env } from '@/lib/env';
 
 const linkClass =
-  'rounded-full px-3.5 py-2 text-sm text-fg/80 transition-colors duration-300 hover:bg-fg/10 hover:text-fg focus-visible:outline-2 focus-visible:outline-accent';
+  'flex min-h-11 items-center rounded-lg px-3 text-[15px] font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 
 export function Header() {
   const name = env.NEXT_PUBLIC_APP_NAME;
 
   const links = (
     <>
-      <Link href="/products" className={linkClass}>All products</Link>
+      <Link href="/products" className={linkClass}>Shop</Link>
+      <Link href="/#goals" className={linkClass}>Browse by goal</Link>
       <Link href="/#how-it-works" className={linkClass}>How it works</Link>
-      <Link href="/#why" className={linkClass}>Why {name}</Link>
-      <a href={`mailto:${env.NEXT_PUBLIC_SUPPORT_EMAIL}`} className={linkClass}>Contact</a>
+      <Link href="/#faq" className={linkClass}>Help</Link>
     </>
   );
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3 font-display sm:px-4">
-      <Container className="glass-nav rounded-full !px-3 sm:!px-4">
-        <div className="flex h-16 items-center justify-between gap-2">
+    <header className="sticky top-0 z-40 bg-ink font-body text-white">
+      <div className="mx-auto flex h-[70px] w-full max-w-[1440px] items-center justify-between gap-6 px-4 lg:px-16">
+        <Link
+          href="/"
+          aria-label={`${name} home`}
+          className="flex min-h-11 shrink-0 items-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          <BrandLogo priority className="h-9 sm:h-10" />
+        </Link>
+
+        <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
+          {links}
+        </nav>
+
+        <div className="flex items-center gap-2">
           <Link
-            href="/"
-            aria-label={`${name} home`}
-            className="shrink-0 rounded-lg px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            href="/products"
+            className="hidden min-h-11 items-center rounded-[10px] bg-white px-5 text-[15px] font-semibold text-ink transition-colors hover:bg-brand-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:flex"
           >
-            <BrandLogo priority className="h-8 min-[400px]:h-9 sm:h-11" />
+            Browse guides
           </Link>
-
-          <nav aria-label="Main" className="hidden items-center gap-0.5 lg:flex">
-            {links}
-          </nav>
-
-          <div className="flex items-center gap-1.5">
-            <Link
-              href="/#shop"
-              className="hidden h-10 shrink-0 items-center whitespace-nowrap rounded-full bg-accent px-4 text-sm font-semibold text-surface transition-colors duration-300 hover:bg-accent-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg sm:flex"
-            >
-              Shop now
-            </Link>
-
-            <MobileMenu>{links}</MobileMenu>
-          </div>
+          <MobileMenu>{links}</MobileMenu>
         </div>
-      </Container>
+      </div>
     </header>
   );
 }

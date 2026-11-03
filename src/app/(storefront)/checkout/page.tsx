@@ -4,29 +4,33 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { trackEvent } from '@/lib/track';
-import { AlertCircle, ArrowLeft, Loader2, Lock, Tag, X } from 'lucide-react';
+import { AlertCircle, Clock, Loader2, Lock, Tag, X } from 'lucide-react';
 import { useCart } from '@/context/cart-context';
 import { formatCurrency } from '@/lib/utils';
 import { productPath } from '@/lib/product-url';
+import { CheckoutHeader } from '@/components/layout/checkout-header';
+import { primaryButton, secondaryButton } from '@/components/home/primitives';
 
 const GHANA_REGIONS = [
   'Greater Accra', 'Ashanti', 'Central', 'Eastern', 'Western', 'Western North', 'Volta', 'Oti',
   'Northern', 'Savannah', 'North East', 'Upper East', 'Upper West', 'Bono', 'Bono East', 'Ahafo',
 ];
 
+const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'tomevari8@gmail.com';
 const PENDING_KEY = 'nov_pending_checkout';
 const PENDING_MAX_AGE_MS = 25 * 60 * 1000;
 
-const PAYMENT_MESSAGES: Record<string, { title: string; body: string; canRetry: boolean }> = {
+const PAYMENT_MESSAGES: Record<string, { title: string; body: string; canRetry: boolean; tone?: 'danger' | 'pending' }> = {
   payment_cancelled: { title: 'Payment cancelled', body: 'You cancelled the payment, so no money was taken. You can try again whenever you’re ready.', canRetry: true },
-  payment_failed: { title: 'Payment didn’t go through', body: 'The payment was declined or timed out and no money was taken. Please try again, or use a different number or card.', canRetry: true },
-  payment_pending: { title: 'Payment not finished yet', body: 'If you approved the Mobile Money prompt on your phone, give it a minute and tap “Check again”. If you closed the payment page before paying, tap “Try again”.', canRetry: true },
-  verification_unavailable: { title: 'Checking your payment', body: 'We couldn’t reach the payment provider to confirm your payment just now. Please don’t pay again. Tap “Check again” in a minute; if money left your account, your order will be confirmed automatically.', canRetry: false },
+  payment_failed: { title: 'Payment didn’t go through', body: 'The payment was declined or timed out and no money was taken. Please try again, or use a different number or card.', canRetry: true, tone: 'danger' },
+  payment_pending: { title: 'Payment not finished yet', body: 'If you approved the Mobile Money prompt on your phone, give it a minute and tap “Check again”. If you closed the payment page before paying, tap “Try again”.', canRetry: true, tone: 'pending' },
+  verification_unavailable: { title: 'Checking your payment', body: 'We couldn’t reach the payment provider to confirm your payment just now. Please don’t pay again. Tap “Check again” in a minute; if money left your account, your order will be confirmed automatically.', canRetry: false, tone: 'pending' },
 };
 const UNCONFIRMED_MESSAGE = {
   title: 'We couldn’t confirm your payment',
   body: 'If money left your account, don’t pay again. Contact us with your order number and we’ll sort it out. Otherwise you can try again.',
   canRetry: true,
+  tone: undefined as 'danger' | 'pending' | undefined,
 };
 
 interface Line {
@@ -44,8 +48,8 @@ interface Line {
 }
 
 const fieldClass =
-  'w-full rounded-xl border border-stone-700 bg-stone-900 px-3.5 py-3 text-base text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-300/60';
-const labelClass = 'mb-1.5 block text-sm font-medium text-stone-300';
+  'min-h-12 w-full rounded-[10px] border border-line-strong bg-card px-3.5 py-3 text-base text-ink placeholder:text-ink-soft';
+const labelClass = 'mb-1.5 block text-[15px] font-semibold text-ink';
 
 async function readJson(res: Response) {
   try {
@@ -123,41 +127,47 @@ function RetryPanel({ orderId, errorCode }: { orderId: string; errorCode: string
   };
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-2xl border border-amber-800/60 bg-amber-950/30 p-4">
-        <h1 className="flex items-center gap-2 text-lg font-semibold text-amber-200">
-          <AlertCircle className="h-5 w-5" /> {message.title}
+    <div className="mx-auto w-full max-w-xl space-y-5">
+      <div className={`rounded-[14px] border p-4 ${message.tone === 'danger' ? 'border-bad/40 bg-bad-soft' : 'border-warn/40 bg-warn-soft'}`}>
+        <h1 className={`flex items-center gap-2 text-xl font-bold leading-snug ${message.tone === 'danger' ? 'text-bad' : 'text-warn'}`}>
+          {message.tone === 'pending' ? <Clock className="h-5 w-5 shrink-0" aria-hidden /> : <AlertCircle className="h-5 w-5 shrink-0" aria-hidden />} {message.title}
         </h1>
-        <p className="mt-1 text-sm text-stone-300">{message.body}</p>
+        <p className="mt-1.5 text-base leading-relaxed text-ink">{message.body}</p>
       </div>
 
       {order && (
-        <div className="rounded-2xl border border-stone-800 p-4 text-sm">
-          <div className="text-stone-400">Order {order.orderNumber}</div>
+        <div className="rounded-[14px] border border-line bg-card p-4 text-[15px]">
+          <div className="text-sm text-ink-soft">Order <span className="tabular-nums text-ink">{order.orderNumber}</span></div>
           {order.items.map((i) => (
-            <div key={i.id} className="mt-1 text-white">{i.product.title}</div>
+            <div key={i.id} className="mt-1 font-semibold text-ink">{i.product.title}</div>
           ))}
-          <div className="mt-2 tabular-nums text-lg font-bold text-white">{formatCurrency(order.total, order.currency)}</div>
+          <div className="mt-2 tabular-nums text-lg font-bold text-ink">{formatCurrency(order.total, order.currency)}</div>
         </div>
       )}
 
-      {error && <p role="alert" className="text-sm text-red-300">{error}</p>}
+      {error && <p role="alert" className="text-[15px] font-medium text-bad">{error}</p>}
 
       <div className="flex flex-col gap-3">
         {message.canRetry && order && order.status !== 'PAID' && (
-          <button type="button" onClick={retry} disabled={busy !== null} className="flex h-12 items-center justify-center gap-2 rounded-xl bg-amber-300 font-bold text-stone-950 disabled:opacity-60">
+          <button type="button" onClick={retry} disabled={busy !== null} className={primaryButton}>
             {busy === 'retry' && <Loader2 className="h-4 w-4 animate-spin" />} Try again
           </button>
         )}
-        <button type="button" onClick={checkAgain} disabled={busy !== null} className="flex h-12 items-center justify-center gap-2 rounded-xl border border-stone-700 font-semibold text-stone-100 disabled:opacity-60">
+        <button type="button" onClick={checkAgain} disabled={busy !== null} className={secondaryButton}>
           {busy === 'check' && <Loader2 className="h-4 w-4 animate-spin" />} Check again
         </button>
         {order?.items[0] && (
-          <Link href={productPath(order.items[0].product.slug)} className="text-center text-sm text-stone-400 underline">
+          <Link href={productPath(order.items[0].product.slug)} className="flex min-h-11 items-center justify-center text-[15px] font-medium text-ink underline underline-offset-4">
             Back to the product
           </Link>
         )}
       </div>
+
+      <p className="text-center text-sm text-ink-soft">
+        Need help? Email{' '}
+        <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-brand-hover underline underline-offset-4">{SUPPORT_EMAIL}</a>
+        {order ? ` with order ${order.orderNumber}.` : '.'}
+      </p>
     </div>
   );
 }
@@ -390,10 +400,10 @@ function CheckoutForm() {
   if (loadError) {
     return (
       <div className="space-y-4 text-center">
-        <AlertCircle className="mx-auto h-10 w-10 text-amber-300" />
-        <p className="text-stone-200">{loadError}</p>
+        <AlertCircle className="mx-auto h-10 w-10 text-warn" aria-hidden />
+        <p className="text-lg font-semibold text-ink">{loadError}</p>
         {productSlug && (
-          <Link href={productPath(productSlug)} className="inline-block text-sm text-amber-300 underline">
+          <Link href={productPath(productSlug)} className="inline-flex min-h-11 items-center font-medium text-brand-hover underline underline-offset-4">
             Back to the product
           </Link>
         )}
@@ -404,7 +414,7 @@ function CheckoutForm() {
   if (!lines) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-amber-300" />
+        <Loader2 className="h-6 w-6 animate-spin text-brand" aria-label="Loading your order" />
       </div>
     );
   }
@@ -412,66 +422,68 @@ function CheckoutForm() {
   if (lines.length === 0) {
     return (
       <div className="space-y-3 text-center">
-        <p className="text-stone-300">There’s nothing to check out.</p>
-        <Link href="/" className="text-sm text-amber-300 underline">Go to the shop</Link>
+        <p className="text-lg font-semibold text-ink">There’s nothing to check out.</p>
+        <Link href="/products" className="inline-flex min-h-11 items-center font-medium text-brand-hover underline underline-offset-4">Go to the shop</Link>
       </div>
     );
   }
 
   return (
-    <form onSubmit={submit} className="space-y-7">
+    <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-12">
       {/* Order summary */}
-      <section className="space-y-3 rounded-2xl border border-stone-800 bg-stone-900/50 p-4">
+      <section aria-labelledby="summary-title" className="space-y-3 rounded-[14px] border border-line bg-card p-4 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1 lg:p-5">
+        <h2 id="summary-title" className="text-[17px] font-bold text-ink">Order summary</h2>
         {lines.map((l) => (
           <div key={`${l.productId}-${l.variantId ?? ''}`} className="flex gap-3">
-            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-stone-800">
+            <div className="h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-band">
               {l.coverImage && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={l.coverImage} alt="" className="h-full w-full object-cover" />
+                <img src={l.coverImage} alt="" className="h-full w-full object-contain" />
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="font-medium text-white">{l.title}</div>
-              <div className="text-xs text-stone-400">
+              <div className="font-semibold leading-snug text-ink">{l.title}</div>
+              <div className="mt-0.5 text-sm text-ink-soft">
                 {[l.optionLabel, l.kind === 'PHYSICAL' ? `Qty ${l.quantity}` : 'Instant download'].filter(Boolean).join(' · ')}
               </div>
             </div>
-            <div className="text-right tabular-nums text-sm text-white">
+            <div className="text-right tabular-nums text-[15px] font-semibold text-ink">
               {formatCurrency(l.unitPrice * l.quantity, l.currency)}
               {l.compareAtPrice !== null && (
-                <div className="text-xs text-stone-500 line-through">{formatCurrency(l.compareAtPrice * l.quantity, l.currency)}</div>
+                <div className="text-sm font-normal text-ink-soft line-through">{formatCurrency(l.compareAtPrice * l.quantity, l.currency)}</div>
               )}
             </div>
           </div>
         ))}
 
-        <dl className="space-y-1.5 border-t border-stone-800 pt-3 text-sm">
-          <div className="flex justify-between text-stone-400">
+        <dl className="space-y-1.5 border-t border-line pt-3 text-[15px]">
+          <div className="flex justify-between text-ink-soft">
             <dt>Subtotal</dt>
             <dd className="tabular-nums">{formatCurrency(subtotal, currency)}</dd>
           </div>
           {coupon && (
-            <div className="flex justify-between text-emerald-300">
+            <div className="flex justify-between text-ok">
               <dt>Discount ({coupon.code})</dt>
               <dd className="tabular-nums">−{formatCurrency(discount, currency)}</dd>
             </div>
           )}
           {hasPhysical && (
-            <div className="flex justify-between text-stone-400">
+            <div className="flex justify-between text-ink-soft">
               <dt>Delivery</dt>
               <dd className="tabular-nums">{shippingFee > 0 ? formatCurrency(shippingFee, currency) : 'Free'}</dd>
             </div>
           )}
-          <div className="flex justify-between pt-1 text-base font-bold text-white">
+          <div className="flex justify-between pt-1 text-lg font-bold text-ink">
             <dt>Total</dt>
             <dd className="tabular-nums">{formatCurrency(total, currency)}</dd>
           </div>
         </dl>
       </section>
 
+      <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
       {/* Contact */}
       <section className="space-y-4">
-        <h2 className="text-base font-semibold text-white">Your details</h2>
+        <h2 className="font-serif text-[28px] font-medium leading-tight text-ink">Your details</h2>
         <div>
           <label className={labelClass} htmlFor="co-name">Full name</label>
           <input id="co-name" className={fieldClass} autoComplete="name" required minLength={2} value={name} onChange={(e) => setName(e.target.value)} />
@@ -479,10 +491,10 @@ function CheckoutForm() {
         <div>
           <label className={labelClass} htmlFor="co-email">Email</label>
           <input id="co-email" type="email" inputMode="email" autoComplete="email" required className={fieldClass} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
-          {!hasPhysical && <p className="mt-1 text-xs text-stone-500">We’ll email your download link here.</p>}
+          {!hasPhysical && <p className="mt-1.5 text-sm text-ink-soft">We will email your download link here.</p>}
         </div>
         <div>
-          <label className={labelClass} htmlFor="co-phone">Phone (Mobile Money number)</label>
+          <label className={labelClass} htmlFor="co-phone">Mobile Money phone number</label>
           <input id="co-phone" type="tel" inputMode="tel" autoComplete="tel" required className={fieldClass} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="024 123 4567" />
         </div>
       </section>
@@ -490,7 +502,7 @@ function CheckoutForm() {
       {/* Delivery address (physical only) */}
       {hasPhysical && (
         <section className="space-y-4">
-          <h2 className="text-base font-semibold text-white">Delivery address</h2>
+          <h2 className="font-serif text-[28px] font-medium leading-tight text-ink">Delivery address</h2>
           <div>
             <label className={labelClass} htmlFor="co-region">Region</label>
             <select id="co-region" className={fieldClass} value={region} onChange={(e) => setRegion(e.target.value)}>
@@ -509,11 +521,11 @@ function CheckoutForm() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className={labelClass} htmlFor="co-landmark">Landmark <span className="text-stone-500">(optional)</span></label>
+              <label className={labelClass} htmlFor="co-landmark">Landmark <span className="text-ink-soft">(optional)</span></label>
               <input id="co-landmark" className={fieldClass} value={landmark} onChange={(e) => setLandmark(e.target.value)} placeholder="Near the mall" />
             </div>
             <div>
-              <label className={labelClass} htmlFor="co-gps">GhanaPost GPS <span className="text-stone-500">(optional)</span></label>
+              <label className={labelClass} htmlFor="co-gps">GhanaPost GPS <span className="text-ink-soft">(optional)</span></label>
               <input id="co-gps" className={fieldClass} value={gps} onChange={(e) => setGps(e.target.value)} placeholder="GA-123-4567" />
             </div>
           </div>
@@ -523,26 +535,26 @@ function CheckoutForm() {
       {/* Coupon */}
       <section>
         {coupon ? (
-          <div className="flex items-center justify-between rounded-xl border border-emerald-800 bg-emerald-950/30 px-3 py-2 text-sm text-emerald-200">
+          <div className="flex min-h-12 items-center justify-between rounded-[10px] border border-ok/40 bg-ok-soft px-3 py-1 text-[15px] font-semibold text-ok">
             <span className="flex items-center gap-2"><Tag className="h-4 w-4" /> {coupon.code} applied</span>
-            <button type="button" aria-label="Remove code" onClick={() => { setCoupon(null); setCouponInput(''); }} className="text-emerald-300">
-              <X className="h-4 w-4" />
+            <button type="button" aria-label="Remove code" onClick={() => { setCoupon(null); setCouponInput(''); }} className="flex h-11 w-11 items-center justify-center text-ok">
+              <X className="h-5 w-5" aria-hidden />
             </button>
           </div>
         ) : (
           <div className="flex gap-2">
             <input aria-label="Discount code" className={`${fieldClass} uppercase`} value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder="Discount code" />
-            <button type="button" onClick={() => applyCoupon(couponInput)} className="shrink-0 rounded-xl border border-stone-700 px-4 text-sm font-semibold text-stone-100">
+            <button type="button" onClick={() => applyCoupon(couponInput)} className="min-h-12 shrink-0 rounded-[10px] border border-line-strong bg-card px-5 text-[15px] font-semibold text-ink hover:border-ink">
               Apply
             </button>
           </div>
         )}
-        {couponMessage && <p className="mt-1.5 text-xs text-red-300">{couponMessage}</p>}
+        {couponMessage && <p role="alert" className="mt-1.5 text-sm text-bad">{couponMessage}</p>}
       </section>
 
       {error && (
-        <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-900 bg-red-950/50 p-3 text-sm text-red-200">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
+        <div role="alert" className="flex items-start gap-2 rounded-[10px] border border-bad/40 bg-bad-soft p-3 text-[15px] text-bad">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden /> {error}
         </div>
       )}
 
@@ -550,12 +562,13 @@ function CheckoutForm() {
         <button
           type="submit"
           disabled={submitting}
-          className="flex h-13 w-full items-center justify-center gap-2 rounded-xl bg-amber-300 py-3.5 text-base font-bold text-stone-950 shadow-lg shadow-amber-900/20 disabled:opacity-60"
+          className={`${primaryButton} w-full`}
         >
-          {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-4 w-4" />}
+          {submitting ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Lock className="h-4 w-4" aria-hidden />}
           {total === 0 ? 'Get it free' : `Pay ${formatCurrency(total, currency)}`}
         </button>
-        <p className="text-center text-xs text-stone-500">Mobile Money or card on the next screen. No account needed.</p>
+        <p className="text-center text-sm text-ink-soft">Mobile Money or card on the next screen. No account needed.</p>
+      </div>
       </div>
     </form>
   );
@@ -568,30 +581,24 @@ function CheckoutContent() {
   const productSlug = searchParams.get('product');
 
   return (
-    <div className="mx-auto w-full max-w-lg px-4 py-6 pb-16">
-      <div className="mb-5 flex items-center gap-3">
-        <Link
-          href={productSlug ? productPath(productSlug) : '/'}
-          aria-label="Back"
-          className="rounded-xl border border-stone-800 p-2 text-stone-400 hover:text-white"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <h1 className="text-xl font-bold text-white">Checkout</h1>
+    <>
+      <CheckoutHeader backHref={productSlug ? productPath(productSlug) : '/products'} backLabel={productSlug ? 'Back to the guide' : 'Back to the shop'} />
+      <div className="mx-auto w-full max-w-[1120px] px-4 pb-16 pt-6 lg:pt-12">
+        {errorCode && retryOrderId ? (
+          <RetryPanel orderId={retryOrderId} errorCode={errorCode} />
+        ) : (
+          <>
+            <h1 className="mb-5 font-serif text-[38px] font-medium leading-[1.1] text-ink lg:mb-8 lg:text-[52px]">Checkout</h1>
+            {errorCode && (
+              <div role="alert" className="mb-5 rounded-[10px] border border-warn/40 bg-warn-soft p-3 text-[15px] text-ink">
+                {(PAYMENT_MESSAGES[errorCode] ?? UNCONFIRMED_MESSAGE).body}
+              </div>
+            )}
+            <CheckoutForm />
+          </>
+        )}
       </div>
-      {errorCode && retryOrderId ? (
-        <RetryPanel orderId={retryOrderId} errorCode={errorCode} />
-      ) : (
-        <>
-          {errorCode && (
-            <div role="alert" className="mb-5 rounded-xl border border-amber-800/60 bg-amber-950/30 p-3 text-sm text-amber-100">
-              {(PAYMENT_MESSAGES[errorCode] ?? UNCONFIRMED_MESSAGE).body}
-            </div>
-          )}
-          <CheckoutForm />
-        </>
-      )}
-    </div>
+    </>
   );
 }
 
@@ -600,7 +607,7 @@ export default function CheckoutPage() {
     <React.Suspense
       fallback={
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-amber-300" />
+          <Loader2 className="h-6 w-6 animate-spin text-brand" aria-label="Loading checkout" />
         </div>
       }
     >

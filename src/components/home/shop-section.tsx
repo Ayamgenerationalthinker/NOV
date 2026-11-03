@@ -2,231 +2,150 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, CheckCircle2, Loader2, Package, Search } from 'lucide-react';
-import { Container } from '@/components/ui/container';
+import { ArrowRight, CheckCircle2, Loader2, Search } from 'lucide-react';
+import { GuideCard } from '@/components/products/guide-card';
 import { GOALS } from '@/content/home';
-import { productPath } from '@/lib/product-url';
-import { DIGITAL_PRODUCT_TYPE_OPTIONS, type DigitalProductType } from '@/lib/product-types';
-import { cn, formatCurrency } from '@/lib/utils';
+import type { ShopProduct } from '@/lib/shop-product';
+import { cn } from '@/lib/utils';
 import { trackEvent } from '@/lib/track';
-import { useGoal } from './goal-context';
-import { primaryButton, SectionHeading } from './primitives';
-import { TiltCard } from './tilt-card';
-
-/** What the grid needs to know about a product. Built on the server in app/page.tsx. */
-export interface ShopProduct {
-  id: string;
-  slug: string;
-  title: string;
-  summary: string | null;
-  coverImage: string | null;
-  price: number;
-  /** Set when the product is on sale; `price` is then the sale price. */
-  wasPrice: number | null;
-  currency: string;
-  label: string;
-  productType: string;
-  isPhysical: boolean;
-  soldOut: boolean;
-  goals: string[];
-}
+import { pageWidth, primaryButton, secondaryButton } from './primitives';
 
 interface ShopSectionProps {
   products: ShopProduct[];
-  isOwner: boolean;
+  isOwner?: boolean;
+  /** Goal chosen by the link that opened the page. */
+  initialGoal?: string | null;
+  initialQuery?: string;
+  /** Show only this many until a filter is used, with a link to the full shop. */
+  limit?: number;
+  /** The shop page's main heading; the homepage uses a section heading. */
+  pageHeading?: boolean;
 }
 
-export function ShopSection({ products, isOwner }: ShopSectionProps) {
-  const { selected, select } = useGoal();
-  const [category, setCategory] = useState<DigitalProductType | null>(null);
-  const [query, setQuery] = useState('');
-  const goal = GOALS.find((g) => g.slug === selected);
+export function ShopSection({ products, isOwner = false, initialGoal = null, initialQuery = '', limit, pageHeading = false }: ShopSectionProps) {
+  const [goal, setGoal] = useState<string | null>(initialGoal);
+  const [query, setQuery] = useState(initialQuery);
   const needle = query.trim().toLowerCase();
-  const visible = products.filter(
+  const matches = products.filter(
     (product) =>
-      (!selected || product.goals.includes(selected)) &&
-      (!category || product.productType === category) &&
-      (!needle || product.title.toLowerCase().includes(needle) || product.summary?.toLowerCase().includes(needle))
+      (!goal || product.goals.includes(goal)) &&
+      (!needle ||
+        product.title.toLowerCase().includes(needle) ||
+        product.outcome?.toLowerCase().includes(needle) ||
+        product.audience?.toLowerCase().includes(needle)),
   );
-  // Only offer categories that have at least one product, so no filter leads to an empty grid.
-  const categories = DIGITAL_PRODUCT_TYPE_OPTIONS.filter((option) =>
-    products.some((product) => product.productType === option.value)
-  );
-  const filtered = Boolean(selected || category || needle);
+  const filtered = Boolean(goal || needle);
+  const visible = limit && !filtered ? matches.slice(0, limit) : matches;
+  const hidden = limit && !filtered && products.length > limit;
   const clearFilters = () => {
-    select(null);
-    setCategory(null);
+    setGoal(null);
     setQuery('');
   };
   const chipClass = (on: boolean) =>
     cn(
-      'h-10 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-      on ? 'border-accent bg-accent text-surface' : 'border-fg/20 bg-fg/5 text-fg/80 hover:bg-fg/10'
+      'min-h-11 shrink-0 rounded-full border px-3.5 text-[13px] font-semibold transition-colors',
+      on ? 'border-ink bg-ink text-white' : 'border-line-strong bg-card text-ink hover:border-ink',
     );
+  const Title = pageHeading ? 'h1' : 'h2';
 
   return (
-    <section id="shop" aria-labelledby="shop-title" className="light relative bg-surface py-20 text-fg sm:py-28">
-      <Container>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <SectionHeading
-            id="shop-title"
-            eyebrow="Shop"
-            title={goal ? goal.name : 'Guides ready to download'}
-            text="Every price is in GH₵. Pay with Mobile Money or card and start reading right away."
-          />
-          {products.length > 0 && (
-            <p className="text-sm tabular-nums text-fg/70" aria-live="polite">
-              {visible.length} of {products.length} product{products.length === 1 ? '' : 's'}
+    <section id="shop" aria-labelledby="shop-title" className={cn('bg-paper', pageHeading ? 'pb-14 pt-8 lg:pb-[72px] lg:pt-14' : 'py-10 lg:py-[72px]')}>
+      <div className={pageWidth}>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between md:gap-12">
+          <div className="max-w-2xl">
+            <Title id="shop-title" className={cn('font-serif font-medium text-ink', pageHeading ? 'text-[38px] leading-[1.12] lg:text-[52px] lg:leading-[1.08]' : 'text-[28px] leading-[1.18] lg:text-[38px] lg:leading-[1.12]')}>
+              {pageHeading ? 'All guides' : 'Find your next guide'}
+            </Title>
+            <p className="mt-2 text-base leading-relaxed text-ink-soft">
+              {pageHeading
+                ? 'Practical PDF guides for money, business, skills and everyday life. Every price is in GH₵ and includes the full download.'
+                : 'Every price is in GH₵ and includes the full download.'}
             </p>
+          </div>
+          {products.length > 3 && (
+            <div className="relative w-full shrink-0 md:w-80">
+              <label htmlFor="shop-search" className="sr-only">Search guides</label>
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-soft" aria-hidden />
+              <input
+                id="shop-search"
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search guides"
+                className="min-h-12 w-full rounded-[10px] border border-line-strong bg-card pl-11 pr-4 text-base text-ink placeholder:text-ink-soft"
+              />
+            </div>
           )}
         </div>
 
         {products.length > 0 && (
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {categories.length > 1 ? (
-              <div role="group" aria-label="Filter by category" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-                <button type="button" aria-pressed={!category} onClick={() => setCategory(null)} className={chipClass(!category)}>
-                  All
+          <div className="mt-6 flex items-center justify-between gap-4">
+            <div role="group" aria-label="Filter by goal" className="-mx-4 flex gap-2 overflow-x-auto px-4 py-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0">
+              <button type="button" aria-pressed={!goal} onClick={() => setGoal(null)} className={chipClass(!goal)}>
+                All guides
+              </button>
+              {GOALS.map((item) => (
+                <button
+                  key={item.slug}
+                  type="button"
+                  aria-pressed={goal === item.slug}
+                  onClick={() => setGoal(goal === item.slug ? null : item.slug)}
+                  className={chipClass(goal === item.slug)}
+                >
+                  {item.name}
                 </button>
-                {categories.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    aria-pressed={category === option.value}
-                    onClick={() => setCategory(category === option.value ? null : option.value)}
-                    className={chipClass(category === option.value)}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <span />
-            )}
-            {products.length > 3 && (
-              <div className="relative sm:w-72">
-                <label htmlFor="shop-search" className="sr-only">
-                  Search products
-                </label>
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-fg/50" aria-hidden />
-                <input
-                  id="shop-search"
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search products"
-                  className="h-11 w-full rounded-full border border-fg/20 bg-surface/60 pl-11 pr-4 text-base text-fg placeholder:text-fg/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/50 sm:text-sm"
-                />
-              </div>
-            )}
+              ))}
+            </div>
+            <p aria-live="polite" className="hidden shrink-0 text-[13px] font-semibold tabular-nums text-ink-soft md:block">
+              {matches.length} guide{matches.length === 1 ? '' : 's'}
+            </p>
           </div>
         )}
 
-        <div className="mt-8">
+        <div className="mt-6">
           {products.length === 0 ? (
             <ComingSoon isOwner={isOwner} />
           ) : visible.length === 0 ? (
-            <div className="glass rounded-3xl px-6 py-14 text-center">
-              <p className="text-lg font-semibold text-fg">No products match {needle ? `“${query.trim()}”` : 'these filters'} yet.</p>
-              <p className="mt-2 text-sm text-fg/70">New products are added as they are finished.</p>
-              {filtered && (
-                <button type="button" onClick={clearFilters} className={cn(primaryButton, 'mt-6')}>
-                  Show everything
-                </button>
-              )}
+            <div className="rounded-[14px] border border-line bg-card px-6 py-12 text-center">
+              <h3 className="text-lg font-bold text-ink">No guides match {needle ? `“${query.trim()}”` : 'this goal'} yet.</h3>
+              <p className="mt-2 text-sm text-ink-soft">Try another goal above, or look through everything we have.</p>
+              <button type="button" onClick={clearFilters} className={cn(primaryButton, 'mt-5')}>
+                Show all guides
+              </button>
             </div>
           ) : (
-            <ul className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+            <ul className="grid gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
               {visible.map((product) => (
-                <li key={product.id} data-reveal>
-                  <ShopCard product={product} />
+                <li key={product.id}>
+                  <GuideCard product={product} headingLevel={pageHeading ? 2 : 3} />
                 </li>
               ))}
             </ul>
           )}
         </div>
-      </Container>
+
+        {hidden && (
+          <div className="mt-6 flex justify-center">
+            <Link href="/products" className={secondaryButton}>
+              See all {products.length} guides <ArrowRight className="h-5 w-5" aria-hidden />
+            </Link>
+          </div>
+        )}
+      </div>
     </section>
-  );
-}
-
-function ShopCard({ product }: { product: ShopProduct }) {
-  const Placeholder = product.isPhysical ? Package : BookOpen;
-
-  return (
-    <TiltCard className="h-full rounded-3xl">
-      <Link
-        href={productPath(product.slug)}
-        className="glass group flex h-full flex-col overflow-hidden rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >
-        <div className="relative aspect-[5/6] overflow-hidden bg-surface-800">
-          {product.coverImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={product.coverImage}
-              alt={`Cover of ${product.title}`}
-              loading="lazy"
-              decoding="async"
-              className={cn(
-                'h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105',
-                product.soldOut && 'opacity-50',
-              )}
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-fg/30">
-              <Placeholder className="h-12 w-12" aria-hidden />
-            </div>
-          )}
-          <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1.5 sm:left-3 sm:top-3">
-            <span className="rounded-full bg-surface/80 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-fg backdrop-blur">
-              {product.label}
-            </span>
-            {product.soldOut ? (
-              <span className="rounded-full bg-deep/90 px-2.5 py-1 text-[11px] font-semibold text-fg">Sold out</span>
-            ) : (
-              product.wasPrice !== null && (
-                <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-bold text-surface">
-                  −{Math.round((1 - product.price / product.wasPrice) * 100)}%
-                </span>
-              )
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-1 flex-col gap-1 p-3 sm:p-4">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug tracking-tight text-fg sm:text-base">{product.title}</h3>
-          {product.summary && (
-            <p className="hidden text-xs leading-relaxed text-fg/65 sm:line-clamp-1 sm:text-sm">{product.summary}</p>
-          )}
-          <div className="mt-auto flex items-center justify-between gap-2 pt-2.5">
-            <p className="flex flex-wrap items-baseline gap-x-1.5 leading-tight tabular-nums">
-              <span className="text-base font-semibold text-accent-200 sm:text-lg">{formatCurrency(product.price, product.currency)}</span>
-              {product.wasPrice !== null && (
-                <s className="text-xs text-fg/55">{formatCurrency(product.wasPrice, product.currency)}</s>
-              )}
-            </p>
-            {/* Phones: a round arrow button beside the price keeps the card short. */}
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1 rounded-full bg-accent text-sm font-semibold text-surface transition-colors duration-300 group-hover:bg-accent-200 sm:w-auto sm:px-3.5">
-              <span className="sr-only sm:not-sr-only">{product.soldOut ? 'View' : 'Buy now'}</span>
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </span>
-          </div>
-        </div>
-      </Link>
-    </TiltCard>
   );
 }
 
 function ComingSoon({ isOwner }: { isOwner: boolean }) {
   return (
-    <div className="glass mx-auto max-w-2xl rounded-3xl px-6 py-12 text-center sm:px-10">
-      <p className="text-2xl font-semibold tracking-tight text-fg">New products are coming soon.</p>
-      <p className="mt-2 text-sm text-fg/70">Leave your email and we will tell you when the first guides are ready.</p>
+    <div className="mx-auto max-w-2xl rounded-[14px] border border-line bg-card px-6 py-12 text-center sm:px-10">
+      <h3 className="text-xl font-bold text-ink">New guides are coming soon.</h3>
+      <p className="mt-2 text-sm text-ink-soft">Leave your email and we will tell you when the first guides are ready.</p>
       <NotifyForm />
       {isOwner && (
-        <p className="mt-8 border-t border-fg/10 pt-6 text-sm text-fg/70">
+        <p className="mt-8 border-t border-line pt-6 text-sm text-ink-soft">
           You haven’t published any products yet.{' '}
-          <Link href="/admin/products/new" className="font-semibold text-accent-200 underline underline-offset-4">
+          <Link href="/admin/products/new" className="font-semibold text-brand-hover underline underline-offset-4">
             Add your first product
           </Link>
         </p>
@@ -263,7 +182,7 @@ function NotifyForm() {
 
   if (state === 'done') {
     return (
-      <p role="status" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-accent-200">
+      <p role="status" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-ok">
         <CheckCircle2 className="h-5 w-5" aria-hidden /> Thank you. We’ll email you when new guides are ready.
       </p>
     );
@@ -284,14 +203,14 @@ function NotifyForm() {
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@example.com"
         aria-describedby={state === 'error' ? 'notify-error' : undefined}
-        className="h-12 flex-1 rounded-full border border-fg/20 bg-surface/60 px-5 text-base text-fg placeholder:text-fg/50 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/50"
+        className="min-h-12 flex-1 rounded-[10px] border border-line-strong bg-card px-4 text-base text-ink placeholder:text-ink-soft"
       />
-      <button type="submit" disabled={state === 'sending'} className={cn(primaryButton, 'disabled:opacity-70')}>
+      <button type="submit" disabled={state === 'sending'} className={primaryButton}>
         {state === 'sending' && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
         Email me when ready
       </button>
       {state === 'error' && (
-        <p id="notify-error" role="alert" className="w-full text-sm text-red-700">
+        <p id="notify-error" role="alert" className="w-full text-sm text-bad">
           {error}
         </p>
       )}

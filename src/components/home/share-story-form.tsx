@@ -7,7 +7,7 @@ import { trackEvent } from '@/lib/track';
 import { primaryButton } from './primitives';
 
 const field =
-  'w-full rounded-2xl border border-fg/15 bg-fg/[0.04] px-4 py-3 text-base text-fg placeholder:text-fg/45 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30';
+  'min-h-12 w-full rounded-[10px] border border-line-strong bg-card px-3.5 py-3 text-base text-ink placeholder:text-ink-soft';
 
 /** Testimony box shown straight on the page: write it, add name and email, send. The owner publishes it later. */
 export function ShareStoryForm({ className }: { className?: string }) {
@@ -36,16 +36,16 @@ export function ShareStoryForm({ className }: { className?: string }) {
 
   if (status === 'sent') {
     return (
-      <div role="status" className={cn('glass mx-auto max-w-xl rounded-3xl px-6 py-8 text-center', className)}>
-        <CheckCircle2 className="mx-auto h-8 w-8 text-accent" aria-hidden />
-        <p className="mt-3 text-lg font-semibold text-fg">Thank you for sharing.</p>
-        <p className="mt-1 text-sm text-fg/70">Your testimony will appear here once we have reviewed it.</p>
+      <div role="status" className={cn('max-w-xl rounded-[14px] border border-line bg-card px-6 py-8 text-center', className)}>
+        <CheckCircle2 className="mx-auto h-8 w-8 text-ok" aria-hidden />
+        <p className="mt-3 text-lg font-bold text-ink">Thank you for sharing.</p>
+        <p className="mt-1 text-sm text-ink-soft">Your testimony will appear here once we have reviewed it.</p>
       </div>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className={cn('glass mx-auto max-w-xl space-y-3 rounded-3xl p-5 text-left sm:p-6', className)}>
+    <form onSubmit={onSubmit} className={cn('max-w-xl space-y-3 rounded-[14px] border border-line bg-card p-4 text-left sm:p-5', className)}>
       <label htmlFor="story-quote" className="sr-only">
         Your testimony
       </label>
@@ -82,14 +82,14 @@ export function ShareStoryForm({ className }: { className?: string }) {
       <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
 
       {error && (
-        <p role="alert" className="text-sm text-red-600">
+        <p role="alert" className="text-sm text-bad">
           {error}
         </p>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-fg/60">Your email is never shown.</p>
-        <button type="submit" disabled={status === 'sending'} className={cn(primaryButton, 'disabled:opacity-60')}>
+        <p className="text-sm text-ink-soft">Your email is never shown.</p>
+        <button type="submit" disabled={status === 'sending'} className={primaryButton}>
           {status === 'sending' ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Send className="h-4 w-4" aria-hidden />}
           Share
         </button>

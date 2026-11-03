@@ -1,48 +1,32 @@
 import { cn } from '@/lib/utils';
 
-/** Small uppercase label in a pill, used above every section heading. */
-export function Eyebrow({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-accent-200',
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
 interface SectionHeadingProps {
-  eyebrow: string;
   title: string;
   text?: string;
   /** id for the <h2>, so the section can point at it with aria-labelledby. */
   id: string;
+  /** Light text, for the navy section. */
+  inverse?: boolean;
   className?: string;
 }
 
-export function SectionHeading({ eyebrow, title, text, id, className }: SectionHeadingProps) {
+export function SectionHeading({ title, text, id, inverse = false, className }: SectionHeadingProps) {
   return (
     <div className={cn('max-w-2xl', className)}>
-      <div data-reveal>
-        <Eyebrow>{eyebrow}</Eyebrow>
-      </div>
-      <h2 id={id} data-reveal className="mt-4 text-3xl font-semibold tracking-tight text-fg sm:text-4xl lg:text-5xl">
+      <h2 id={id} className={cn('font-serif text-[28px] font-medium leading-[1.18] lg:text-[38px] lg:leading-[1.12]', inverse ? 'text-white' : 'text-ink')}>
         {title}
       </h2>
-      {text && (
-        <p data-reveal className="mt-4 text-base leading-relaxed text-fg/70 sm:text-lg">
-          {text}
-        </p>
-      )}
+      {text && <p className={cn('mt-2 text-base leading-relaxed', inverse ? 'text-white/80' : 'text-ink-soft')}>{text}</p>}
     </div>
   );
 }
 
-export const primaryButton =
-  'inline-flex h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-semibold text-surface transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-accent-200 motion-reduce:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg glow-accent';
+const buttonBase =
+  'inline-flex min-h-12 items-center justify-center gap-2 rounded-[10px] px-6 text-[15px] font-semibold transition-colors disabled:opacity-60';
 
-export const ghostButton =
-  'inline-flex h-12 items-center justify-center gap-2 rounded-full border border-fg/25 bg-fg/5 px-6 text-sm font-semibold text-fg backdrop-blur transition duration-300 ease-out hover:border-fg/50 hover:bg-fg/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg';
+export const primaryButton = cn(buttonBase, 'bg-brand text-white hover:bg-brand-hover');
+
+export const secondaryButton = cn(buttonBase, 'border border-line-strong bg-card text-ink hover:border-ink');
+
+/** Page-width wrapper shared by the customer pages. */
+export const pageWidth = 'mx-auto w-full max-w-[1440px] px-4 lg:px-16';

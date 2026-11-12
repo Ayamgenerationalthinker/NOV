@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic';
 
 const TITLE = `${env.NEXT_PUBLIC_APP_NAME} | Practical guides for your money, work and next step`;
 const DESCRIPTION =
-  'Practical ebooks and downloadable PDF guides for starting a business, earning online, saving, freelancing and digital skills. Pay in GH₵ with Mobile Money or card. Instant download, no account needed.';
+  'Practical ebooks and downloadable PDF guides for starting a business, earning online, saving, freelancing and digital skills. Pay with Mobile Money, Visa or debit card. Instant download, no account needed.';
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

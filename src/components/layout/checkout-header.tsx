@@ -17,11 +17,11 @@ export function CheckoutHeader({ backHref, backLabel }: { backHref: string; back
             <span className="hidden sm:inline">Back</span>
           </Link>
           <Link href="/" aria-label="Tomevari home" className="flex min-h-11 items-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
-            <BrandLogo className="h-8 lg:h-9" />
+            <BrandLogo className="h-8 text-[18px] sm:text-[22px] lg:h-9" />
           </Link>
         </div>
         <p className="flex shrink-0 items-center gap-2 text-sm text-white/85">
-          <Lock className="h-4 w-4" aria-hidden /> Secure checkout
+          <Lock className="h-4 w-4" aria-hidden /> <span>Secure<span className="hidden min-[400px]:inline"> checkout</span></span>
         </p>
       </div>
     </header>

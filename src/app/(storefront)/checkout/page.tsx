@@ -9,6 +9,7 @@ import { useCart } from '@/context/cart-context';
 import { formatCurrency } from '@/lib/utils';
 import { productPath } from '@/lib/product-url';
 import { CheckoutHeader } from '@/components/layout/checkout-header';
+import { CoverImage } from '@/components/products/cover-image';
 import { primaryButton, secondaryButton } from '@/components/home/primitives';
 
 const GHANA_REGIONS = [
@@ -435,11 +436,8 @@ function CheckoutForm() {
         <h2 id="summary-title" className="text-[17px] font-bold text-ink">Order summary</h2>
         {lines.map((l) => (
           <div key={`${l.productId}-${l.variantId ?? ''}`} className="flex gap-3">
-            <div className="h-20 w-16 shrink-0 overflow-hidden rounded-lg bg-band">
-              {l.coverImage && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={l.coverImage} alt="" className="h-full w-full object-contain" />
-              )}
+            <div className="flex h-20 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-band">
+              {l.coverImage && <CoverImage src={l.coverImage} sizes="64px" className="h-full w-full object-contain" />}
             </div>
             <div className="min-w-0 flex-1">
               <div className="font-semibold leading-snug text-ink">{l.title}</div>
@@ -494,7 +492,7 @@ function CheckoutForm() {
           {!hasPhysical && <p className="mt-1.5 text-sm text-ink-soft">We will email your download link here.</p>}
         </div>
         <div>
-          <label className={labelClass} htmlFor="co-phone">Mobile Money phone number</label>
+          <label className={labelClass} htmlFor="co-phone">Phone number</label>
           <input id="co-phone" type="tel" inputMode="tel" autoComplete="tel" required className={fieldClass} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="024 123 4567" />
         </div>
       </section>
@@ -567,7 +565,7 @@ function CheckoutForm() {
           {submitting ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Lock className="h-4 w-4" aria-hidden />}
           {total === 0 ? 'Get it free' : `Pay ${formatCurrency(total, currency)}`}
         </button>
-        <p className="text-center text-sm text-ink-soft">Mobile Money or card on the next screen. No account needed.</p>
+        <p className="text-center text-sm text-ink-soft">Pay with Mobile Money, Visa or debit card on the next screen. No account needed.</p>
       </div>
       </div>
     </form>

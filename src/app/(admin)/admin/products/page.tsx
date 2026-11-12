@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { productPath, productUrl } from '@/lib/product-url';
 import { ShareProductButtons } from '@/components/admin/share-product-buttons';
+import { CoverImage } from '@/components/products/cover-image';
 import { isDigitalProductType, productTypeLabel } from '@/lib/product-types';
 
 interface AdminProductRow {
@@ -100,10 +101,9 @@ export default function AdminProductsPage() {
             return (
               <li key={p.id} className="rounded-2xl border border-stone-800 bg-stone-900/60 p-4">
                 <div className="flex gap-4">
-                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-stone-800">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-stone-800">
                     {p.coverImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.coverImage} alt="" className="h-full w-full object-cover" />
+                      <CoverImage src={p.coverImage} sizes="64px" className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-stone-500">
                         {p.productKind === 'DIGITAL' ? <BookOpen className="w-5 h-5" /> : <Package className="w-5 h-5" />}

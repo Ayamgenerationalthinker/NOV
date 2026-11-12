@@ -20,6 +20,9 @@ export function formatCurrency(
   if (isNaN(numericAmount)) return currency === 'GHS' ? 'GH₵0.00' : '$0.00';
 
   const curr = currency.toUpperCase();
+  if (curr === 'GHS') {
+    return `GH₵${numericAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
   const targetLocale = curr === 'GHS' ? 'en-GH' : curr === 'NGN' ? 'en-NG' : locale;
 
   try {

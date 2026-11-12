@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     default: env.NEXT_PUBLIC_APP_NAME,
   },
   description:
-    'Ebooks, courses and videos for building skills and income. Pay in GH₵ with Mobile Money or card, no account needed.',
+    'Ebooks, courses and videos for building skills and income. Pay with Mobile Money, Visa or debit card, no account needed.',
   applicationName: env.NEXT_PUBLIC_APP_NAME,
   // Favicons come from app/favicon.ico, app/icon.png and app/apple-icon.png (built from the logo).
   openGraph: {

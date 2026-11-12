@@ -27,7 +27,7 @@ export function Footer() {
               Practical PDF guides for money, business, skills and everyday life.
             </p>
             <p className="mt-4 flex items-center gap-2 text-sm text-white/80">
-              <Lock className="h-4 w-4 shrink-0" aria-hidden /> Pay with Mobile Money or card in GH₵
+              <Lock className="h-4 w-4 shrink-0" aria-hidden /> Pay with Mobile Money, Visa or debit card
             </p>
           </div>
 

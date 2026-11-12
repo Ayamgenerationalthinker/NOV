@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { BookOpen } from 'lucide-react';
 
 /** Covers the image optimiser may resize: the shop's own media route and its live address. */
 function canOptimize(src: string): boolean {
@@ -20,17 +21,39 @@ interface CoverImageProps {
 
 /**
  * A product cover, resized and compressed for the screen it is shown on. Uploaded covers are often
- * 1–2 MB; this sends a few dozen KB instead. If resizing ever fails, the original file is shown,
- * so a cover is never left blank.
+ * 1–2 MB; this sends a few dozen KB instead. If resizing fails the original file is tried, and if
+ * that fails too (storage offline) a plain book placeholder shows instead of a broken image.
  */
 export function CoverImage({ src, className, sizes, priority = false, alt = '' }: CoverImageProps) {
-  const [failed, setFailed] = useState(false);
+  const [stage, setStage] = useState<'optimized' | 'original' | 'missing'>(canOptimize(src) ? 'optimized' : 'original');
 
-  if (failed || !canOptimize(src)) {
+  if (stage === 'missing') {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={src} alt={alt} width={300} height={400} loading={priority ? 'eager' : 'lazy'} decoding="async" className={className} />
+      <span
+        role={alt ? 'img' : undefined}
+        aria-label={alt || undefined}
+        className="flex aspect-[3/4] w-full max-w-[120px] items-center justify-center sm:h-full sm:w-auto sm:max-w-full rounded-lg bg-gradient-to-br from-[#0b5cff] to-[#001650] text-[#ffffff] shadow-[0_16px_30px_-14px_rgba(0,22,80,0.55)]"
+      >
+        <BookOpen className="h-1/4 w-1/4" aria-hidden />
+      </span>
     );
   }
-  return <Image src={src} alt={alt} width={600} height={800} sizes={sizes} priority={priority} className={className} onError={() => setFailed(true)} />;
+
+  if (stage === 'original') {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={alt}
+        width={300}
+        height={400}
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+        className={className}
+        onError={() => setStage('missing')}
+      />
+    );
+  }
+
+  return <Image src={src} alt={alt} width={600} height={800} sizes={sizes} priority={priority} className={className} onError={() => setStage('original')} />;
 }

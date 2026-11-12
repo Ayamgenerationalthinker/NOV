@@ -7,7 +7,7 @@ import { env } from '@/lib/env';
 
 export const metadata: Metadata = {
   title: 'All guides',
-  description: `Browse every practical guide on ${env.NEXT_PUBLIC_APP_NAME}. Prices in GH₵, pay with Mobile Money or card.`,
+  description: `Browse every practical guide on ${env.NEXT_PUBLIC_APP_NAME}. Pay with Mobile Money, Visa or debit card.`,
   alternates: { canonical: '/products' },
 };
 

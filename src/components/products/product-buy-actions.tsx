@@ -132,7 +132,7 @@ export function ProductBuyActions({ slug, title, currency, isPhysical, basePrice
           </Link>
         )}
       </div>
-      {!soldOut && <p className="text-sm text-ink-soft">Next, you enter your details and pay with Mobile Money or card. No account needed.</p>}
+      {!soldOut && <p className="text-sm text-ink-soft">Next, you enter your details and pay with Mobile Money, Visa or debit card. No account needed.</p>}
 
       {/* Phones only: repeats the title, price and button after the main one scrolls away. */}
       {!soldOut && (

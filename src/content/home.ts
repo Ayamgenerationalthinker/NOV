@@ -43,7 +43,7 @@ export const GOALS: Goal[] = [
 
 export const BUYING_STEPS = [
   { title: 'Choose a guide', text: 'Pick the guide that fits your goal and see what is inside before you buy.' },
-  { title: 'Pay on a secure page', text: 'Check out as a guest in GH₵ with Mobile Money or card. No account needed.' },
+  { title: 'Pay on a secure page', text: 'Check out as a guest with Mobile Money, Visa or debit card. No account needed.' },
   { title: 'Download your file', text: 'Your download appears once payment is confirmed, and we email you a link to keep.' },
 ] as const;
 

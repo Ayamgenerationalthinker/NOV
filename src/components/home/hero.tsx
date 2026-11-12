@@ -7,7 +7,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { inverseButton, pageWidth, primaryButton } from './primitives';
 
 const FACTS = [
-  { icon: Lock, text: 'Mobile Money or card' },
+  { icon: Lock, text: 'Mobile Money, Visa or debit card' },
   { icon: UserRound, text: 'No account needed' },
   { icon: Download, text: 'Download after payment' },
 ];

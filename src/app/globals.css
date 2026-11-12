@@ -500,10 +500,7 @@ html {
   .owner-light main summary {
     min-height: 44px;
   }
-  .owner-light main a.inline-flex,
-  .owner-light main a[class*='rounded'] {
+  .owner-light main a.inline-flex {
     min-height: 44px;
-    display: inline-flex;
-    align-items: center;
   }
 }

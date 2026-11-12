@@ -3,7 +3,7 @@ import { Download, Mail, ShoppingBag } from 'lucide-react';
 import { AuthShell, authButton } from '@/components/auth/auth-shell';
 
 const STEPS = [
-  { icon: ShoppingBag, title: 'Buy as a guest', text: 'Choose a guide and pay with Mobile Money or card.' },
+  { icon: ShoppingBag, title: 'Buy as a guest', text: 'Choose a guide and pay with Mobile Money, Visa or debit card.' },
   { icon: Download, title: 'Download straight away', text: 'Your file appears once payment is confirmed.' },
   { icon: Mail, title: 'Keep the link', text: 'We email your receipt and download link too.' },
 ];
